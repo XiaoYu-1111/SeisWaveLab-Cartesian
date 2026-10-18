@@ -23,7 +23,7 @@ FENCE = re.compile(r'(^```[^\n]*\n.*?^```[^\n]*$)', re.M | re.S)
 SELECTED = ["PROJECT_MANUAL.md", "README.md", "user/Seis3D_User_Guide.md",
     "user/Seis2D_User_Guide.md", "user/Seis3D_Screenshot_Gallery.md",
     "user/S3DM_Model_Format.md", "user/VTK_Model_Export.md", "build/BUILDING.md",
-    "build/HEXO_MATH.md", "development/REPOSITORY_LAYOUT.md",
+    "build/HEXO_MATH.md", "development/REPOSITORY_LAYOUT.md", "development/PROJECT_NAMING.md",
     "development/SEIS3D_IMPLEMENTATION.md", "development/SEIS2D_REFACTOR_AND_VIEWER.md",
     "publication/PUBLICATION_ROADMAP.md", "reviews/DOCUMENTATION_REFRESH_2026_10_18.md"]
 FRONT = f'''---

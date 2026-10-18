@@ -321,7 +321,7 @@ python docs/tools/verify_shot_package.py "完整的数据包目录"
 
 ```powershell
 .\out\bin\RelWithDebInfo\SeisWaveLab.exe --capture-seis2d-workflow
-python CMakePro_CUDA_SeisSim_V2/docs/tools/prepare_seis2d_screenshots.py
+python SeisWaveLab_Cartesian/docs/tools/prepare_seis2d_screenshots.py
 ```
 
 入口创建隐藏的真实 GLFW/OpenGL 窗口，运行 CUDA 求解与 ImGui 渲染，读取最大化窗口的实际帧缓冲，本机生成2560×1494完整PNG；临时应用浅色设置，不保存用户布局或主题偏好。临时使用中文，不保存语言偏好。复制工具保持原始像素，不合成或重绘波场。

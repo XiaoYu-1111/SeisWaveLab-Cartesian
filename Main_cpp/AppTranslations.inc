@@ -647,7 +647,7 @@
 {"Reflecting slip walls","滑移反射壁面"},
 {"All faces CPML","六面 CPML 吸收"},
 {"Theme / Language","主题 / 语言"},
-{"CUDA Elastic Wave Simulation | v%s","CUDA 弹性波模拟 | v%s"},
+{"Cartesian Elastic Wave Simulation | v%s","笛卡尔网格弹性波模拟 | v%s"},
 {"About SeisWave Lab","关于 SeisWave Lab"},
 {"Version: %s","版本：%s"},
 {"3D module: %s","三维模块：%s"},

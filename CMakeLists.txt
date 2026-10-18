@@ -19,7 +19,7 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
 endif()
 
 # [关键修改] 显式声明支持 CUDA 语言
-project(CMakePro_CUDA_SeisSim_V1 VERSION 2.0.0 LANGUAGES CXX C CUDA)
+project(SeisWaveLab_Cartesian VERSION 2.0.0 LANGUAGES CXX C CUDA)
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/MsvcDependencies.cmake")
 # Use the native SDK finder; CUDA language detection alone does not create CUDA:: library targets.
 find_package(CUDAToolkit REQUIRED MODULE)
@@ -37,7 +37,7 @@ endif()
 option(SEISSIM_BUILD_SOLVER_TESTS "Build 2D record and CUDA solver regression checks" OFF)
 enable_testing()
 
-set(TARGET_NAME "CMakePro_CUDA_SeisSim_V2")
+set(TARGET_NAME "SeisWaveLab")
 
 # Public product metadata has one version source; generated files stay in the outer build tree.
 configure_file("Main_header/AppInfo.h.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/AppInfo.h" @ONLY)
@@ -74,7 +74,7 @@ file(GLOB CUDA_USER_SOURCES "CUDA_Kernels/Cuda_Check.cu")
 file(GLOB CUDA_USER_HEADERS "CUDA_Kernels/Cuda_Check.cuh")
 
 # 项目主源文件
-set(PROJECT_SRCS "Main_cpp/CMakePro_cuda.cpp" "Main_cpp/DocumentationCapture3D.h")
+set(PROJECT_SRCS "Main_cpp/SeisWaveLab.cpp" "Main_cpp/DocumentationCapture3D.h")
 
 # STB Image (仅头文件)
 set(STB_SRCS "stb_image/stb_image_write.h")

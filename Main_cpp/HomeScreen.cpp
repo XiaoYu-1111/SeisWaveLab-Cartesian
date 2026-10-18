@@ -181,7 +181,7 @@ AppScreen drawHomeScreen(const GpuInfo& info,int width,int height) {
         ImGui::TableSetupColumn("Theme",ImGuiTableColumnFlags_WidthFixed,215*scale);
         ImGui::TableNextColumn();ImGui::PushFont(nullptr,(AppUi::currentLanguage()==AppUi::Language::English?25:30)*scale);
         AppUi::Widgets::TextColored(p.text,"%s",AppUi::productName);ImGui::PopFont();
-        AppUi::Widgets::TextDisabled("CUDA Elastic Wave Simulation | v%s",AppUi::productVersion);
+        AppUi::Widgets::TextDisabled("Cartesian Elastic Wave Simulation | v%s",AppUi::productVersion);
         ImGui::TableNextColumn();AppUi::Widgets::TextDisabled("Theme / Language");AppUi::drawThemeSelector("##HomeTheme",-1);
         AppUi::drawLanguageSelector(-1);
         ImGui::EndTable();

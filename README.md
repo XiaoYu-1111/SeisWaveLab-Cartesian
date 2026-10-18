@@ -4,7 +4,7 @@
 
 基于 CUDA、OpenGL 4.3、Dear ImGui Docking 和 ImPlot 的二维与三维弹性波模拟工作区。首页分别进入二维波场沙盒与 Seis3D 三维沙盒，切换模式时释放原模式的 GPU 和图形资源。
 
-软件名称为 **SeisWave Lab**，当前版本 **v2.0.0**，窗口标题为 **SeisWave Lab — CUDA Elastic Wave Simulation | v2.0.0**。三维模块与命名空间继续使用 **Seis3D**。主页、操作手册的“关于 SeisWave Lab”和 Windows 文件属性显示相同的版本信息；后续版本号统一在本仓库 `CMakeLists.txt` 的 `project(... VERSION ...)` 中修改。
+软件名称为 **SeisWave Lab**，当前版本 **v2.0.0**，窗口标题为 **SeisWave Lab — Cartesian Elastic Wave Simulation | v2.0.0**。三维模块与命名空间继续使用 **Seis3D**。主页、操作手册的“关于 SeisWave Lab”和 Windows 文件属性显示相同的版本信息；后续版本号统一在本仓库 `CMakeLists.txt` 的 `project(... VERSION ...)` 中修改。
 
 本目录是 Git 仓库根目录。源码、原始运行资源、Markdown 文档、说明书截图与文档导出工具集中在本仓库，VS 的 Git 更改窗口可以识别这些文件。
 
@@ -33,7 +33,9 @@
 
 二维实现已整理到 `src/Seis2D`，`Seis_Sim.h` 保留公共入口。新的地震记录查看器可打开当前 Vz/Vx 采集快照，也可独立导入单炮 SEG-Y；提供单道/多道、滑动 RMS AGC、独立增益和显式显示重置。切换分量、导入和刷新保留显示设置，正式导出保持原始振幅。首页操作手册新增“二维模拟与地震记录”章节。
 
-发布程序位于父目录下的 `out/bin/RelWithDebInfo/SeisWaveLab.exe`，Debug 位于 `out/bin/Debug/SeisWaveLab.exe`。CMake 构建目标仍为 `CMakePro_CUDA_SeisSim_V2`，现有工程目录与命令保持兼容。运行时保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`。
+发布程序位于父目录下的 `out/bin/RelWithDebInfo/SeisWaveLab.exe`，Debug 位于 `out/bin/Debug/SeisWaveLab.exe`。CMake 项目为 `SeisWaveLab_Cartesian`，主程序目标为 `SeisWaveLab`。运行时保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`。
+
+2026-10-18 完成项目重命名：外层工作区为 `SeisWaveLab_Cartesian_Workspace`，本 Git 仓库目录为 `SeisWaveLab_Cartesian`。在 VS 重新打开新目录；旧路径的 CMake/IDE 缓存不能直接复用。迁移说明见 [项目命名](docs/development/PROJECT_NAMING.md)。软件版本仍为 v2.0.0，Seis2D/Seis3D 模块名和 Git 历史保持。
 
 三维初始为 **Vz / Paper scientific（论文浅色）/ Coolwarm**，使用 Scientific White 浅色材料和 1.8 倍波场显示增益，历史峰值保持关闭。默认网格 **300×50×300**，接收排列 **X 向每排 100 道、Y 向 5 排，共 500 道**，每炮 **1000 样点**，接收总上限 **500 道**；初始为单炮激发，多炮布设默认为 **1×1**。网格预设中的 96³/160³ 已替换为 **500×20×500 / 200³**。主频应用、重发或新采集同步更新子波与 CPML，保留模型和显示增益；参数生效规则见三维指南。界面主题独立选择，可在三维页设置 **Interface theme → Paper Sand**，搭配默认论文浅色预设。
 

@@ -1,6 +1,6 @@
 # 构建与输出位置
 
-默认构建命令从外层工作区根目录执行；文中的 `out` 位于该根目录。Git 仓库根目录位于内层 `CMakePro_CUDA_SeisSim_V2`，本文件位于仓库的 `docs/build` 中。文档导出命令从 Git 仓库根目录执行；仅克隆内部仓库的构建方式见下节。
+默认构建命令从外层工作区根目录执行；文中的 `out` 位于该根目录。Git 仓库根目录位于内层 `SeisWaveLab_Cartesian`，本文件位于仓库的 `docs/build` 中。文档导出命令从 Git 仓库根目录执行；仅克隆内部仓库的构建方式见下节。
 
 ## 独立仓库与依赖配置
 
@@ -10,7 +10,7 @@
 
 ```powershell
 cmake -S . -B ../out/build/standalone/RelWithDebInfo -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIB_ROOT=D:/CPP_lib -DSEISSIM_BUILD_SOLVER_TESTS=ON
-cmake --build ../out/build/standalone/RelWithDebInfo --target CMakePro_CUDA_SeisSim_V2 Seis2DRecordRegression --parallel 2
+cmake --build ../out/build/standalone/RelWithDebInfo --target SeisWaveLab Seis2DRecordRegression --parallel 2
 ```
 
 GLFW/GLEW/GLM 是外部 SDK，默认兼容已有 LIB_ROOT/OpenGL 布局，也可单独指定以下缓存变量。修改 LIB_ROOT 后，如果缓存已经记录旧的单项根目录，应同时更新这些变量或使用新的构建缓存。
@@ -37,7 +37,7 @@ CUDA 编译器识别成功不代表 `CUDA::cudart`、`CUDA::cuda_driver` 导入�
 
 重新执行 **生成 CMake 缓存** 即可加载修复，无须删除源码或整个 out。旧 vcpkg 脚本的 `CMake < 3.10` 弃用提示为警告，不是 CUDA 链接目标缺失的直接原因。项目的回退提示也会说明工具链仍未执行 CUDA 查找。
 
-如果直接打开内部 `CMakePro_CUDA_SeisSim_V2` 目录，内部新增的 `CMakeSettings.json` 也会把产物放到外层 `out`。配置修改后，等待 VS 完成 CMake 重新配置；若仍显示旧路径，可关闭并重新打开项目文件夹，再选择构建目标 `CMakePro_CUDA_SeisSim_V2` 对应的 `SeisWaveLab.exe` 启动。
+如果直接打开内部 `SeisWaveLab_Cartesian` 目录，内部新增的 `CMakeSettings.json` 也会把产物放到外层 `out`。配置修改后，等待 VS 完成 CMake 重新配置；若仍显示旧路径，可关闭并重新打开项目文件夹，再选择构建目标 `SeisWaveLab` 对应的 `SeisWaveLab.exe` 启动。
 
 软件名称为 SeisWave Lab，三维模块为 Seis3D。当前版本 `2.0.0` 由内层 `CMakeLists.txt` 的 `project(... VERSION ...)` 统一配置，生成的 `AppInfo.h` 和 Windows 文件版本资源位于外层构建目录。程序窗口、主页、“关于”页与 EXE 文件属性使用同一版本信息。工程文件夹与构建目标无需改名。
 
@@ -47,14 +47,14 @@ CUDA 编译器识别成功不代表 `CUDA::cudart`、`CUDA::cuda_driver` 导入�
 
 ```powershell
 cmake -S . -B out/build/x64-Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build out/build/x64-Debug --target CMakePro_CUDA_SeisSim_V2 --parallel
+cmake --build out/build/x64-Debug --target SeisWaveLab --parallel
 ```
 
 发布配置与当前 VS 的 `x64-Release` 保持一致：
 
 ```powershell
 cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build out/build/x64-Release --target CMakePro_CUDA_SeisSim_V2 --parallel
+cmake --build out/build/x64-Release --target SeisWaveLab --parallel
 ```
 
 ## 目录布局
@@ -64,7 +64,7 @@ cmake --build out/build/x64-Release --target CMakePro_CUDA_SeisSim_V2 --parallel
 ├─ CMakeLists.txt
 ├─ CMakeSettings.json
 ├─ cmake/BuildLayout.cmake
-├─ CMakePro_CUDA_SeisSim_V2/       Git 仓库、源码、原始资源与内部入口配置
+├─ SeisWaveLab_Cartesian/       Git 仓库、源码、原始资源与内部入口配置
 │  └─ docs/                     Markdown 文档、截图与导出工具
 └─ out/
    ├─ build/
@@ -151,12 +151,12 @@ python docs/tools/export_user_guide.py
 
 ```powershell
 cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSEISSIM_BUILD_SOLVER_TESTS=ON -DSEIS3D_BUILD_WORKSPACE_CHECKS=ON
-cmake --build out/build/x64-Release --target CMakePro_CUDA_SeisSim_V2 Seis2DRecordRegression SeisSimSolverRegression Seis3DWorkspaceRegression --parallel 2
+cmake --build out/build/x64-Release --target SeisWaveLab Seis2DRecordRegression SeisSimSolverRegression Seis3DWorkspaceRegression --parallel 2
 .\out\bin\RelWithDebInfo\Seis2DRecordRegression.exe
 .\out\bin\RelWithDebInfo\SeisSimSolverRegression.exe
 .\out\bin\RelWithDebInfo\Seis3DWorkspaceRegression.exe
 .\out\bin\RelWithDebInfo\SeisWaveLab.exe --capture-seis2d-paper
-python CMakePro_CUDA_SeisSim_V2/docs/tools/prepare_seis2d_screenshots.py
+python SeisWaveLab_Cartesian/docs/tools/prepare_seis2d_screenshots.py
 ```
 
 记录回归运行时仅使用 CPU，覆盖五种 SEG-Y 样本格式、中文输入/输出路径、时间延迟、失败回滚、AGC/原始数据分离、显示设置保持、数据包碰撞拒绝及导出范围。数值回归和工作区回归需要 CUDA，后者还需要 OpenGL。
@@ -166,7 +166,7 @@ python CMakePro_CUDA_SeisSim_V2/docs/tools/prepare_seis2d_screenshots.py
 截图入口还在程序旁 `checks/paper-seis2d/session-.../paper_shot_0001` 输出真实 100 道×500 样点的数据包。用 Python 3.11+ 独立只读检查：
 
 ```powershell
-python CMakePro_CUDA_SeisSim_V2/docs/tools/verify_shot_package.py "完整的数据包目录"
+python SeisWaveLab_Cartesian/docs/tools/verify_shot_package.py "完整的数据包目录"
 ```
 
 启用了 `SEIS3D_BUILD_BOUNDARY_CHECKS` 时，完整构建后再运行 ctest；只编译主程序不会自动重建每个独立回归 EXE，旧测试文件不能作为当前源码的证据。

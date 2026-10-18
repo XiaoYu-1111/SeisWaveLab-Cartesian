@@ -2,9 +2,11 @@
 
 更新日期：2026-10-18。当前项目专注笛卡尔网格二维／三维模拟。
 
+当前外层工作区名为 `SeisWaveLab_Cartesian_Workspace`，内层仓库为 `SeisWaveLab_Cartesian`。CMake 项目使用后者，主程序目标为 `SeisWaveLab`。重命名、旧缓存归档及重新打开 VS 的约定见[项目命名说明](PROJECT_NAMING.md)。
+
 ## 1. 两层目录
 
-Git 仓库是内层 `CMakePro_CUDA_SeisSim_V2`；父目录包含本机外层 CMake 包装、VS 配置和统一 `out`。文档和发表截图必须在内层仓库，保证 VS 提交和克隆可获得这些资料。
+Git 仓库是内层 `SeisWaveLab_Cartesian`；父目录包含本机外层 CMake 包装、VS 配置和统一 `out`。文档和发表截图必须在内层仓库，保证 VS 提交和克隆可获得这些资料。
 
 | 目录 | 职责 | 保留方式 |
 | --- | --- | --- |

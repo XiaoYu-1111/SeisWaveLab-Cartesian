@@ -15,6 +15,7 @@
 | VS、SDK、缓存与外层输出位置 | [构建说明](build/BUILDING.md) |
 | Hexo 同名资源、NexT 与 MathJax SVG | [Hexo 公式设置](build/HEXO_MATH.md) |
 | Git 仓库、文档分类与生成产物 | [文件组织](development/REPOSITORY_LAYOUT.md) |
+| Cartesian 项目名、目录迁移与 VS 重新打开 | [项目命名](development/PROJECT_NAMING.md) |
 | CUDA、CPML、自由表面、预算与 SEG-Y | [三维实现](development/SEIS3D_IMPLEMENTATION.md) |
 | 二维文件职责、生命周期与记录查看器 | [二维整理](development/SEIS2D_REFACTOR_AND_VIEWER.md) |
 | 本轮重新截图及发布检查 | [2026-10-18 更新记录](reviews/DOCUMENTATION_REFRESH_2026_10_18.md) |

@@ -156,12 +156,12 @@ sampleIndex   = recordingStep / samplingStride
 
 ```powershell
 cmake -S . -B out/build/x64-Release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSEISSIM_BUILD_SOLVER_TESTS=ON -DSEIS3D_BUILD_WORKSPACE_CHECKS=ON
-cmake --build out/build/x64-Release --target CMakePro_CUDA_SeisSim_V2 Seis2DRecordRegression SeisSimSolverRegression Seis3DWorkspaceRegression --parallel 2
+cmake --build out/build/x64-Release --target SeisWaveLab Seis2DRecordRegression SeisSimSolverRegression Seis3DWorkspaceRegression --parallel 2
 .\out\bin\RelWithDebInfo\Seis2DRecordRegression.exe
 .\out\bin\RelWithDebInfo\SeisSimSolverRegression.exe
 .\out\bin\RelWithDebInfo\Seis3DWorkspaceRegression.exe
 .\out\bin\RelWithDebInfo\SeisWaveLab.exe --capture-seis2d-paper
-python CMakePro_CUDA_SeisSim_V2/docs/tools/prepare_seis2d_screenshots.py
+python SeisWaveLab_Cartesian/docs/tools/prepare_seis2d_screenshots.py
 ```
 
 CPU 记录回归的生成文件保存在外层程序目录的 `checks/seis2d-record-<编号>`，不会写入源码。截图入口不保存用户主题或布局偏好。更多路径约定见 [BUILDING](../build/BUILDING.md)。

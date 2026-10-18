@@ -27,7 +27,7 @@ After initializing the MSVC x64 environment, run from this repository:
 
 ```powershell
 cmake -S . -B ../out/build/standalone/RelWithDebInfo -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIB_ROOT=D:/CPP_lib
-cmake --build ../out/build/standalone/RelWithDebInfo --target CMakePro_CUDA_SeisSim_V2 --parallel 2
+cmake --build ../out/build/standalone/RelWithDebInfo --target SeisWaveLab --parallel 2
 ```
 
 The legacy `LIB_ROOT/OpenGL` directory layout is documented in [BUILDING](docs/build/BUILDING.md). Alternatively set `SEISWAVE_GLM_ROOT`, `SEISWAVE_GLEW_ROOT` and `SEISWAVE_GLFW_ROOT` individually. CMake discovers CUDA; an explicit `CUDAToolkit_ROOT` and `CMAKE_CUDA_COMPILER` may select an installation. `CMAKE_CUDA_ARCHITECTURES` defaults to `native`; specify a supported architecture list for distribution builds.

@@ -1,5 +1,5 @@
 /**
- * @file      CMakePro_cuda.cpp
+ * @file      SeisWaveLab.cpp
  * @author    XIAO YU (1269466423@qq.com)
  * @brief     SeisWave Lab: CUDA elastic wave simulation, visualization and acquisition.
  * @date      2026-10-13
@@ -93,7 +93,7 @@
 // =================================================================================
 // 5. 本项目自定义头文件 (Project Specific Headers)
 // =================================================================================
-#include "CMakePro_cuda.h" // 包含启动界面逻辑、系统结构体及核心计算单元
+#include "SeisWaveLab.h" // 包含启动界面逻辑、系统结构体及核心计算单元
 #include "AppInfo.h"
 #include "../src/Seis3D/Internal3D.h"
 

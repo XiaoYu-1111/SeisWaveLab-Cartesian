@@ -2,10 +2,10 @@
 
 ## 当前实现范围
 
-在当前 `CMakePro_CUDA_SeisSim_V2` 工程内加入独立三维子系统，保留二维求解器。软件显示名称为 SeisWave Lab，输出程序为 `SeisWaveLab.exe`，原 CMake 构建目标保持兼容。版本号统一由 CMake 配置生成 `AppInfo.h` 与 Windows 版本资源。三维 C++/CUDA 类型、函数、状态和算法全部位于 `namespace Seis3D`，以独立静态库目标 `Seis3D` 编译。
+在当前 `SeisWaveLab_Cartesian` 工程内加入独立三维子系统，保留二维求解器。软件显示名称为 SeisWave Lab，输出程序为 `SeisWaveLab.exe`，CMake 项目为 SeisWaveLab_Cartesian，主程序目标为 SeisWaveLab。版本号统一由 CMake 配置生成 `AppInfo.h` 与 Windows 版本资源。三维 C++/CUDA 类型、函数、状态和算法全部位于 `namespace Seis3D`，以独立静态库目标 `Seis3D` 编译。
 
 ```text
-CMakePro_CUDA_SeisSim_V2/
+SeisWaveLab_Cartesian/
 ├─ include/Common3D.h          物理上下文、GPU 指针、内存预算和视图布局
 ├─ include/Seis3D_Sim.h        独立 UI 状态、GL 句柄、观测系统和道集快照
 ├─ cuda/Cuda_Seis3D.cuh        CUDA 求解器接口

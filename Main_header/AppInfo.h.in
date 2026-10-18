@@ -3,7 +3,7 @@
 
 namespace AppUi {
 inline constexpr char productName[]="SeisWave Lab";
-inline constexpr char productDescription[]="CUDA Elastic Wave Simulation";
+inline constexpr char productDescription[]="Cartesian Elastic Wave Simulation";
 inline constexpr char productVersion[]="@PROJECT_VERSION@";
 inline constexpr char moduleName3D[]="Seis3D";
 

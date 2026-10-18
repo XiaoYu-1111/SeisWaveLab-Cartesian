@@ -1,6 +1,6 @@
 #include "AppWidgets.h"
 #include "AppShortcuts.h"
-// CMakePro_gui_intro.h: 标准系统包含文件的包含文件
+// SeisWaveLab.h: 应用入口所需的界面、状态与模拟模块。
 // 或项目特定的包含文件。
 
 #pragma once

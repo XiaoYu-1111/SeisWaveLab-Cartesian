@@ -541,12 +541,12 @@ Model I/O 为 S3DM 与 VTI 分别保存路径；当前波场快照还有独立�
 
 ### 5.2 目录组织与构建
 
-Git 根目录位于外层工作区内的 `CMakePro_CUDA_SeisSim_V2`。源码、原始资源、文档、发表截图与工具均在仓库中；编译和生成结果进入其父目录的 `out`。
+外层工作区为 `SeisWaveLab_Cartesian_Workspace`，Git 根目录为其内层 `SeisWaveLab_Cartesian`。CMake 项目为 `SeisWaveLab_Cartesian`，主程序目标为 `SeisWaveLab`。源码、原始资源、文档、发表截图与工具均在仓库中；编译和生成结果进入其父目录的 `out`。
 
 ```text
 外层工作区/
 ├─ CMakeLists.txt、AGENTS.md          外层构建入口和约定
-├─ CMakePro_CUDA_SeisSim_V2/          Git 仓库
+├─ SeisWaveLab_Cartesian/          Git 仓库
 │  ├─ Main_cpp、Main_header           应用与共享界面
 │  ├─ src/Seis2D、src/Seis3D          独立工作区与 I/O
 │  ├─ cuda、CUDA_Kernels、shaders     计算与显示代码
