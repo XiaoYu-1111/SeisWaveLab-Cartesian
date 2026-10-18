@@ -34,10 +34,10 @@ struct SliceCamera3D {
 };
 
 struct Survey3D {
-    int receiverCountX3D = 50, receiverCountY3D = 3;
-    int receiverOrigin3D[3] = { 27, 1, 0 };
-    int receiverSpacing3D[2] = { 5, 23 };
-    int shotCountX3D = 3, shotCountY3D = 2;
+    int receiverCountX3D = 100, receiverCountY3D = 5;
+    int receiverOrigin3D[3] = { 1, 2, 0 };
+    int receiverSpacing3D[2] = { 3, 11 };
+    int shotCountX3D = 1, shotCountY3D = 1;
     int shotOrigin3D[3] = { 24, 24, 12 };
     int shotSpacing3D[2] = { 20, 20 };
     double worldOrigin3D[2] = { 0.0, 0.0 };
@@ -71,7 +71,7 @@ struct ImportedShot3D {
 struct LiveTrace3D {
     static constexpr int capacity3D=1000;
     std::array<double,capacity3D> times3D{};
-    std::vector<float> samples3D; // Ring [batch][receiver][Vx,Vy,Vz]; up to 3.6 MB of float samples at 300 receivers.
+    std::vector<float> samples3D; // Ring [batch][receiver][Vx,Vy,Vz]; up to 6 MB of float samples at 500 receivers.
     int receiverCount3D=0, count3D=0, next3D=0;
 };
 
@@ -127,8 +127,9 @@ struct Seis3D_State {
     bool showBoundary3D = false; // Show actual external CPML samples, never alter solver boundary conditions.
     float fontScale3D = 1.0f, boundaryOpacity3D = 0.12f;
     bool panelsOpen3D[7] = {true,true,true,true,true,true,true};
-    int layoutPreset3D = 0, displayMode3D = 0, waveStyle3D = 1, modelStyle3D = 1;
-    int visualPreset3D = 2, traceView3D = 0;
+    // Start with Paper scientific colors and display parameters while retaining signed Vz.
+    int layoutPreset3D = 0, displayMode3D = 0, waveStyle3D = 1, modelStyle3D = 4;
+    int visualPreset3D = 4, traceView3D = 0;
     int traceDisplay3D = 0, traceRow3D = 0, traceComponent3D = 2;
     int traceFirst3D=0, traceVisibleCount3D=100;
     bool traceShowAll3D=true; // Follow the current live/captured/imported selection's actual channel count.
@@ -141,14 +142,14 @@ struct Seis3D_State {
     std::uint64_t displayedStep3D = 0;
     bool materialRangeAuto3D = true;
     float materialRange3D[2] = {0,1}, manualMaterialRange3D[2] = {1500,5000};
-    float waveOpacity3D = 0.95f, waveThreshold3D = 0.008f;
-    float waveGamma3D = 0.8f, materialBrightness3D = 0.9f;
-    float modelOpacity3D = 0.3f, gridOpacity3D = 0.10f;
+    float waveOpacity3D = 1.0f, waveThreshold3D = 0.008f;
+    float waveGamma3D = 0.5f, materialBrightness3D = 1.0f;
+    float modelOpacity3D = 0.16f, gridOpacity3D = 0.16f;
     int component3D = 0, stepsPerFrame3D = 2, slice3D[3] = {150,25,75}; // Display order: Vz, Vx, Vy, |V|, pressure.
     int targetSamples3D = 1000, samplingStride3D = 2, sequenceIndex3D = 0;
     int maximumSteps3D = 2000, selectedReceiver3D = 0;
     std::uint64_t step3D = 0;
-    float viewMaximum3D = 1.0f, manualScale3D = 0.01f, gain3D = 1.0f;
+    float viewMaximum3D = 1.0f, manualScale3D = 0.01f, gain3D = 1.8f;
     bool holdPeakScale3D = false;
     float scalePeak3D = 0;
     float referenceMaximum3D = 0;
@@ -156,7 +157,7 @@ struct Seis3D_State {
     std::array<float,2> unitManualScales3D{.01f,1e6f};
     int scaleUnit3D=0; // Velocity m/s and pressure Pa keep separate references.
     int scaleComponent3D = -1;
-    float volumeOpacity3D = 2.0f, volumeThreshold3D = 0.025f, computeMs3D = 0.0f;
+    float volumeOpacity3D = 1.4f, volumeThreshold3D = 0.02f, computeMs3D = 0.0f;
     float volumeSampling3D = 1.25f, volumeSharpness3D = 1.15f;
     float volumeGain3D = 1.8f;
     bool volumeSizeCompensation3D = true;
@@ -169,6 +170,9 @@ struct Seis3D_State {
     bool hoverValid3D = false;
     char modelPath3D[1024]{};
     char modelExportPath3D[1024]{};
+    char vtiModelExportPath3D[1024]{};
+    char vtiWavefieldExportPath3D[1024]{};
+    int modelExportFormat3D = 0; // S3DM and VTI retain independent output paths.
     char exportDirectory3D[1024]{};
     char exportPrefix3D[128]="shot";
     bool exportSessionFolder3D=true;

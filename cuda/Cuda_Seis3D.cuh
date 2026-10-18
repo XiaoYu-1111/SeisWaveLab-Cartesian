@@ -40,5 +40,8 @@ void finishModelUpload3D(GPUSimData3D& gpu3D, const SimulationContext3D& context
 // Copy one physical material plane to SI Vp/Vs/rho for streaming model export.
 void downloadModelPlane3D(GPUSimData3D& gpu3D, const SimulationContext3D& context3D,
     int plane3D, float* values3D);
+// Download one physical scalar wavefield plane, using the same velocity collocation as the viewer.
+void downloadWavefieldPlane3D(GPUSimData3D& gpu3D, const SimulationContext3D& context3D,
+    int plane3D, int component3D, float* values3D, float* hostScratch3D);
 
 } // namespace Seis3D

@@ -1,6 +1,8 @@
 # SeisWave Lab Seis3D 三维地震波模拟使用说明
 
-适用软件 SeisWave Lab v2.0.0　三维模块 Seis3D　更新日期 2026 年 10 月 15 日
+适用软件 SeisWave Lab v2.0.0　三维模块 Seis3D　更新日期 2026 年 10 月 18 日
+
+理论、19 组编号公式与可复现流程见[完整说明](../PROJECT_MANUAL.md)。本项目是笛卡尔网格、平面地表模拟；曲面地表由独立曲网格项目维护。本轮全部图片重新采自当前程序，三维图集与摘要记录实际日期和条件。
 
 本文说明如何建立三维弹性介质模型、运行波场、查看正交剖面与体视图，以及采集和导出三分量地震记录。示例统一使用 Paper Sand 界面与 Paper scientific 显示预设，模型采用浅色分层，波场采用蓝红配色。
 
@@ -10,7 +12,7 @@
 
 本轮截图覆盖模型、时步、震源、接收布设、采集、记录分析和文件导入导出，并展示六种波场色带。英文标签与中文标签对应同一功能；本文保留英文操作名称，便于对照中文实际截图。
 
-当前初始设置为 **Vz + Geological layers（地质分层）+ Coolwarm**，历史峰值保持关闭；默认物理网格 **300×50×300**，每炮 **1000 样点**、采样步数间隔 2；接收排列 **X 向每排 50 道、Y 向 3 排，共 150 道**，接收总上限 **300 道**。默认网格中的排列为 X=27+5i（i=0…49）、Y=1/24/47、Z=0。修改视觉预设保留已调增益；重置显示参数会采用当前预设的默认值，并关闭历史峰值保持。
+当前初始设置为 **Vz + Paper scientific（论文浅色）+ Coolwarm**，材料采用 Scientific White，波场显示增益为 **1.8**，历史峰值保持关闭；默认物理网格 **300×50×300**，每炮 **1000 样点**、采样步数间隔 2；接收排列 **X 向每排 100 道、Y 向 5 排，共 500 道**，接收总上限 **500 道**。默认网格中的排列为 X=1+3i（i=0…99）、Y=2/13/24/35/46、Z=0。初始为单炮激发，多炮布设默认为 **1×1**；接收点数不会增加同时激发的震源数。修改视觉预设保留已调增益；重置显示参数会采用当前预设的默认值，并关闭历史峰值保持。
 
 **本次截图参数：** 200³ 双层模型、10 m 间距、20 Hz、0.5 ms 手动步长、50×3 接收排列。中文界面采用 Paper Sand，波场采用 Paper scientific 配色与 1.8 倍显示增益。六种色带比较使用同一暂停时刻：第480步、0.240 s；深度切片移到 Z=70 格（700 m），避免 Vz 位于震源对称面而接近零。各剖面均为100%适配，文字倍率1.0。记录分析使用软件自身的 Receiver focus 布局，图片未做外部放大。全部33张原图见[完整窗口截图集](Seis3D_Screenshot_Gallery.md)。
 
@@ -28,7 +30,7 @@
 
 ![内置操作手册](../assets/seis3d/full/30-operating-manual.png)
 
-主题菜单位于首页右上角。选择 **Paper Sand** 后，界面采用暖白底色、深灰文字和青绿色控件。进入三维后，在 **Display / materials → Visual preset** 中选择 **Paper scientific**，模型与波场会使用配套的浅色画布。
+主题菜单位于首页右上角。选择 **Paper Sand** 后，界面采用暖白底色、深灰文字和青绿色控件。进入三维后，**Display / materials → Visual preset** 默认选择 **Paper scientific（论文浅色）**，模型与波场使用配套的浅色画布。界面主题仍按用户自己的选择使用。
 
 界面现有十套主题，新增 **Arctic Lab**（冷白蓝灰）与 **Warm Ivory**（暖白铜色），均适合浅色科研界面。主题只改变界面；模型与波场配色仍在显示设置中独立选择。
 
@@ -110,15 +112,15 @@
 | Ricker f0 | 20 Hz | 主频 |
 | CFL safety factor | 0.85 | 自动安全时步的系数 |
 | Solver time step | Automatic CFL | 默认自动；可在安全上限内手动指定整数微秒步长 |
-| Receiver mesh | 50 × 3 | X 向每排 50 道、Y 向 3 排，共 150 个接收点 |
+| Receiver mesh | 100 × 5 | X 向每排 100 道、Y 向 5 排，共 500 个接收点；默认单炮 |
 | Samples per shot | 1000 | 每道默认样点数，采样步数间隔 2 |
-| Component / Visual preset / Wave palette | Vz / Geological layers / Coolwarm | 初始波场分量和配色 |
+| Component / Visual preset / Wave palette | Vz / Paper scientific / Coolwarm | 初始波场分量和配色，显示增益 1.8 |
 | Hold observed peak | 关闭 | 按当前幅值参考映射颜色 |
 
 1. 在首页进入三维工作区，打开 **Simulation** 标签。
 2. 展开 **GRID / RESOLUTION** 与 **MODEL / MATERIAL**，保留 300 / 50 / 300 和 **Two layers**；在边界组确认 12 格 CPML，保留 10 m 间距。
 3. 点击 **Initialize 3D**。已有会话时按钮显示 **Rebuild 3D session**。检查底部没有错误提示。
-4. 打开 **Display / materials**，初始为 **Geological layers + Coolwarm + Vz**。界面主题可选 **Paper Sand**；若要复现本文演示，切换 **Paper scientific** 并按图调整参数。
+4. 打开 **Display / materials**，初始为 **Paper scientific + Coolwarm + Vz**，显示增益 1.8。界面主题可选 **Paper Sand**；若要复现本文截图，请另按截图条件设置 200³ 模型、0.5 ms 时步和 50×3 接收排列。
 5. 点击 **Run**。程序发射震源，并在底部生成真实接收点的实时波形；也可点击 Step 单步推进。
 6. 点击 Pause 暂停观察，使用剖面滑块、滚轮和中键探索波场。
 7. 需要正式道集时点击 **Fire + capture**。普通 Run 的实时预览与正式采集分别保存。
@@ -341,7 +343,7 @@ Auxiliary volume raymarch 可关闭体绘制，Cloud opacity 与 Cloud cutoff �
 图8　同一接收点的Vx、Vy、Vz曲线。图中已开启AGC，横轴为秒，纵轴为AGC显示振幅；关闭AGC后才按m/s物理振幅显示。
 
 1. 初始化模型后，打开 **Acquisition** 标签。
-2. 初始为 **50×3** 的地表面阵，共150道；可用50×6达到300道上限，也可选择10×10、单排X/Y测线。总道数等于X点数乘Y排数。
+2. 初始为 **100×5** 的地表面阵，共500道，达到当前接收上限；也可选择50×3、50×6、10×10、单排X/Y测线。总道数等于X点数乘Y排数，默认单炮激发。
 3. 设置接收点原点、XY 间距及深度 Z；地表接收可使用 Z 为 0。
 4. 需要自动适配模型范围时点击 **Fit spread to model**，再点击 **Deploy mesh** 应用。
 5. 设置 Samples per shot、Sample stride。通过 **Browse export folder** 选择文件夹，通过 **Shot file prefix** 或 **Choose export name / location** 选择文件名前缀和位置。
@@ -387,7 +389,7 @@ Auxiliary volume raymarch 可关闭体绘制，Cloud opacity 与 Cloud cutoff �
 1. 打开 **Acquisition → IMPORT SHOT RECORD**，点击 **Browse SEG-Y**，或在路径栏输入 `.sgy` / `.segy` 文件位置。
 2. 点击 **Import shot for display**。导入成功后，Receiver traces 自动切换到 **Imported**，显示文件名、炮号、分量、单位和样本数。
 3. 选择 **Single trace** 查看单道，或选择 **All traces / X row (fixed Y) / Y row (fixed X)** 查看多道及指定排列。导入文件只显示实际存储的分量；当前程序导出的 `_vx.sgy`、`_vy.sgy`、`_vz.sgy` 分别加载。
-4. 使用 **Trace options / 波形选项** 调整 Trace gain、自动增益补偿、正振幅填充、归一化和图形适配。**All traces / 全部道** 默认显示当前数据的全部道数，不再固定限制为 128 道：150 道显示 150 道，300 道显示 300 道，导入记录按其实际总道数更新。
+4. 使用 **Trace options / 波形选项** 调整 Trace gain、自动增益补偿、正振幅填充、归一化和图形适配。**All traces / 全部道** 默认显示当前数据的全部道数，不再固定限制为 128 道：150 道显示 150 道，500 道显示 500 道，导入记录按其实际总道数更新。
 
 **First / visible traces / 首道与显示道数** 可手动截取范围，最大显示数量为从当前首道起剩余的道数；**Show all traces / 显示全部道** 恢复首道 1 并随数据总道数自动更新。选择 X/Y 排时，上限按该排实际道数计算，默认面阵第 2 个 X 排为中间 50 道。选范围、换排列或数据来源保留增益和原始记录。大量导入道同时绘制会增加绘图开销，可手动缩小显示范围；每道仍最多保留 2048 个预览点，原始采样不变。
 
@@ -403,7 +405,7 @@ Auxiliary volume raymarch 可关闭体绘制，Cloud opacity 与 Cloud cutoff �
 
 ### 只显示一排接收点的多道记录
 
-1. 默认 **50 × 3 / 150**；可用 **50 × 6 / 300** 达到总上限，也保留 **10 × 10 / 100、20 × 5、5 × 20、X line (fit)、Y line (fit)**。总上限 300 道，较小网格按可布点空间减少实际数量。预设只是编辑布设，需点击 **Deploy mesh** 或开始采集才能应用。
+1. 默认 **100 × 5 / 500**，同时提供对应的一键布设按钮；保留 **50 × 3 / 150、50 × 6 / 300、10 × 10 / 100、20 × 5、5 × 20、X line (fit)、Y line (fit)**。总上限 500 道，较小网格按可布点空间减少实际数量。预设只是编辑布设，需点击 **Deploy mesh** 或开始采集才能应用。
 2. 选择 **Workspace → Receiver focus** 放大道集区域。
 3. 在 **Receiver traces** 中选择 **Capture** 查看正式记录，或 **Live** 查看当前监视数据。
 4. 视图选择 **X row (fixed Y)**，拖动 **Row** 只显示固定 Y 的一排；选择 **Y row (fixed X)** 则显示固定 X 的一列。Row 从 1 开始，行数与坐标来自实际接收点。也可选择 **All traces** 查看全部道，**Single (3C)** 返回原单接收点三分量图。
@@ -446,7 +448,7 @@ Auxiliary volume raymarch 可关闭体绘制，Cloud opacity 与 Cloud cutoff �
 
 实际采样间隔等于 Sample stride 乘以当前已生效的求解时步。例如本模型自动步长下 stride 为 2，间隔为 1.816 ms；手动步长 0.5 ms 时则为 1 ms。首样本位于速度半时间步，准确起点也写入几何 CSV。Live 预览按批次记录，应使用正式采集获得均匀采样的导出道集。
 
-每炮输出 `_vx.sgy`、`_vy.sgy`、`_vz.sgy` 和 `_geometry.csv`，每个分量文件最多包含 300 道。默认每道 1000 样点；三个分量各有相同的接收位置，不将其计成三倍空间道数。多测线放炮使用 Shots per line、Source line count 和 Shot spacing，并通过 Start spread + auto export 自动逐炮采集与导出。
+每炮输出 `_vx.sgy`、`_vy.sgy`、`_vz.sgy` 和 `_geometry.csv`，每个分量文件最多包含 500 道。默认每道 1000 样点；三个分量各有相同的接收位置，不将其计成三倍空间道数。默认单炮，多测线放炮的 Shots per line 和 Source line count 均为 1；需要多炮时再修改这两项及 Shot spacing，通过 Start spread + auto export 自动逐炮采集与导出。
 
 <!-- pagebreak -->
 
@@ -458,7 +460,13 @@ Auxiliary volume raymarch 可关闭体绘制，Cloud opacity 与 Cloud cutoff �
 
 **Model I/O** 使用 `.s3dm` 三维模型。文件保存物理 XYZ 网格的 Vp、Vs、密度，X 方向连续；CPML 和差分填充区由程序重建。导入时逐单元检查材料并求最大 Vp，然后计算安全时步与显存预算。导出模型时使用新文件名。
 
-**Model path + Browse model file** 选择待导入模型，再点击校验导入。**Model export path + Choose model output** 独立选择导出文件夹与 `.s3dm` 文件名，再点击导出；更改导出位置不会改变导入路径。浏览或选择位置本身不触发模型重建或写文件。
+`.s3dm` 是本项目自定义格式，不是通用模型标准，也不保存震源、接收排列或波场续算状态。完整字节布局、单位、版本兼容，以及无需 GPU 的 Python/C++ 读取代码见 [S3DM 模型格式与独立读取说明](S3DM_Model_Format.md)。
+
+**Model path + Browse model file** 选择待导入 `.s3dm` 模型，再点击校验导入。**Model export format / 模型导出格式** 可选 S3DM 或 **VTK ImageData（.vti）**；两种格式各自保留输出路径。使用 **Model export path + Choose model output** 选择文件夹及对应文件名，再点击导出；更改导出位置不会改变导入路径。浏览、切换格式或选择位置本身不触发模型重建或写文件。
+
+VTI 导出当前已初始化物理模型的 **Vp、Vs、Density** 三个 PointData 数组，使用原网格分辨率、小端 Float32 二进制；坐标单位 m，Z 为向下正深度，材料单位分别为 m/s、m/s、kg/m³。CPML、ghost、显示增益和配色不参与输出。可用于外部 VTK/ParaView 查看；操作、坐标约定、Python 读取示例与验证范围见 [VTI 模型导出说明](VTK_Model_Export.md)。
+
+同一页面还可将当前选中的 `Vz`、`Vx`、`Vy`、速度大小或压力导出为 `.vti` 三维标量快照，并记录模拟时刻与分量单位。波场快照与显示增益无关；详见上述 VTI 导出说明。
 
 | 物理网格 | 代码估算的总显存预算 | 适用起点 |
 | --- | --- | --- |

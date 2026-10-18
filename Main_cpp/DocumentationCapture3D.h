@@ -35,6 +35,8 @@ struct WorkflowCapture3D {
         ImGui::ClearIniSettings();ImGui::GetIO().IniFilename=nullptr;
         AppUi::setTheme(AppUi::ThemeId::PaperSand,false);AppUi::setLanguage(AppUi::Language::Chinese,false);
         s.editContext3D.nx3D=s.editContext3D.ny3D=s.editContext3D.nz3D=200;
+        // Preserve the documented 150-channel screenshot scenario independently from application defaults.
+        s.survey3D.receiverCountX3D=50;s.survey3D.receiverCountY3D=3;
         s.editContext3D.manualTimeStep3D=true;s.editContext3D.requestedDtMs3D=.5f;
         s.targetSamples3D=1000;s.samplingStride3D=2;s.stepsPerFrame3D=8;s.fontScale3D=1;
         s.resetLayout3D=true;

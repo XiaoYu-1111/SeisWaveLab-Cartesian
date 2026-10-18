@@ -10,10 +10,14 @@
 
 ## 文档入口
 
+- [完整理论与流程说明](docs/PROJECT_MANUAL.md)：笛卡尔网格方程、19 组编号公式、CUDA 实现、完整操作与复现条件。
+- [仓库分类](docs/development/REPOSITORY_LAYOUT.md)与[Hexo 数学排版](docs/build/HEXO_MATH.md)：当前截图、历史图片及发布目录约定。
 - [二维模拟与地震记录图文指南](docs/user/Seis2D_User_Guide.md)：模型到采集全流程、三种停靠布局、单/多道、AGC、增益保持、单炮数据包，含八张实际 CUDA 截图。
 - [论文准备与期刊建议](docs/publication/PUBLICATION_ROADMAP.md)：定量验证矩阵、性能实验、开源发布与科研软件投稿路线。
 - [二维代码整理与后续优化](docs/development/SEIS2D_REFACTOR_AND_VIEWER.md)：文件职责、生命周期、采集问题修复、回归结果与分阶段建议。
-- [三维模拟图文使用说明](docs/user/Seis3D_User_Guide.md)：Paper Sand 界面、浅色模型、蓝红波场、默认 150 道与 300 道上限。
+- [三维模拟图文使用说明](docs/user/Seis3D_User_Guide.md)：Paper Sand 界面、浅色模型、蓝红波场、默认 100×5 接收排列与 500 道上限。
+- [S3DM 模型格式与读取代码](docs/user/S3DM_Model_Format.md)：自定义模型文件的字节布局、单位、版本兼容，以及不依赖 GPU 的 Python/C++ 读取示例。
+- [VTK ImageData 模型与波场导出](docs/user/VTK_Model_Export.md)：导出完整物理网格、Vp/Vs/密度或当前分量波场快照，供外部 VTK/ParaView 使用。
 - [三维实操视频教程](docs/user/Seis3D_Video_Tutorial.md)：模型、震源、100 道采集、AGC 显示与 SEG-Y 导出。
 - [三维项目展示文章](docs/showcase/CUDA_Seis3D_GitHub_Pages.md)：适合个人博客展示的完整介绍，包含计算原理与实际运行截图。
 - [文档导航](docs/README.md)：操作、构建、实现与历史审查资料。
@@ -23,13 +27,15 @@
 
 可编辑 Word 由图文指南和截图导出，保存在外层 `out/docs/Seis3D_User_Guide.docx`。导出方式见文档导航。
 
+2026-10-18 已重新采集二维 8 张、三维 33 张 2560×1494 完整窗口图。当前项目仅维护笛卡尔网格与平面地表；独立曲网格项目分别维护。运行 `python -B docs/tools/package_documentation.py` 可生成父目录 `out/documentation/SeisWaveLab` 和 `out/blog/SeisWaveLab_Hexo.zip`；主文与截图保存在本仓库，生成文件不加入 Git。
+
 ## 启动与显示
 
 二维实现已整理到 `src/Seis2D`，`Seis_Sim.h` 保留公共入口。新的地震记录查看器可打开当前 Vz/Vx 采集快照，也可独立导入单炮 SEG-Y；提供单道/多道、滑动 RMS AGC、独立增益和显式显示重置。切换分量、导入和刷新保留显示设置，正式导出保持原始振幅。首页操作手册新增“二维模拟与地震记录”章节。
 
 发布程序位于父目录下的 `out/bin/RelWithDebInfo/SeisWaveLab.exe`，Debug 位于 `out/bin/Debug/SeisWaveLab.exe`。CMake 构建目标仍为 `CMakePro_CUDA_SeisSim_V2`，现有工程目录与命令保持兼容。运行时保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`。
 
-三维初始为 **Vz / Geological layers / Coolwarm**，历史峰值保持关闭。默认网格 **300×50×300**，接收排列 **X 向每排 50 道、Y 向 3 排，共 150 道**，每炮 **1000 样点**，接收总上限 **300 道**。网格预设中的 96³/160³ 已替换为 **500×20×500 / 200³**。主频应用、重发或新采集同步更新子波与 CPML，保留模型和显示增益；参数生效规则见三维指南。在三维页选择 **Interface theme → Paper Sand** 与 **Visual preset → Paper scientific**，可复现说明书此前的浅色搭配。
+三维初始为 **Vz / Paper scientific（论文浅色）/ Coolwarm**，使用 Scientific White 浅色材料和 1.8 倍波场显示增益，历史峰值保持关闭。默认网格 **300×50×300**，接收排列 **X 向每排 100 道、Y 向 5 排，共 500 道**，每炮 **1000 样点**，接收总上限 **500 道**；初始为单炮激发，多炮布设默认为 **1×1**。网格预设中的 96³/160³ 已替换为 **500×20×500 / 200³**。主频应用、重发或新采集同步更新子波与 CPML，保留模型和显示增益；参数生效规则见三维指南。界面主题独立选择，可在三维页设置 **Interface theme → Paper Sand**，搭配默认论文浅色预设。
 
 首页设备摘要旁提供双语言 **Operating manual / 操作手册**。模型文件支持独立输入与输出路径选择；采集支持导出文件夹、中文文件名前缀和可选会话子文件夹，已有目标不会被覆盖。
 

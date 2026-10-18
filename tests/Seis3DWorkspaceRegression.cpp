@@ -205,7 +205,7 @@ void checkDisplayPersistence3D() {
     require3D(s.gather3D.sampleCount3D==16&&displayParameters3D(s)==expected,"Capture/source amplitude edit reset display parameters");
     const auto samples=s.gather3D.samples3D;const auto step=s.step3D;
     resetDisplayParameters3D(s);
-    require3D(s.gain3D==1&&s.volumeGain3D==1.8f&&s.autoScale3D&&s.gather3D.samples3D==samples&&s.step3D==step,
+    require3D(s.gain3D==1.8f&&s.volumeGain3D==1.8f&&s.autoScale3D&&s.gather3D.samples3D==samples&&s.step3D==step,
         "Explicit display reset failed or modified physical samples/time");
     releaseSandbox3D(s);
 }
@@ -434,8 +434,8 @@ int main(int argc,char**) {
     try {
         {
             Seis3D::Seis3D_State initial;
-            require3D(initial.component3D==0&&initial.visualPreset3D==2&&initial.waveStyle3D==1
-                &&initial.modelStyle3D==1&&!initial.holdPeakScale3D,"Initial Vz / geological / Coolwarm settings are incorrect");
+            require3D(initial.component3D==0&&initial.visualPreset3D==4&&initial.waveStyle3D==1
+                &&initial.modelStyle3D==4&&!initial.holdPeakScale3D,"Initial Vz / Paper scientific / Coolwarm settings are incorrect");
             const auto& q=initial.survey3D;
             require3D(initial.context3D.nx3D==300&&initial.context3D.ny3D==50&&initial.context3D.nz3D==300
                 &&initial.targetSamples3D==1000,"Initial 300/50/300 grid or 1000-sample shot default is incorrect");
@@ -444,35 +444,35 @@ int main(int argc,char**) {
                 Seis3D::validateContext3D(preset);
                 require3D(Seis3D::estimateMemory3D(preset).totalBytes3D<=Seis3D::memoryLimit3D,"New grid preset exceeds the sandbox budget");
             }
-            require3D(q.receiverCountX3D==50&&q.receiverCountY3D==3
-                &&q.receiverOrigin3D[0]+49*q.receiverSpacing3D[0]<initial.context3D.nx3D-1
-                &&q.receiverOrigin3D[1]+2*q.receiverSpacing3D[1]<initial.context3D.ny3D-1,"Initial 50 x 3 spread does not fit");
+            require3D(q.receiverCountX3D==100&&q.receiverCountY3D==5
+                &&q.receiverOrigin3D[0]+99*q.receiverSpacing3D[0]<initial.context3D.nx3D-1
+                &&q.receiverOrigin3D[1]+4*q.receiverSpacing3D[1]<initial.context3D.ny3D-1,"Initial 100 x 5 spread does not fit");
             require3D(std::string(initial.modelPath3D)!=initial.modelExportPath3D,"Model input/output paths are coupled");
             Seis3D::Detail3D::initializeSession3D(initial,false);
-            require3D(initial.receivers3D.size()==150&&initial.gpu3D.receiverCount3D==150,"Initial spread did not deploy 150 channels");
-            for(int row=0;row<3;++row) {
+            require3D(initial.receivers3D.size()==500&&initial.gpu3D.receiverCount3D==500,"Initial spread did not deploy 500 channels");
+            for(int row=0;row<5;++row) {
                 const auto selection=Seis3D::Detail3D::selectReceiverRow3D(initial.receivers3D,2,row);
-                require3D(selection.indices3D.size()==50&&selection.rowCount3D==3,"Initial spread does not contain three 50-channel rows");
+                require3D(selection.indices3D.size()==100&&selection.rowCount3D==5,"Initial spread does not contain five 100-channel rows");
             }
             for(const auto& receiver:initial.receivers3D) require3D(receiver.z3D==0,"Initial receiver is off the surface");
             Seis3D::Detail3D::startGather3D(initial,1);
-            require3D(initial.gather3D.targetSamples3D==1000&&initial.gather3D.samples3D.size()==150*1000*3,
-                "Initial capture does not reserve a 150-channel, 1000-sample three-component gather");
+            require3D(initial.gather3D.targetSamples3D==1000&&initial.gather3D.samples3D.size()==500*1000*3,
+                "Initial capture does not reserve a 500-channel, 1000-sample three-component gather");
             initial.recording3D=initial.running3D=false;
-            std::puts("PASS: 300/50/300 defaults, 1000 samples, three 50-channel rows, 300-channel GPU sampling and grid preset budgets.");
-            initial.survey3D.receiverCountX3D=20;initial.survey3D.receiverCountY3D=15;
+            std::puts("PASS: 300/50/300 defaults, 1000 samples, five 100-channel rows, 500-channel GPU sampling and grid preset budgets.");
+            initial.survey3D.receiverCountX3D=20;initial.survey3D.receiverCountY3D=25;
             Seis3D::Detail3D::fitSurvey3D(initial);Seis3D::Detail3D::startGather3D(initial,2);
-            require3D(initial.gpu3D.receiverCount3D==300&&initial.gather3D.receivers3D.size()==300
-                &&initial.gather3D.samples3D.size()==300*1000*3,"300-channel gather allocation failed");
+            require3D(initial.gpu3D.receiverCount3D==500&&initial.gather3D.receivers3D.size()==500
+                &&initial.gather3D.samples3D.size()==500*1000*3,"500-channel gather allocation failed");
             Seis3D::Detail3D::advanceSimulation3D(initial);
-            require3D(initial.gather3D.sampleCount3D==1,"300-channel GPU sampling failed");
+            require3D(initial.gather3D.sampleCount3D==1,"500-channel GPU sampling failed");
             initial.recording3D=initial.running3D=false;
             for(const auto invalid:{"","../escape","bad/name","bad:name","bad\\name","trailing."}) {
                 bool rejected=false;try {Seis3D::Detail3D::validatedExportPrefix3D(invalid);}catch(const std::runtime_error&) {rejected=true;}
                 require3D(rejected,"Invalid export prefix accepted");
             }
             Seis3D::Detail3D::resetDisplayParameters3D(initial);
-            require3D(initial.component3D==0&&!initial.holdPeakScale3D&&initial.waveStyle3D==1,"Display reset disagrees with the new defaults");
+            require3D(initial.component3D==3&&!initial.holdPeakScale3D&&initial.waveStyle3D==1,"Display reset disagrees with Paper scientific defaults");
             for(int language=0;language<2;++language) {
                 AppUi::setLanguage(AppUi::Language(language),false);
                 ImGui_ImplOpenGL3_NewFrame();ImGui_ImplGlfw_NewFrame();ImGui::NewFrame();
@@ -545,7 +545,7 @@ int main(int argc,char**) {
         std::vector<Seis3D::Receiver3D> tooMany(Seis3D::maxReceivers3D+1);
         rejected=false;
         try {Seis3D::setReceivers3D(s.gpu3D,s.context3D,tooMany.data(),int(tooMany.size()));} catch(const std::invalid_argument&) {rejected=true;}
-        require3D(rejected && s.gpu3D.receiverCount3D==100,"CUDA receiver API accepted more than 300 channels");
+        require3D(rejected && s.gpu3D.receiverCount3D==100,"CUDA receiver API accepted more than 500 channels");
         s.displayMode3D=2;
         Seis3D::Detail3D::updateGraphics3D(s);
         require3D(std::abs(s.materialRange3D[0]-3000)<1 && std::abs(s.materialRange3D[1]-4200)<1,"Material extrema / partial warp reduction failed");

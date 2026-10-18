@@ -55,6 +55,30 @@ void browseModelPath3D(Seis3D_State& s,bool save) {
 #endif
 }
 
+// Keep the VTI save path independent of both S3DM output and model input.
+void browseVtiModelPath3D(Seis3D_State& s) {
+#ifdef _WIN32
+    std::filesystem::path selected3D;
+    if(chooseFile3D(uiPath3D(s.vtiModelExportPath3D),
+        L"VTK ImageData\0*.vti\0All files\0*.*\0",L"vti",true,selected3D))
+        copySelectedPath3D(s.vtiModelExportPath3D,selected3D);
+#else
+    throw std::runtime_error("Edit the path field directly on this platform.");
+#endif
+}
+
+// Keep snapshot output separate from model exports so either filename can be reused safely.
+void browseVtiWavefieldPath3D(Seis3D_State& s) {
+#ifdef _WIN32
+    std::filesystem::path selected3D;
+    if(chooseFile3D(uiPath3D(s.vtiWavefieldExportPath3D),
+        L"VTK ImageData wavefield\0*.vti\0All files\0*.*\0",L"vti",true,selected3D))
+        copySelectedPath3D(s.vtiWavefieldExportPath3D,selected3D);
+#else
+    throw std::runtime_error("Edit the path field directly on this platform.");
+#endif
+}
+
 // Use COM's modern folder picker with balanced initialization, including an existing apartment.
 void browseExportFolder3D(Seis3D_State& s) {
 #ifdef _WIN32

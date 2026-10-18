@@ -3,6 +3,7 @@ from pathlib import Path
 import shutil
 import hashlib
 import json
+from datetime import datetime
 from PIL import Image
 
 
@@ -33,7 +34,9 @@ def prepare_screenshots() -> None:
             width, height = image.size
         shutil.copy2(source / original, output / name)
         manifest.append(dict(image=name, width=width, height=height, cropped=False,
-            resampled=False, sha256=hashlib.sha256((source / original).read_bytes()).hexdigest()))
+            resampled=False, recolored=False, theme="Paper Sand", application_version="2.0.0",
+            captured_date=datetime.fromtimestamp((source / original).stat().st_mtime).astimezone().date().isoformat(),
+            sha256=hashlib.sha256((source / original).read_bytes()).hexdigest()))
     (output / "capture-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Copied {len(captures)} original 2D captures to {output}")
 

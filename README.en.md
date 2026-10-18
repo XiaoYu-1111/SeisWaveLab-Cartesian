@@ -2,6 +2,8 @@
 
 [中文说明](README.md) · [Documentation](docs/README.md) · [Publication roadmap](docs/publication/PUBLICATION_ROADMAP.md)
 
+The project's custom S3DM model format is documented in [S3DM format and standalone readers](docs/user/S3DM_Model_Format.md), with GPU-independent [Python](docs/examples/read_s3dm.py) and [C++17](docs/examples/S3dmReader3D.h) examples.
+
 SeisWave Lab v2.0.0 is an interactive Windows desktop workspace for two-dimensional and three-dimensional elastic-wave simulation and seismic-record inspection. It combines CUDA finite differences, OpenGL 4.3 visualization, Dear ImGui Docking and ImPlot. The Seis3D module owns its own simulation state and GPU/graphics resources; switching modes releases the previous module's GPU resources.
 
 ## Features
@@ -9,10 +11,13 @@ SeisWave Lab v2.0.0 is an interactive Windows desktop workspace for two-dimensio
 - Isotropic velocity–stress solvers with high-order staggered spatial derivatives and explicit time stepping.
 - Independent 2D docked controls, wavefield and record viewer, with modeling, comparison and record-focus layouts.
 - 3D orthogonal slices and volume visualization, synthetic model presets, configurable boundaries and memory checks.
+- VTK XML ImageData (.vti) export of full-resolution models or the currently selected wavefield snapshot, with physical units and time metadata; see the [export guide](docs/user/VTK_Model_Export.md).
 - Receiver acquisition, fixed-length SEG-Y import, single/multiple traces and adjustable RMS AGC for display.
 - Display gain and palette settings preserved across data/component changes. Record export uses raw samples.
 - 2D shot packages with both velocity components, geometry, optional frozen model/source arrays and a SHA-256 manifest.
 - English/Chinese interface and light scientific themes.
+
+Seis3D starts with Vz, the Paper scientific visual preset, Scientific White materials and Coolwarm wave colors at 1.8x display gain. The default 300 x 50 x 300 grid uses 100 X receivers in 5 Y rows (500 total, also the acquisition limit), 1000 samples per shot and a single-shot source spread (1 x 1). Switching visual presets preserves tuned display parameters; interface themes are selected independently.
 
 ## Build on Windows
 
@@ -36,6 +41,8 @@ Enable `SEISSIM_BUILD_SOLVER_TESTS` for `Seis2DRecordRegression` and `SeisSimSol
 The hidden real-application command `SeisWaveLab.exe --capture-seis2d-paper` creates eight documentation images, a real raw-data shot package and acquisition/workspace checks. It preserves saved user theme/layout preferences. `docs/tools/verify_shot_package.py` independently checks package hashes and layouts with Python 3.11 or newer.
 
 Detailed operational guides currently use Chinese: [2D guide](docs/user/Seis2D_User_Guide.md), [3D guide](docs/user/Seis3D_User_Guide.md). Full English tutorials and public automated CI are future work.
+
+The [complete Chinese manual](docs/PROJECT_MANUAL.md) now covers Cartesian-grid theory, 19 numbered equations, implementation and reproducible workflows. On 2026-10-18 all 41 native 2560x1494 workflow screenshots were recaptured. Run `python -B docs/tools/package_documentation.py` for offline documentation and a Hexo post with its matching asset folder under the parent `out`. Curvilinear/topographic solvers remain in the separate Seis3D_Curvilinear project.
 
 ## Scientific scope and limitations
 

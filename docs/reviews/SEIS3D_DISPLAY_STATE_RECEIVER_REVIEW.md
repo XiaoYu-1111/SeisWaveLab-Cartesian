@@ -27,7 +27,7 @@ Captured 使用冻结的接收坐标，后来编辑或部署的排列不影响�
 
 单道和多道预览每道最多 2048 点，长记录保留区间极值、起止点及完整峰值统计。此预览不能替代完整信号分析，导出仍使用原始全样本。Receiver focus 为新增独立停靠预设，不自动覆盖已有用户布局。
 
-![真实主程序中选取一排十道](../assets/seis3d/receiver-row-paper.png)
+![真实主程序中选取一排十道](../assets/history/seis3d/receiver-row-paper.png)
 
 图为 96³ 双层模型的正式 100 道 × 256 样本采集，选择第 5 排的 Vz（R41–R50），采用 Paper Sand 界面。截图未重绘或修改波形。
 

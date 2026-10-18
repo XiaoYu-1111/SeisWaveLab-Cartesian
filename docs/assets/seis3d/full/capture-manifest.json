@@ -12,14 +12,18 @@
     "captured_samples": "0",
     "wave_component": "0",
     "wave_palette": "1",
-    "model_palette": "1",
+    "model_palette": "4",
     "layout": "0",
     "agc": "0",
     "slice_zoom": "1",
     "title": "中文首页",
-    "sha256": "b0f8da416ace3651013f2d46f5f26580f96a5cca1908c9f4d72bc04d1343e400",
+    "captured_date": "2026-10-18",
+    "sha256": "70f71f19ba277091a47121787401dbe589509d64b7f647f810ef9020a83fb2ca",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "02-model.png",
@@ -39,9 +43,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "模型与网格",
-    "sha256": "a7443cc95f7a9bd2909c5ca41aa103f077a9b90348851377e2f4c3695d45dffa",
+    "captured_date": "2026-10-18",
+    "sha256": "7471c36d0a4c9bc0927f32d6abf97aecfa7ce8cb68ce1846bbce090341a74eb7",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "03-stability.png",
@@ -61,9 +69,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "安全时步",
-    "sha256": "72e2a156ef82f79cb6125a460dc78866fe2b13fa9ec3b10f96a734ff680f9dcd",
+    "captured_date": "2026-10-18",
+    "sha256": "d7f80d443d2a37fc70f7d3715c46ec78fdc468edca85e231a8c4757325d0437b",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "04-source.png",
@@ -83,9 +95,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "震源设置",
-    "sha256": "c214b80560c0bc08a3af93363f470e44771724e5ecd7c4455d3c41a6f10f4c27",
+    "captured_date": "2026-10-18",
+    "sha256": "9991905b81d626b72641ed91587aadbada41aa0dd6707bfbcd235d183a93e2ec",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "05-model-io.png",
@@ -105,9 +121,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "模型文件",
-    "sha256": "780b68c67a6a4bdd5c835908ab91a0f8d4990eebb0423e308ba25add2687c20b",
+    "captured_date": "2026-10-18",
+    "sha256": "b1bfb2b54d371d3fd4ff4c46b6573d06343dbe7e3ec2f8f40c8d09099c2819d9",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "06-receivers.png",
@@ -127,9 +147,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "接收排列",
-    "sha256": "622f5c2510473f8b92b8f7c686d9cd6f6dd9cd0c3a40f603ffc181f555eea2b4",
+    "captured_date": "2026-10-18",
+    "sha256": "7d9c343925297b24bcfdf1b64fea0a743e28024e070a90d5bece5abe1f329f0a",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "07-acquisition-settings.png",
@@ -149,9 +173,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "采集参数",
-    "sha256": "235cfaeb37b025101f94653e0c834616c8f2794a30172c827c55b8814838db30",
+    "captured_date": "2026-10-18",
+    "sha256": "a03e73c2e72559928f0eb0685e2babf55c8cc30c9d10fd5a281f0893c376c902",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "08-wavefield.png",
@@ -171,9 +199,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "运行波场",
-    "sha256": "000c36b3cd2aa0fb63e29fff6f948c52db795b126ca53adbf49546e169a94141",
+    "captured_date": "2026-10-18",
+    "sha256": "db5b4c56e0df7621e80f626909b071d1a467d99b15abbbe1108bdfb87606e455",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "09-style-coolwarm.png",
@@ -193,9 +225,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "Coolwarm",
-    "sha256": "b651a4098c878c2a2211a346197f6407161801344edc31c5f77b52da1fd825be",
+    "captured_date": "2026-10-18",
+    "sha256": "6341781959d8162181454a8fbbe2c8f045fbf11c4c67115fcf351204efed778a",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "10-style-bipolar.png",
@@ -215,9 +251,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "Seismic Bipolar",
-    "sha256": "ab30fb7b158afd6e1db014c4d0597cdc81bfb42b72b9c65d4c64a7bf300f9766",
+    "captured_date": "2026-10-18",
+    "sha256": "6ad6cc0cd5973f7059a946627a50373f45d27dbb3cf6183dd16667ed31dae05b",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "11-style-viridis.png",
@@ -237,9 +277,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "Viridis",
-    "sha256": "a6f1ad0af04964fd166bcabb4e8bc0fc3dcba07b35a99da926e2b29d19b3b7ca",
+    "captured_date": "2026-10-18",
+    "sha256": "2eb96bcd4390e17f65da291b4225904af219fbf6a0c4eb9f98eb15529cfbfda9",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "12-style-turbo.png",
@@ -259,9 +303,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "Turbo",
-    "sha256": "b077f8bc69aaa84c5e43fbc2b70c3a02ce9ee03e5e5aefd57de4ead60efb37fc",
+    "captured_date": "2026-10-18",
+    "sha256": "68de4de8414a221f2734db24ceb236c3df1ad8f595b0314dde915aa53f275413",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "13-style-inferno.png",
@@ -281,9 +329,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "Inferno",
-    "sha256": "a4e7ccd3a5c9b088c968907cccd7ff0e0cba3d1725fe7144c239db6d72a051a6",
+    "captured_date": "2026-10-18",
+    "sha256": "431cff260ef0c10afc29104611eaa4c78af68d30aaef579cc3a44d03d36d586f",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "14-style-cuda.png",
@@ -303,9 +355,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "CUDA Green",
-    "sha256": "2d6ef5e368ebf0ab27f82fa66bd9be221a54ad289bf0f44eab4e3c68c810a62b",
+    "captured_date": "2026-10-18",
+    "sha256": "e70548679acffa6a3ea96d1ab1b35a4c9146ffd8a20e96b715fc16709c1ebcc1",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "15-component-magnitude.png",
@@ -325,9 +381,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "速度模",
-    "sha256": "1b02abe1a04efc7b01e6436313ce2117d3fe08bc380e6d252ed469f9b970721b",
+    "captured_date": "2026-10-18",
+    "sha256": "ef7223b99497af0615793bf9348a6a0874360a68da871a406366bfce4b68074e",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "16-volume-settings.png",
@@ -347,9 +407,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "体绘制参数",
-    "sha256": "df01158a34d320f9c7ad34f29af85029276bad10988f35ab92bde9ebcb8204c7",
+    "captured_date": "2026-10-18",
+    "sha256": "846c048c3c2bb6214b04a710a62533996be76e96e1787cc1dfeb8d19cac09174",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "17-boundary-visible.png",
@@ -369,9 +433,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "边界层显示",
-    "sha256": "d5d0ff0ff73a46b28a11d464ae190fbd90a76a5a02cb28e3bc58e56220ee5d5b",
+    "captured_date": "2026-10-18",
+    "sha256": "d13bc546ccdbaf06a0395328dccbb8d7ee3c4cfdc86bd8d986c643208855a28f",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "18-capture-progress.png",
@@ -391,9 +459,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "采集中",
-    "sha256": "f78f07a18a2b57a6807f926b71490211c14cb7b7dbcbd1f1829191a68058aca7",
+    "captured_date": "2026-10-18",
+    "sha256": "3ea2f04894eb12b80349c47e92715021682cf9528feb4daaf39a424e7b6cfb85",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "19-record-all.png",
@@ -413,9 +485,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "全部150道",
-    "sha256": "b78245cd78d410d175cffc4953c361bbb5e08c1a5793e870cd2fe5b491f28232",
+    "captured_date": "2026-10-18",
+    "sha256": "fcf287b5c5b870d356f1764150c3933ec595a58307a77dd4c0ca93a169b024d3",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "20-record-row.png",
@@ -435,9 +511,13 @@
     "agc": "0",
     "slice_zoom": "1",
     "title": "中间50道",
-    "sha256": "b19428665a12f5d7dea68f98630a2625c6af3f6c7fb7c3b4777e41d74438c28b",
+    "captured_date": "2026-10-18",
+    "sha256": "29fa14e5b1d0985f0fe80fcdbb0e159bfe48d6d7b7e5566c27d575f583dbdee6",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "21-record-agc.png",
@@ -457,9 +537,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "AGC对比",
-    "sha256": "2d1fa09bc1011cfd24fdfa37361a651896366f58a2b9476b06da026577a68985",
+    "captured_date": "2026-10-18",
+    "sha256": "a468003e9c064803a88be5b97632b27392499e48f5ddecdd6a8d601b92796033",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "22-record-density.png",
@@ -479,9 +563,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "密度图",
-    "sha256": "0899c58d9cac0e1d667a2b4cec3ea0f390b905da4973e72140881c02823d332a",
+    "captured_date": "2026-10-18",
+    "sha256": "fc49edcb911c4ad0d927bfc5ccc2af28279073cac97346422cb51c9394405854",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "23-single-trace.png",
@@ -501,9 +589,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "单道三分量",
-    "sha256": "8fb570debd13ad769b111d185b2508ff6ba723bfce660e368c00b190302746c0",
+    "captured_date": "2026-10-18",
+    "sha256": "2b36a491eb09ff875b374707e7d1c403181b6f7ec36bc486467d662f49f6158c",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "24-export.png",
@@ -523,9 +615,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "导出记录",
-    "sha256": "26c6498dbe611d0e859ba132c832d7ebc8de238240011a16f92a9875bd80c7af",
+    "captured_date": "2026-10-18",
+    "sha256": "23c91eea5500f77a1271b0f670e6ebf3d0a51947b90fe768f124c8ce3c85c280",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "25-import.png",
@@ -545,9 +641,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "单炮导入",
-    "sha256": "9a8e915eae1301d203f5431206ae6ff84a3ee30c5a3fe1bfde6541f30c793e2f",
+    "captured_date": "2026-10-18",
+    "sha256": "8eead3b410408c078c3ffb95f044aa992189f46e6e42fa23c389ffa4fc42b8d8",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "26-agc-options.png",
@@ -567,9 +667,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "AGC控件",
-    "sha256": "04ad1a8bd3298f3b29cfd77f3019927095f101020472bad10643452bd20953b4",
+    "captured_date": "2026-10-18",
+    "sha256": "87ce1ef9679eb063cee85a3d736b93f507e7edfe9e3751a2ef2ee667b3921262",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "27-shortcuts.png",
@@ -589,9 +693,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "快捷键帮助",
-    "sha256": "a4deb2bf68446692acf5ccc9e7082cb439c4eb789b32877a4abc3cc3f2456957",
+    "captured_date": "2026-10-18",
+    "sha256": "ab5f6836705ac38511c3939a763b52c96c4162ebc536c03ccf31ffd8f9d144fa",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "28-model-fault.png",
@@ -611,9 +719,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "断层模型",
-    "sha256": "5a33db7893673c696ffdfbbd5f7c46a416eeb58da4cc6a3d97bdc33c8af3b36a",
+    "captured_date": "2026-10-18",
+    "sha256": "88105f2cb32e625e66d06e57f4e3267ee24f121d79a1568e19d958bc55a79383",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "29-home-english.png",
@@ -633,9 +745,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "英文首页",
-    "sha256": "9d673b00ef46eae420d266a7dba981ccfe02ba42f451d5e3d5bcd2981426d9b4",
+    "captured_date": "2026-10-18",
+    "sha256": "f0af2c56c8988f6e65a7956de592351a4c34453caaa62ff47e8dc9e4706dd2de",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "30-operating-manual.png",
@@ -655,9 +771,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "内置操作手册",
-    "sha256": "63476061268c72dd5f148253ca0c5ab8388ef9e53972deed55b76bc6b2692b0f",
+    "captured_date": "2026-10-18",
+    "sha256": "ff9b105e9c7439b6084dad9e576704cfbe0101698515e43f76007fbd323fbf99",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "31-boundary-settings.png",
@@ -677,9 +797,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "自由顶面",
-    "sha256": "e5c2f1df50aa59388493fb5b3e6cf710df0d8d4eeebe8c31c9b9acf315bf298a",
+    "captured_date": "2026-10-18",
+    "sha256": "5a453e03e5979ba9eabb3dad65e162c80a59a24c09570c5ca1c50fd12030de88",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "32-all-absorbing.png",
@@ -699,9 +823,13 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "六面吸收",
-    "sha256": "cf03c6b239ea17e3669f3f07c039c89dfafd00a981aa1d13e931d5a27f57a8f1",
+    "captured_date": "2026-10-18",
+    "sha256": "531bbfcd28bd26e4526211d68093d6212dba9f85394284fb644f9f914a90bb16",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   },
   {
     "image": "33-all-reflecting.png",
@@ -721,8 +849,12 @@
     "agc": "1",
     "slice_zoom": "1",
     "title": "六面反射",
-    "sha256": "6388edffcb034449ce3ff3b1e376db04a1b7c2ca43e24c6be2fc896177360cad",
+    "captured_date": "2026-10-18",
+    "sha256": "a130d7d5e0c88fc0acf4f3ca5df9d88ce5b36e912ebbcbc0ecd0f3e90d585667",
     "cropped": false,
-    "resampled": false
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0"
   }
 ]

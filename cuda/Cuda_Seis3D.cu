@@ -732,4 +732,41 @@ void downloadModelPlane3D(GPUSimData3D& g, const SimulationContext3D& c, int z, 
     }
 }
 
+// Download only the field planes needed for the viewer's staggered-grid collocation.
+void downloadWavefieldPlane3D(GPUSimData3D& g,const SimulationContext3D& c,int z,int component,float* values,float* scratch) {
+    if(!g.stream3D||z<0||z>=c.nz3D||component<0||component>4||!values||!scratch)
+        throw std::invalid_argument("Seis3D: invalid wavefield export plane or component.");
+    const std::size_t count=std::size_t(c.nx3D)*c.ny3D;
+    const std::size_t hostPitch=std::size_t(c.nx3D)*sizeof(float),devicePitch=std::size_t(c.gx3D)*sizeof(float);
+    struct PlaneSource3D { int field3D,dx3D,dy3D,dz3D; } sources3D[6]{};
+    int sourceCount3D=0;
+    auto addSource3D=[&](int field3D,int dx3D,int dy3D,int dz3D){sources3D[sourceCount3D++]={field3D,dx3D,dy3D,dz3D};};
+    if(component==0) { addSource3D(2,0,0,0);addSource3D(2,0,0,-1); }
+    else if(component==1) { addSource3D(0,0,0,0);addSource3D(0,-1,0,0); }
+    else if(component==2) { addSource3D(1,0,0,0);addSource3D(1,0,-1,0); }
+    else if(component==3) {
+        addSource3D(0,0,0,0);addSource3D(0,-1,0,0);
+        addSource3D(1,0,0,0);addSource3D(1,0,-1,0);
+        addSource3D(2,0,0,0);addSource3D(2,0,0,-1);
+    } else { addSource3D(3,0,0,0);addSource3D(4,0,0,0);addSource3D(5,0,0,0); }
+    for(int sourceIndex3D=0;sourceIndex3D<sourceCount3D;++sourceIndex3D) {
+        const auto& source3D=sources3D[sourceIndex3D];
+        const auto offset3D=gridIndex3D(c,c.ox3D+source3D.dx3D,c.oy3D+source3D.dy3D,c.oz3D+z+source3D.dz3D);
+        checkCuda3D(cudaMemcpy2DAsync(scratch+std::size_t(sourceIndex3D)*count,hostPitch,
+            g.field3D[source3D.field3D]+offset3D,devicePitch,hostPitch,c.ny3D,cudaMemcpyDeviceToHost,g.stream3D),
+            "download wavefield plane");
+    }
+    checkCuda3D(cudaStreamSynchronize(g.stream3D),"finish wavefield plane export");
+    for(std::size_t i3D=0;i3D<count;++i3D) {
+        const float* a3D=scratch;
+        if(component==0||component==1||component==2) values[i3D]=.5f*(a3D[i3D]+scratch[count+i3D]);
+        else if(component==3) {
+            const float vx3D=.5f*(scratch[i3D]+scratch[count+i3D]);
+            const float vy3D=.5f*(scratch[2*count+i3D]+scratch[3*count+i3D]);
+            const float vz3D=.5f*(scratch[4*count+i3D]+scratch[5*count+i3D]);
+            values[i3D]=std::sqrt(vx3D*vx3D+vy3D*vy3D+vz3D*vz3D);
+        } else values[i3D]=-(scratch[i3D]+scratch[count+i3D]+scratch[2*count+i3D])/3.0f;
+    }
+}
+
 } // namespace Seis3D

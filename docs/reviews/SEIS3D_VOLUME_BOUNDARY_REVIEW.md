@@ -17,7 +17,7 @@
 
 实际程序的 Paper Sand / Paper scientific 截图（96³ 双层模型、自由顶面、100 道采集）：
 
-![当前体视图和三切片](../assets/seis3d/workspace-volume-quality.png)
+![当前体视图和三切片](../assets/history/seis3d/workspace-volume-quality.png)
 
 ## 2. 物理节点总量
 
@@ -78,7 +78,7 @@ cmake --build out/build/x64-Release --target Seis3DBoundaryRegression Seis3DWork
 
 界面统一计算绿、模型蓝、震源橙、采集紫、显示青、边界/警告琥珀、重置/错误红，并保留文字识别。按钮带细色标，参数分组、停靠标签和滑块使用对应颜色；浅色主题采用深强调色。新增 Arctic Lab、Warm Ivory，主题总数为十；控件描边、选中态与圆角统一，Paper Sand 文字对比度略提高。
 
-![新版 Paper 工作区](../assets/seis3d/workspace-function-colors.png)
+![新版 Paper 工作区](../assets/history/seis3d/workspace-function-colors.png)
 
 ### 大模型颜色偏淡的原因与修正
 

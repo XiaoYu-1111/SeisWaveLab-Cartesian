@@ -1,44 +1,71 @@
 # SeisWave Lab 文档导航
 
-文档整理日期为 2026 年 10 月 15 日。本目录位于 Git 仓库内部，文档、截图和导出工具可与源码一起提交。按使用模式阅读二维或三维图文说明，再按需要查看构建、算法实现和历史审查。
+更新日期：2026-10-18。当前项目采用笛卡尔规则网格、平面地表，二维和三维工作区独立；曲网格项目分别维护。本目录在内层 Git 仓库内，可和源码一起提交。
 
-| 分类 | 文档 | 内容 |
-| --- | --- | --- |
-| 使用说明 | [二维模拟与地震记录指南](user/Seis2D_User_Guide.md) | 模型到采集、三种停靠布局、单/多道、AGC、增益保持、单炮数据包和八张实际截图 |
-| 论文准备 | [投稿与可复现实验路线](publication/PUBLICATION_ROADMAP.md) | 科学验证矩阵、源归一化、性能实验、开源发布与期刊建议 |
-| 实现与审查 | [二维整理与查看器升级](development/SEIS2D_REFACTOR_AND_VIEWER.md) | 文件职责、生命周期、采集修复、验证范围、后续优化优先级 |
-| 使用说明 | [Seis3D 图文指南](user/Seis3D_User_Guide.md) | 首页、计算参数、切片、浅色样式、默认 150 道与 300 道上限、模型和 SEG-Y 导入导出 |
-| 视频教程 | [模型到采集与 AGC 实操](user/Seis3D_Video_Tutorial.md) | OBS 实际操作录像、中文字幕、采样与导出步骤；视频文件在外层 `out/videos` |
-| 项目展示 | [CUDA 加速 3D 弹性波模拟](showcase/CUDA_Seis3D_GitHub_Pages.md) | 个人博客文章，含摘要、计算方法、实际截图与采集流程 |
-| 可编辑说明书 | Word 导出版本 | 从图文指南生成，保存到外层 `out/docs/Seis3D_User_Guide.docx` |
-| 构建 | [BUILDING](build/BUILDING.md) | VS、命令行、外层 out、资源部署和增量编译 |
-| 实现 | [SEIS3D_IMPLEMENTATION](development/SEIS3D_IMPLEMENTATION.md) | 三维隔离、差分、CPML、自由表面、显存和文件格式 |
-| 审查记录 | [数值稳定性审查](reviews/NUMERICAL_STABILITY_REVIEW.md) | 二维求解器修复与当时的回归结果 |
-| 审查记录 | [体绘制与六面吸收检查](reviews/SEIS3D_VOLUME_BOUNDARY_REVIEW.md) | 256 点显示体、3600 万总节点、CPML 色阶、大模型透明度与十套主题检查 |
-| 审查记录 | [显示状态与接收选行检查](reviews/SEIS3D_DISPLAY_STATE_RECEIVER_REVIEW.md) | 初始化/重建参数保持、幅值锁定、不同排列、多道记录选行 |
-| 审查记录 | [分量尺度与单炮导入检查](reviews/SEIS3D_COMPONENT_SCALE_SHOT_IMPORT_REVIEW.md) | 共同速度参考、压力尺度、单炮 SEG-Y 读取、实际导入截图 |
-| 审查记录 | [双语界面与折叠面板检查](reviews/SEIS3D_BILINGUAL_COMPACT_UI_REVIEW.md) | 语言切换、停靠与参数保持、分组收起、中英文实际截图 |
-| 审查记录 | [架构和三维升级审查](reviews/DEVELOPMENT_ARCHITECTURE_REVIEW.md) | 三维实现前的架构分析与命名建议 |
-| 历史资料 | [原二维 README](history/Seis2D_Original_README.md) | 保留旧版本介绍、界面和性能描述 |
+## 阅读入口
 
-## 目录约定
+| 内容 | 文档 |
+| --- | --- |
+| 背景、理论、实现、完整操作和复现附录 | [完整说明](PROJECT_MANUAL.md)，包含 19 组编号公式与当前运行截图 |
+| 三维建模、震源、显示、采集和导出 | [Seis3D 用户指南](user/Seis3D_User_Guide.md) |
+| 二维建模、地震记录、AGC 和单炮包 | [二维用户指南](user/Seis2D_User_Guide.md) |
+| 33 张三维完整窗口原图 | [截图集](user/Seis3D_Screenshot_Gallery.md) |
+| S3DM 格式与 Python/C++ 读取器 | [自定义模型格式](user/S3DM_Model_Format.md) |
+| VTI 物性模型与当前波场快照 | [VTK 数据交换](user/VTK_Model_Export.md) |
+| VS、SDK、缓存与外层输出位置 | [构建说明](build/BUILDING.md) |
+| Hexo 同名资源、NexT 与 MathJax SVG | [Hexo 公式设置](build/HEXO_MATH.md) |
+| Git 仓库、文档分类与生成产物 | [文件组织](development/REPOSITORY_LAYOUT.md) |
+| CUDA、CPML、自由表面、预算与 SEG-Y | [三维实现](development/SEIS3D_IMPLEMENTATION.md) |
+| 二维文件职责、生命周期与记录查看器 | [二维整理](development/SEIS2D_REFACTOR_AND_VIEWER.md) |
+| 本轮重新截图及发布检查 | [2026-10-18 更新记录](reviews/DOCUMENTATION_REFRESH_2026_10_18.md) |
+| 科研验证、可复现性与投稿准备 | [论文路线](publication/PUBLICATION_ROADMAP.md) |
+| 模型到采集视频 | [历史实操录像说明](user/Seis3D_Video_Tutorial.md)，保留录制时参数 |
+| 仓库可读博客文章 | [CUDA Seis3D](showcase/CUDA_Seis3D_GitHub_Pages.md)，由完整说明同步 |
 
-`user` 放操作文档，`showcase` 放项目展示文章，`publication` 放论文准备与实验计划，`build` 放构建说明，`development` 放实现说明，`reviews` 放审查记录，`history` 放旧版资料。截图按模式集中在 `assets/seis2d`、`assets/seis3d`，文档工具位于 `tools`。构建与产物约定见 [构建说明](build/BUILDING.md)。
+## 本次截图
 
-本次三维说明书采用Paper Sand浅色主题，原生2560×1494完整窗口，无裁切、拉伸或外部重着色。33张图片覆盖完整流程和六种波场色带，见[完整窗口截图集](user/Seis3D_Screenshot_Gallery.md)。图片与元数据位于assets/seis3d/full。
+全部图片于 2026-10-18 重新采集：三维 33 张、二维 8 张，原生 **2560×1494 完整客户区**，无裁切、缩放或重新着色。三维为 200³、10 m、20 Hz、0.5 ms、50×3 接收点；六种色带冻结于第 480 步。正式采集 150 道×1000 样点、1 ms 间隔，首末速度时刻 0.75–999.75 ms。二维为独立 256×160、100 道×500 点算例。
 
-## 更新说明书
+普通默认值仍为三维 300×50×300、100×5 共 500 道、单炮、1000 点、自动 CFL 时步、Vz / Paper scientific / Coolwarm、增益 1.8、历史峰值保持关闭。不要把截图演示参数写成默认值。
 
-二维指南采用 Markdown，配套图片由 `--capture-seis2d-paper` 生成，再运行 `python docs/tools/prepare_seis2d_screenshots.py` 复制至仓库。原始像素不做后期着色，详见二维指南第 10 节。现有 Word 导出工具针对三维指南，尚未改为二维 Word 导出。
+当前图在 `assets/seis3d/full` 和 `assets/seis2d`，各目录有采集日期与 SHA-256 清单。旧局部图移入 `assets/history/seis3d`，旧审查引用同步保留，不进入当前发布包。历史验证记录保持其原日期，不以新截图代替数值精度证明。
 
-更新 `user/Seis3D_User_Guide.md` 和对应截图后，使用具备 `python-docx`、Pillow 的 Python 运行 `tools/export_user_guide.py`。导出文件写入外层 `out/docs`，排版预览和中间文件写入 `out/docs-work`。
+## 重新采集与打包
 
-当前三维截图入口为 `--capture-seis3d-workflow`，临时使用中文Paper Sand与独立演示会话，不保存用户偏好。实际运行200³模型、50×3接收网格，输出33张完整窗口PNG、采集清单和真实模型／SEG-Y数据，写入外层 `out/screenshots/seis3d-full`。
+先从外层工作区运行：
 
-运行 `python docs/tools/prepare_paper_screenshots.py` 原样复制图片并生成截图集；脚本检查分辨率、暂停时刻和文件摘要，不做图像变换。再运行 `python docs/tools/export_user_guide.py` 导出Word。Word正文为A4，截图为独立A3横向页，嵌入原始PNG并保持比例。导出后须用LibreOffice及 `render_docx.py` 渲染，逐页检查分页、文字和图注。排版预览位于外层out/docs-work。
+```powershell
+& ./out/bin/RelWithDebInfo/SeisWaveLab.exe --capture-seis3d-workflow
+& ./out/bin/RelWithDebInfo/SeisWaveLab.exe --capture-seis2d-workflow
+```
 
-较早的 `--capture-seis3d-paper`、`--capture-seis3d-chinese` 及旧局部截图作为历史资料保留，当前三维指南和博客均使用full目录中的原生截图。
+再从内层 Git 仓库运行：
 
-本轮同时更新二维8张2560×1494完整截图及[二维指南](user/Seis2D_User_Guide.md)，包含波场、原始与AGC记录、单道、分量、停靠对照与导出。截图入口为 `--capture-seis2d-workflow`，独立于历史回归入口。
+```powershell
+python -B docs/tools/prepare_paper_screenshots.py
+python -B docs/tools/prepare_seis2d_screenshots.py
+python -B docs/tools/package_documentation.py
+```
 
-运行 `python docs/tools/package_showcase.py` 可从维护中的博客文章及当前原图重新生成外层 `out/blog/Seis3D/CUDA_Seis3D.md` 和 `out/blog/Seis3D_GitHub_Pages.zip`，保留站点根路径与全部41张完整图片，不打包历史裁切图。Word正文连续排版，截图按编号集中在A3横向附录中。
+文档工具需要 Pillow。先复核真实图像和条件，再发布。维护源为 `PROJECT_MANUAL.md` 与分类用户指南，生成文件不作为反向编辑源；`package_showcase.py` 保留为兼容入口。
+
+| 外层输出 | 用途 |
+| --- | --- |
+| `out/documentation/SeisWaveLab` | 完整离线 Markdown、41 张原图、配套格式与读取代码 |
+| `out/documentation/SeisWaveLab_Documentation.zip` | 离线包 |
+| `out/blog/SeisWaveLab/hexo/source/_posts/CUDA_Seis3D.md` | Hexo 文章 |
+| 同级 `CUDA_Seis3D` 目录 | 同名资源文件夹；必须和文章一起复制 |
+| `out/blog/SeisWaveLab_Hexo.zip` | Hexo 发布包 |
+| `out/docs-work/SeisWaveLab` | HTML 数学排版预览与内部图像检查 |
+
+站点启用 `post_asset_folder`，并把文章资源目录加入 `skip_render`，避免配套 Markdown 被识别为额外文章；数学配置参考 `build/HEXO_MATH.md`。本轮仅输出文档包，不修改博客站点或自动部署。既有 Word 导出工具仍可用，Word 文件留在外层 `out/docs`；本次不重新生成 Word。
+
+## 历史与进一步审查
+
+- [二维数值稳定性](reviews/NUMERICAL_STABILITY_REVIEW.md)
+- [体绘制与六面吸收](reviews/SEIS3D_VOLUME_BOUNDARY_REVIEW.md)
+- [显示状态与接收选行](reviews/SEIS3D_DISPLAY_STATE_RECEIVER_REVIEW.md)
+- [分量尺度与单炮导入](reviews/SEIS3D_COMPONENT_SCALE_SHOT_IMPORT_REVIEW.md)
+- [双语与折叠面板](reviews/SEIS3D_BILINGUAL_COMPACT_UI_REVIEW.md)
+- [原始架构审查](reviews/DEVELOPMENT_ARCHITECTURE_REVIEW.md)
+- [原二维 README](history/Seis2D_Original_README.md)

@@ -275,20 +275,38 @@ void drawSourceControls3D(Seis3D_State& s) {
     AppUi::Widgets::TextWrapped("A normalized 3 x 3 x 3 spatial source reduces grid-scale excitation. Wavelet delay is 1.2 / f0.");
 }
 
-// Provide streaming model I/O using SI Vp/Vs/rho, with no reuse of the 2-D import path.
+// Import S3DM or export initialized SI materials through independent S3DM/VTI output paths.
 void drawModelControls3D(Seis3D_State& s) {
     AppUi::FunctionStyleScope colors(AppUi::FunctionRole::Model);
     AppUi::Widgets::TextWrapped(".s3dm: physical XYZ grid, SI Vp / Vs / rho.");
-    ImGui::BeginDisabled(s.recording3D);
+    ImGui::BeginDisabled(s.recording3D||s.sequence3D);
     AppUi::Widgets::InputText(fieldLabel3D("Model path").c_str(),s.modelPath3D,sizeof(s.modelPath3D));
     if(AppUi::Widgets::Button("Browse model file...",ImVec2(-1,0))) performAction3D(s,[&]{browseModelPath3D(s,false);});
     if(AppUi::Widgets::Button("Validate + import 3D model",ImVec2(-1,0))) performAction3D(s,[&]{initializeSession3D(s,true);});
     ImGui::Separator();
-    AppUi::Widgets::InputText(fieldLabel3D("Model export path").c_str(),s.modelExportPath3D,sizeof(s.modelExportPath3D));
-    if(AppUi::Widgets::Button("Choose model output...",ImVec2(-1,0))) performAction3D(s,[&]{browseModelPath3D(s,true);});
+    AppUi::Widgets::Combo(fieldLabel3D("Model export format").c_str(),&s.modelExportFormat3D,
+        "Seis3D model (.s3dm)\0VTK ImageData (.vti)\0");
+    const bool vti3D=s.modelExportFormat3D==1;
+    auto& outputPath3D=vti3D?s.vtiModelExportPath3D:s.modelExportPath3D;
+    AppUi::Widgets::InputText(fieldLabel3D("Model export path").c_str(),outputPath3D,sizeof(outputPath3D));
+    if(AppUi::Widgets::Button("Choose model output...",ImVec2(-1,0))) performAction3D(s,[&]{
+        if(vti3D) browseVtiModelPath3D(s);else browseModelPath3D(s,true);
+    });
     ImGui::BeginDisabled(!s.ready3D);
-    if(AppUi::Widgets::Button("Export model to a new file",ImVec2(-1,0))) performAction3D(s,[&]{exportModel3D(s);});
-    ImGui::EndDisabled(); ImGui::EndDisabled();
+    if(AppUi::Widgets::Button(vti3D?"Export VTI model to a new file":"Export model to a new file",ImVec2(-1,0)))
+        performAction3D(s,[&]{if(vti3D) exportVtiModel3D(s);else exportModel3D(s);});
+    ImGui::EndDisabled();
+    if(vti3D) AppUi::Widgets::TextWrapped("VTI: Vp / Vs (m/s), Density (kg/m3); Z increases with depth.");
+    ImGui::Separator();
+    AppUi::Widgets::Text("Current wavefield snapshot: %s",s.component3D==0?"Vz":s.component3D==1?"Vx":s.component3D==2?"Vy":s.component3D==3?"Velocity magnitude":"Pressure");
+    AppUi::Widgets::InputText(fieldLabel3D("Wavefield snapshot path").c_str(),s.vtiWavefieldExportPath3D,sizeof(s.vtiWavefieldExportPath3D));
+    if(AppUi::Widgets::Button("Choose snapshot output...",ImVec2(-1,0))) performAction3D(s,[&]{browseVtiWavefieldPath3D(s);});
+    ImGui::BeginDisabled(!s.ready3D);
+    if(AppUi::Widgets::Button("Export current wavefield snapshot (.vti)",ImVec2(-1,0)))
+        performAction3D(s,[&]{exportVtiWavefield3D(s);});
+    ImGui::EndDisabled();
+    AppUi::Widgets::TextWrapped("Exports the selected physical component at native grid resolution and current simulation time. Display gain and palette do not change saved values.");
+    ImGui::EndDisabled();
     if(functionHeader3D("MODEL FILE DETAILS",AppUi::FunctionRole::Model)) {
     AppUi::Widgets::TextWrapped("The importer scans every material cell and computes maximum Vp before allocating GPU memory. Large models are transferred one depth plane at a time.");
     AppUi::Widgets::TextDisabled("Exports preserve existing files; choose a new name.");
@@ -490,6 +508,7 @@ void drawAcquisitionControls3D(Seis3D_State& s) {
     if(functionHeader3D("SURFACE RECEIVER MESH",AppUi::FunctionRole::Acquisition)) {
     AppUi::Widgets::Text("Receiver channels: %d / %d",q.receiverCountX3D*q.receiverCountY3D,maxReceivers3D);
     AppUi::Widgets::TextDisabled("Total channels = X x Y; each stores Vx / Vy / Vz.");
+    if(AppUi::Widgets::Button("100 x 5 / 500",ImVec2(-1,0))) {q.receiverCountX3D=100;q.receiverCountY3D=5;fitSurvey3D(s);}
     if(AppUi::Widgets::Button("50 x 3 / 150",ImVec2(-1,0))) {q.receiverCountX3D=50;q.receiverCountY3D=3;fitSurvey3D(s);}
     if(AppUi::Widgets::Button("50 x 6 / 300",ImVec2(-1,0))) {q.receiverCountX3D=50;q.receiverCountY3D=6;fitSurvey3D(s);}
     if(AppUi::Widgets::Button("8 x 8 / 64")) {q.receiverCountX3D=q.receiverCountY3D=8;fitSurvey3D(s);}
@@ -499,7 +518,7 @@ void drawAcquisitionControls3D(Seis3D_State& s) {
     if(AppUi::Widgets::Button("X line (fit)")) {q.receiverCountX3D=maxReceivers3D;q.receiverCountY3D=1;fitSurvey3D(s);}
     ImGui::SameLine();if(AppUi::Widgets::Button("Y line (fit)")) {q.receiverCountX3D=1;q.receiverCountY3D=maxReceivers3D;fitSurvey3D(s);}
     AppUi::Widgets::TextWrapped("Presets fit the grid; Deploy mesh applies edits. Receiver traces can show all channels or one X / Y row.");
-    AppUi::Widgets::TextWrapped("Default: 50 X receivers in 3 Y rows (150 total). Fit spread centers the mesh; smaller grids reduce the fitted count.");
+    AppUi::Widgets::TextWrapped("Default: 100 X receivers in 5 Y rows (500 total). Fit spread centers the mesh; smaller grids reduce the fitted count.");
     if(AppUi::Widgets::InputInt(fieldLabel3D("Receiver count X").c_str(),&q.receiverCountX3D)) {
         q.receiverCountX3D=(std::clamp)(q.receiverCountX3D,1,maxReceivers3D);
         q.receiverCountY3D=(std::clamp)(q.receiverCountY3D,1,maxReceivers3D/q.receiverCountX3D);

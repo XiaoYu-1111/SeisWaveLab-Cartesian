@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 import shutil
+from datetime import datetime
 from PIL import Image
 
 TITLES = ["中文首页", "模型与网格", "安全时步", "震源设置", "模型文件", "接收排列", "采集参数",
@@ -23,7 +24,8 @@ def prepare_screenshots() -> None:
         rows = list(csv.DictReader(stream))
     if len(rows) != len(TITLES):
         raise ValueError("The complete 33-frame workflow has not finished")
-    gallery = ["# Seis3D 完整窗口截图集", "", "更新于 2026-10-15。所有截图来自 SeisWave Lab v2.0.0 实际运行，原始分辨率为 2560×1494，不裁切、不重采样、不重新着色。文字倍率为1.0，剖面均为100%适配。", "",
+    captured_date = datetime.fromtimestamp((source / "capture-manifest.csv").stat().st_mtime).astimezone().date().isoformat()
+    gallery = ["# Seis3D 完整窗口截图集", "", f"更新于 {captured_date}。所有截图来自 SeisWave Lab v2.0.0 实际运行，原始分辨率为 2560×1494，不裁切、不重采样、不重新着色。文字倍率为1.0，剖面均为100%适配。", "",
         "本次展示使用200³双层模型、10 m间距、20 Hz Ricker震源、0.5 ms手动安全步长与50×3接收排列。软件默认网格仍为300×50×300，默认步长仍为自动模式。色带比较统一暂停在第480步（0.240 s）；Vz深度切片移到Z=70，避免位于震源对称面。记录分析使用软件自身的Receiver focus布局，图片没有做外部放大。", "",
         "正式采集为150道、每道1000样点、间隔1 ms，首末采样时间为0.75～999.75 ms。模型、SEG-Y和几何文件保存在外层out/screenshots的独立会话目录。边界模式图片展示实际初始化设置，不作为边界反射性能测试。", ""]
     for index, (row, title) in enumerate(zip(rows, TITLES), 1):
@@ -34,7 +36,9 @@ def prepare_screenshots() -> None:
         if 9 <= index <= 14 and int(row["step"]) != 480:
             raise ValueError("Palette comparisons must use one paused wavefield")
         shutil.copy2(image_path, output / image_path.name)
-        row.update(title=title, sha256=hashlib.sha256(image_path.read_bytes()).hexdigest(), cropped=False, resampled=False)
+        row.update(title=title, captured_date=captured_date,
+            sha256=hashlib.sha256(image_path.read_bytes()).hexdigest(), cropped=False, resampled=False,
+            recolored=False, theme="Paper Sand", application_version="2.0.0")
         gallery.extend([f"## {index:02d} {title}", "", f"![{title}](../assets/seis3d/full/{image_path.name})", "",
             f"图{index}　{title}。完整程序窗口，2560×1494。", ""])
     (output / "capture-manifest.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")

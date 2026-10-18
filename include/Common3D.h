@@ -11,7 +11,7 @@ constexpr std::size_t maxPhysicalNodes3D = std::size_t(300) * 300 * 400;
 constexpr int maxVolumeAxis3D = 256;
 constexpr int maxVolumeOutput3D = 1536;
 constexpr std::size_t memoryLimit3D = std::size_t(4) * 1024 * 1024 * 1024;
-constexpr int maxReceivers3D = 300; // Total spatial receivers per shot; the initial 50 x 3 spread uses 150.
+constexpr int maxReceivers3D = 500; // Total spatial receivers per shot; the initial 100 x 5 spread uses the full budget.
 constexpr int maxSegySamples3D = 32767;
 constexpr int maxSegyIntervalUs3D = 32767; // SEG-Y rev1 signed two-byte positive values.
 

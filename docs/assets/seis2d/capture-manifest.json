@@ -5,7 +5,11 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
-    "sha256": "a0ce7f92f37e7f1713f2a0168e0844927505a3b86a73a160e08539ecf002cf44"
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
+    "sha256": "c03438c527fb7e12348527c74673d21b7e4fe78d560479445aa69b5a89a1769d"
   },
   {
     "image": "record-raw.png",
@@ -13,6 +17,10 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
     "sha256": "134988dd730086c7d932d8cd9a8660b132ac847ea52c27cf829aa3c08afea93d"
   },
   {
@@ -21,6 +29,10 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
     "sha256": "4ba04fcea4a62f726470526f6b39c369bbce2fe81693609980e4cb6e1c3cd7cf"
   },
   {
@@ -29,6 +41,10 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
     "sha256": "0cab07c80123f1808e7242766c11946b0a60d17ed9fce1c272689b4b6f99ddc6"
   },
   {
@@ -37,6 +53,10 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
     "sha256": "d287c11fe2507128acc885f298d9652172ee079bef17caf8f7b6c3335ad722e7"
   },
   {
@@ -45,7 +65,11 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
-    "sha256": "12af182e9ac703094eb4d33047deba0ff6f552a06f6d39e2439023eeb402eacf"
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
+    "sha256": "dda3cee61d0d97932f8d49cfbad190927bc016f0b460c234b9244e1a13efc4de"
   },
   {
     "image": "docking-record-focus.png",
@@ -53,7 +77,11 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
-    "sha256": "463b95784931041232a0dc744d858f8c669ed1ecfb1e4a8eedd35890baee027b"
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
+    "sha256": "1cedf1ffde529846a2916d1dd165b0882ea5e094aac93a9d7fc6e0b028ad50c8"
   },
   {
     "image": "export-package.png",
@@ -61,6 +89,10 @@
     "height": 1494,
     "cropped": false,
     "resampled": false,
-    "sha256": "8ef504745f3c592aa66fb83c793b10def79f1d7efd21432a87fdbb7f8eca1e18"
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-18",
+    "sha256": "5222de03c86aefef56e35aa75d2c91e2dce1c1c16d6ca7c970763e1d69cf0b0e"
   }
 ]

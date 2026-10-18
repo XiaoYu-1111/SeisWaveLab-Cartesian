@@ -210,7 +210,7 @@ add_library(Seis3D STATIC
     "include/Common3D.h" "include/Seis3D_Sim.h"
     "cuda/Cuda_Seis3D.cuh" "cuda/Cuda_Seis3D.cu" "src/Seis3D_Sim.cpp"
     "src/Seis3D/Renderer3D.cpp" "src/Seis3D/Workspace3D.cpp" "src/Seis3D/SliceView3D.cpp" "src/Seis3D/TraceView3D.cpp"
-    "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/Acquisition3D.cpp" "src/Seis3D/ModelPresets3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp"
+    "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/VtiExport3D.cpp" "src/Seis3D/Acquisition3D.cpp" "src/Seis3D/ModelPresets3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp"
     "src/Seis3D/Internal3D.h" "src/Seis3D/Visual3D.h")
 get_target_property(SEIS3D_SHARED_INCLUDE_DIRS ${TARGET_NAME} INCLUDE_DIRECTORIES)
 get_target_property(SEIS3D_SHARED_LINK_DIRS ${TARGET_NAME} LINK_DIRECTORIES)
@@ -241,7 +241,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE AppUi Seis3D)
 source_group("Seis3D\\Workspace" FILES "src/Seis3D/Workspace3D.cpp" "src/Seis3D/SliceView3D.cpp" "src/Seis3D/TraceView3D.cpp" "src/Seis3D/Visual3D.h")
 source_group("Seis3D\\Rendering" FILES "src/Seis3D/Renderer3D.cpp")
 source_group("Seis3D\\Models" FILES "src/Seis3D/ModelPresets3D.cpp")
-source_group("Seis3D\\IO" FILES "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp")
+source_group("Seis3D\\IO" FILES "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/VtiExport3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp")
 source_group("Seis3D\\Data IO" FILES "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/Acquisition3D.cpp")
 file(GLOB SEIS3D_SHADER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*")
 set_property(TARGET ${TARGET_NAME} APPEND PROPERTY LINK_DEPENDS ${SEIS3D_SHADER_FILES})

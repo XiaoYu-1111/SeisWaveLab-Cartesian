@@ -29,10 +29,10 @@ Debug 与 RelWithDebInfo 主程序和 `Seis3DWorkspaceRegression` 构建通过�
 
 RelWithDebInfo 真实主程序分别执行英文和中文截图入口，均通过 96³ 模型、切片显示、实际 ImGui 图像提交和 100 道采集检查。截图已查看，英文首页长标题已缩短。
 
-![英文首页](../assets/seis3d/home-bilingual-en.png)
+![英文首页](../assets/history/seis3d/home-bilingual-en.png)
 
-![中文紧凑模拟面板](../assets/seis3d/workspace-compact-zh.png)
+![中文紧凑模拟面板](../assets/history/seis3d/workspace-compact-zh.png)
 
-![中文紧凑显示面板](../assets/seis3d/display-compact-zh.png)
+![中文紧凑显示面板](../assets/history/seis3d/display-compact-zh.png)
 
 以上截图均来自真实程序窗口。此次检查未完整遍历历史二维页面的所有交互，也未重新执行物理精度或长期稳定性验证。

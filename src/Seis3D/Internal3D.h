@@ -13,6 +13,10 @@ inline constexpr double gibibyte3D=1024.0*1024.0*1024.0;
 std::filesystem::path uiPath3D(const char* text);
 // Select a model import or independent export filename without changing the working directory.
 void browseModelPath3D(Seis3D_State& s,bool save);
+// Select an independent VTK ImageData export filename with Unicode path support.
+void browseVtiModelPath3D(Seis3D_State& s);
+// Select an independent VTI filename for a current wavefield snapshot.
+void browseVtiWavefieldPath3D(Seis3D_State& s);
 // Select an existing destination folder using the Windows Unicode folder picker.
 void browseExportFolder3D(Seis3D_State& s);
 // Select a directory and shared basename for the three SEG-Y components and geometry manifest.
@@ -80,6 +84,10 @@ SimulationContext3D inspectModel3D(const std::filesystem::path& path,SimulationC
 void importModel3D(Seis3D_State& s,const std::filesystem::path& path);
 // Stream the current model to a new output file.
 void exportModel3D(Seis3D_State& s);
+// Stream initialized physical materials as VTK ImageData point arrays, excluding CPML and ghosts.
+void exportVtiModel3D(Seis3D_State& s);
+// Stream the currently selected physical wavefield component and simulation time as VTK point data.
+void exportVtiWavefield3D(Seis3D_State& s);
 // Fit receiver and source spreads to the current model dimensions.
 void fitSurvey3D(Seis3D_State& s);
 // Validate and upload the selected receiver geometry.

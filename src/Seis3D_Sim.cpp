@@ -164,6 +164,10 @@ Seis3D_State::Seis3D_State() {
     std::snprintf(modelPath3D,sizeof(modelPath3D),"%s",model.c_str());
     const auto modelOutput=pathToUtf8(directory/"model_export.s3dm");
     std::snprintf(modelExportPath3D,sizeof(modelExportPath3D),"%s",modelOutput.c_str());
+    const auto vtiOutput3D=pathToUtf8(directory/"model_export.vti");
+    std::snprintf(vtiModelExportPath3D,sizeof(vtiModelExportPath3D),"%s",vtiOutput3D.c_str());
+    const auto wavefieldOutput3D=pathToUtf8(directory/"wavefield_snapshot.vti");
+    std::snprintf(vtiWavefieldExportPath3D,sizeof(vtiWavefieldExportPath3D),"%s",wavefieldOutput3D.c_str());
     std::snprintf(exportDirectory3D,sizeof(exportDirectory3D),"%s",output.c_str());
     fitSurvey3D(*this);
 }

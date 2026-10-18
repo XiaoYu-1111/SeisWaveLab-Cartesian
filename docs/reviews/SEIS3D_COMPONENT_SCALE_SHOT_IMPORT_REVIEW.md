@@ -23,7 +23,7 @@ Debug 与 RelWithDebInfo 主程序和 `Seis3DWorkspaceRegression` 编译通过�
 
 时间比例运算采用 1e-12 秒容差；自身 SEG-Y 导出的起点量化另以 1e-7 秒容差检查。不能以二进制浮点与十进制常量的严格相等判断时间比例正确性。
 
-![实际导入道集界面](../assets/seis3d/imported-shot.png)
+![实际导入道集界面](../assets/history/seis3d/imported-shot.png)
 
 截图由回归程序的真实窗口像素读回，Arctic Lab 主题；仅从 PPM 无损转换为 PNG，未重新绘制曲线。
 
