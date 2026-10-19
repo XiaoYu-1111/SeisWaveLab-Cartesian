@@ -81,7 +81,7 @@ inline void browsePackageName2D() {
 // Offer one consistent destination for manual, completed and multi-shot records.
 inline void drawExportDestination2D() {
     ensureExportDirectory2D();
-    if(AppUi::Widgets::CollapsingHeader("Shot package output",ImGuiTreeNodeFlags_DefaultOpen)) {
+    if(parameterGroup2D("Shot package output")) {
         ImGui::BeginDisabled(acquisition2D.isRecording||autoAcquisition2D.state==AUTO_ACQ_RUNNING);
         AppUi::Widgets::TextUnformatted("Export directory");ImGui::SetNextItemWidth(-1);
         if(AppUi::Widgets::InputText("##ExportDirectory2D",exportDirectory2D,sizeof(exportDirectory2D))) activeExportDirectory2D.clear();

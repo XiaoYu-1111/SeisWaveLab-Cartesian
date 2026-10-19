@@ -37,7 +37,7 @@ CUDA 编译器识别成功不代表 `CUDA::cudart`、`CUDA::cuda_driver` 导入�
 
 重新执行 **生成 CMake 缓存** 即可加载修复，无须删除源码或整个 out。旧 vcpkg 脚本的 `CMake < 3.10` 弃用提示为警告，不是 CUDA 链接目标缺失的直接原因。项目的回退提示也会说明工具链仍未执行 CUDA 查找。
 
-如果直接打开内部 `SeisWaveLab_Cartesian` 目录，内部新增的 `CMakeSettings.json` 也会把产物放到外层 `out`。配置修改后，等待 VS 完成 CMake 重新配置；若仍显示旧路径，可关闭并重新打开项目文件夹，再选择构建目标 `SeisWaveLab` 对应的 `SeisWaveLab.exe` 启动。
+如果直接打开内部 `SeisWaveLab_Cartesian` 目录，内部新增的 `CMakeSettings.json` 也会把产物放到外层 `out`。配置修改后，等待 VS 完成 CMake 重新配置；若仍显示旧路径，可关闭并重新打开项目文件夹，再选择构建目标 `SeisWaveLab` 对应的 `SeisWaveLab_Cartesian.exe` 启动。
 
 软件名称为 SeisWave Lab，三维模块为 Seis3D。当前版本 `2.0.0` 由内层 `CMakeLists.txt` 的 `project(... VERSION ...)` 统一配置，生成的 `AppInfo.h` 和 Windows 文件版本资源位于外层构建目录。程序窗口、主页、“关于”页与 EXE 文件属性使用同一版本信息。工程文件夹与构建目标无需改名。
 
@@ -73,7 +73,7 @@ cmake --build out/build/x64-Release --target SeisWaveLab --parallel
    │  └─ standalone/              内部入口的独立缓存
    ├─ bin/
    │  ├─ Debug/
-   │  │  ├─ SeisWaveLab.exe
+   │  │  ├─ SeisWaveLab_Cartesian.exe
    │  │  └─ resource_CUDA_V1/
    │  └─ RelWithDebInfo/
    ├─ lib/                        生成的库文件（如有）
@@ -111,7 +111,7 @@ cmake --build out/build/x64-Release --clean-first --parallel 2
 从 `out/bin/RelWithDebInfo` 运行：
 
 ```powershell
-.\SeisWaveLab.exe --check-seis3d-display
+.\SeisWaveLab_Cartesian.exe --check-seis3d-display
 ```
 
 检查模式使用真实程序启动、96³ 默认模型、CUDA/GL 渲染和 100 道正式采集，在不可见窗口中临时应用四视图布局，检查切片纹理及实际 ImGui 图像提交，并生成 `seis3d-app-display-check.png`。成功输出 `PASS` 并返回 0；此模式不保存或覆盖用户的 ImGui 布局。更完整的交互回归由可选目标 `Seis3DWorkspaceRegression` 提供。
@@ -123,7 +123,7 @@ cmake --build out/build/x64-Release --clean-first --parallel 2
 从外层 `out/bin/RelWithDebInfo` 运行当前发布程序：
 
 ```powershell
-.\SeisWaveLab.exe --capture-seis3d-workflow
+.\SeisWaveLab_Cartesian.exe --capture-seis3d-workflow
 ```
 
 截图入口临时使用中文Paper Sand、独立200³双层模型、10m间距、20Hz、0.5ms时步及50×3接收阵列，不保存主题、语言或布局。输出33张原生2560×1494完整窗口PNG至外层out/screenshots/seis3d-full，并保存capture-manifest.csv与真实模型、三分量SEG-Y和几何CSV。六套色带仅改变配色，均暂停于第480步（0.240s）；正式采集1000点，记录间隔1ms。Receiver focus采用实际停靠布局，图片无外部裁切或放大。
@@ -145,7 +145,7 @@ python docs/tools/export_user_guide.py
 
 ## 二维记录回归与实际截图
 
-二维实现位于 `src/Seis2D`，私有 `.inc` 只由 `Simulation2D.cpp` 包含一次；公共入口为 `Main_header/Seis_Sim.h`。不要将 `.inc` 当独立源重复编译。
+二维实现位于 `src/Seis2D`，私有 `.inc` 只由 `Simulation2D.cpp` 包含一次；公共入口为 `include/Seis2D/Seis_Sim.h`。不要将 `.inc` 当独立源重复编译。
 
 在外层工作区、MSVC x64 终端中启用相关检查：
 
@@ -155,7 +155,7 @@ cmake --build out/build/x64-Release --target SeisWaveLab Seis2DRecordRegression 
 .\out\bin\RelWithDebInfo\Seis2DRecordRegression.exe
 .\out\bin\RelWithDebInfo\SeisSimSolverRegression.exe
 .\out\bin\RelWithDebInfo\Seis3DWorkspaceRegression.exe
-.\out\bin\RelWithDebInfo\SeisWaveLab.exe --capture-seis2d-paper
+.\out\bin\RelWithDebInfo\SeisWaveLab_Cartesian.exe --capture-seis2d-paper
 python SeisWaveLab_Cartesian/docs/tools/prepare_seis2d_screenshots.py
 ```
 
@@ -172,3 +172,23 @@ python SeisWaveLab_Cartesian/docs/tools/verify_shot_package.py "完整的数据�
 启用了 `SEIS3D_BUILD_BOUNDARY_CHECKS` 时，完整构建后再运行 ctest；只编译主程序不会自动重建每个独立回归 EXE，旧测试文件不能作为当前源码的证据。
 
 详细参数见 [二维使用指南](../user/Seis2D_User_Guide.md)，实现和验证范围见 [二维整理说明](../development/SEIS2D_REFACTOR_AND_VIEWER.md)。
+
+## 当前启动入口（2026-10-19）
+
+构建目标保持 `SeisWaveLab`。推荐运行 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`，它是直接链接生成的唯一主程序输出。Debug 使用对应 `out/bin/Debug`。正式图标集中在 `resources/icons`。
+
+## CPU/OpenMP 后端与源码目录（2026-10-19）
+
+源码按 `src/Seis2D`、`src/Seis3D`、`src/SeisCommon` 及对应 `include` 分类。CMake 必需检测 CXX OpenMP；MSVC 使用 `/openmp`。CUDA 仍为当前工程编译语言，构建机需 CUDA Toolkit。发布目录自动同步 `cudart64*.dll`；在无 CUDA 显卡或驱动的机器上可使用 CPU/OpenMP，仍需 OpenGL 4.3 和 VC++/OpenMP 运行库。
+
+`out/tools/Build-Workspace.cmd checks` 构建程序及二维数值、记录、三维工作区和新增三维后端回归。运行：
+
+```powershell
+ctest --test-dir out/build/x64-Release -R '^(Backend3DRegression|SolverRegression|Seis2DRecordRegression|Seis3DWorkspaceRegression)$' --output-on-failure
+$env:SEISWAVE_FORCE_CPU='1'
+& ./out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe --capture-seis2d-paper
+& ./out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe --check-seis3d-display
+Remove-Item Env:SEISWAVE_FORCE_CPU
+```
+
+后两个命令运行实际程序并写入外层 `out/screenshots`；不会把波场改成合成数据。源迁移关系、标准性能比较范围见 [代码架构](../development/CODE_ARCHITECTURE.md)。

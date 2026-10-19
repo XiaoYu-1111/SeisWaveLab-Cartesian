@@ -91,6 +91,9 @@ StyleCopReport.xml
 *.tmp_proj
 *_wpftmp.csproj
 *.log
+# Keep the archived benchmark run logs with the published comparison data.
+!/docs/performance/data/2d-run.log
+!/docs/performance/data/3d-run.log
 *.vspscc
 *.vssscc
 .builds

@@ -32,13 +32,13 @@ cmake --build ../out/build/standalone/RelWithDebInfo --target SeisWaveLab --para
 
 The legacy `LIB_ROOT/OpenGL` directory layout is documented in [BUILDING](docs/build/BUILDING.md). Alternatively set `SEISWAVE_GLM_ROOT`, `SEISWAVE_GLEW_ROOT` and `SEISWAVE_GLFW_ROOT` individually. CMake discovers CUDA; an explicit `CUDAToolkit_ROOT` and `CMAKE_CUDA_COMPILER` may select an installation. `CMAKE_CUDA_ARCHITECTURES` defaults to `native`; specify a supported architecture list for distribution builds.
 
-All build outputs remain outside the source repository, under `../out`. The executable is `../out/bin/RelWithDebInfo/SeisWaveLab.exe`. Keep `resource_CUDA_V1` and `resource_Seis3D` beside it. This repository now contains its own CMake helper scripts and does not need the optional parent wrapper's scripts.
+All build outputs remain outside the source repository, under `../out`. The executable is `../out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`. Keep `resource_CUDA_V1` and `resource_Seis3D` beside it. This repository now contains its own CMake helper scripts and does not need the optional parent wrapper's scripts.
 
 ## Checks and documentation
 
 Enable `SEISSIM_BUILD_SOLVER_TESTS` for `Seis2DRecordRegression` and `SeisSimSolverRegression`. Enable `SEIS3D_BUILD_WORKSPACE_CHECKS` for `Seis3DWorkspaceRegression`. The record check is CPU-only at runtime, but configuring the current project still requires the CUDA toolchain. Numerical checks require CUDA; graphics checks also require an OpenGL context. Return code 77 denotes an unavailable device/skip where supported.
 
-The hidden real-application command `SeisWaveLab.exe --capture-seis2d-paper` creates eight documentation images, a real raw-data shot package and acquisition/workspace checks. It preserves saved user theme/layout preferences. `docs/tools/verify_shot_package.py` independently checks package hashes and layouts with Python 3.11 or newer.
+The hidden real-application command `SeisWaveLab_Cartesian.exe --capture-seis2d-paper` creates eight documentation images, a real raw-data shot package and acquisition/workspace checks. It preserves saved user theme/layout preferences. `docs/tools/verify_shot_package.py` independently checks package hashes and layouts with Python 3.11 or newer.
 
 Detailed operational guides currently use Chinese: [2D guide](docs/user/Seis2D_User_Guide.md), [3D guide](docs/user/Seis3D_User_Guide.md). Full English tutorials and public automated CI are future work.
 
@@ -55,3 +55,9 @@ This is a research/teaching sandbox with focused regression checks. A complete q
 Project-authored material follows the existing [MIT license](LICENSE); dependencies and resources retain their own terms. See [third-party notes](THIRD_PARTY_NOTICES.md) and [contribution guidance](CONTRIBUTING.md). Some resource redistribution permissions still need review before a public binary release.
 
 No paper or archived DOI is claimed. For a research result, record the actual source commit, software version, dependencies and experiment parameters. Formal citation metadata will be added once author information and a permanent release identifier are confirmed.
+
+## Current launch entry
+
+Use the outer `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`. The `SeisWaveLab` CMake target directly produces this executable as its sole application output. Production icons are in `resources/icons`.
+
+Both 2D and 3D support CPU/OpenMP and CUDA with automatic CPU fallback. Source and public headers are grouped into Seis2D, Seis3D and SeisCommon. See [code architecture](docs/development/CODE_ARCHITECTURE.md) for backend ownership, parameter drafts, fold groups and benchmark scope.

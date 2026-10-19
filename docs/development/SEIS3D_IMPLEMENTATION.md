@@ -6,11 +6,11 @@
 
 ```text
 SeisWaveLab_Cartesian/
-├─ include/Common3D.h          物理上下文、GPU 指针、内存预算和视图布局
-├─ include/Seis3D_Sim.h        独立 UI 状态、GL 句柄、观测系统和道集快照
-├─ cuda/Cuda_Seis3D.cuh        CUDA 求解器接口
-├─ cuda/Cuda_Seis3D.cu         差分、CPML、自由表面、切片和接收点核函数
-├─ src/Seis3D_Sim.cpp          会话生命周期、计算推进与资源释放
+├─ include/Seis3D/Common3D.h          物理上下文、GPU 指针、内存预算和视图布局
+├─ include/Seis3D/Seis3D_Sim.h        独立 UI 状态、GL 句柄、观测系统和道集快照
+├─ include/Seis3D/Cuda_Seis3D.cuh        CUDA 求解器接口
+├─ src/Seis3D/cuda/Cuda_Seis3D.cu         差分、CPML、自由表面、切片和接收点核函数
+├─ src/Seis3D/Simulation3D.cpp          会话生命周期、计算推进与资源释放
 ├─ src/Seis3D/
 │  ├─ Workspace3D.cpp         DockSpace、参数面板、切片交互与图例
 │  ├─ SliceView3D.cpp         剖面缩放、平移、网格叠加与坐标拾取
@@ -31,7 +31,7 @@ SeisWaveLab_Cartesian/
 
 三维不使用二维的 `ctx`、`gpu_data`、`rec`、`g_replay`、纹理、程序或模拟运行状态。窗口、ImGui/ImPlot 主上下文、界面主题和可执行文件路径查询属于应用层服务。三维内部不创建或销毁主窗口/ImGui 上下文。
 
-首页现在由独立的 `Main_cpp/HomeScreen.cpp` 实现，应用层 `AppUi` 库管理主题和导流界面；不再保留三维模块内重复的首页卡片绘制代码。首页包含实际设备信息、双模式入口、流程提示与示意波前动画；窄窗口将双卡片改为纵向布局。下方增加四张流程说明卡、三维网格起步建议和剖面操作指引，入口卡片随可用高度伸展，页脚靠近窗口底部；小窗口允许滚动查看完整内容。
+首页现在由独立的 `src/SeisCommon/HomeScreen.cpp` 实现，应用层 `AppUi` 库管理主题和导流界面；不再保留三维模块内重复的首页卡片绘制代码。首页包含实际设备信息、双模式入口、流程提示与示意波前动画；窄窗口将双卡片改为纵向布局。下方增加四张流程说明卡、三维网格起步建议和剖面操作指引，入口卡片随可用高度伸展，页脚靠近窗口底部；小窗口允许滚动查看完整内容。
 
 ### 双语文字与紧凑分组
 

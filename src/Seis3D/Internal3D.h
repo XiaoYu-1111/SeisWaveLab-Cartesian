@@ -93,6 +93,9 @@ void fitSurvey3D(Seis3D_State& s);
 // Validate and upload the selected receiver geometry.
 void configureReceivers3D(Seis3D_State& s);
 // Freeze geometry and start a new shot gather.
+int receiverSamplingStride3D(const Seis3D_State& s,double dt);
+int receiverSamplingIntervalUs3D(const Seis3D_State& s,double dt);
+void appendGatherSamples3D(Seis3D_State& s);
 void startGather3D(Seis3D_State& s,int shotId);
 // Export the frozen three-component gather and geometry.
 void exportGather3D(Seis3D_State& s,const std::filesystem::path& directory);

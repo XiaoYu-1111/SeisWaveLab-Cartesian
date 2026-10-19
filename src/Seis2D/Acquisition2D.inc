@@ -17,6 +17,8 @@ inline void syncReceiversToGpu() {
 
 // Initializes and advances one single-shot simulation using the current setup.
 inline void triggerSingleShot(GLHandles& gl, SimState& state) {
+    multiSourceMode2D=false;
+    if(freeTop2D()) editSrcZ2D=std::max(1,editSrcZ2D);
     acquisition2D.isRecording=false;
     acquisition2D.captureStartStep=0;
 
@@ -34,13 +36,13 @@ inline void triggerSingleShot(GLHandles& gl, SimState& state) {
     activeSources2D.clear();
 
     releaseGpuSimulation(gpuData2D);
-    initializeGpuSimulation(gpuData2D, simulationContext2D); 
+    initializeExternalSimulation2D(gpuData2D, simulationContext2D);
 
     syncReceiversToGpu();
     // Freeze shot geometry at emission, independently from editable controls used for the next shot.
     if(acquisition2D.capturedSamples==0) {
         acquisition2D.capturedSourceX=editSrcX2D;acquisition2D.capturedSourceZ=
-            simulationContext2D.flag_type==3&&simulationContext2D.upFlag?std::max(editSrcZ2D,simulationContext2D.npml+1):editSrcZ2D;
+            simulationContext2D.flag_type==3&&simulationContext2D.upFlag?std::max(editSrcZ2D,1):editSrcZ2D;
         acquisition2D.capturedGridSpacing=simulationContext2D.h;acquisition2D.capturedReceivers=acquisition2D.receivers;
         auto& frozen=acquisition2D.frozenModel;
         frozen.sourceX=editSrcX2D;frozen.sourceZ=acquisition2D.capturedSourceZ;frozen.sourceType=editSourceType2D;

@@ -1,0 +1,53 @@
+CPU 13th Gen Intel(R) Core(TM) i9-13900HX cores=24 logical=32 workers=32 AC=1 GPU NVIDIA GeForce RTX 4060 Laptop GPU
+CASE 2D 256 physical=65536 padded=82944 dt_ms=0.5 init_s=0.15346
+  CPU batch=1 repeat=1 2.4011 ms/step
+  CPU batch=1 repeat=2 2.3873 ms/step
+  CPU batch=1 repeat=3 2.4294 ms/step
+  CPU batch=1 repeat=4 2.3864 ms/step
+  CPU batch=1 repeat=5 2.4195 ms/step
+  CUDA batch=1 repeat=1 0.0551 ms/step
+  CUDA batch=1 repeat=2 0.0424 ms/step
+  CUDA batch=1 repeat=3 0.0452 ms/step
+  CUDA batch=1 repeat=4 0.0438 ms/step
+  CUDA batch=1 repeat=5 0.0401 ms/step
+  CUDA batch=8 repeat=1 0.0387 ms/step
+  CUDA batch=8 repeat=2 0.0488 ms/step
+  CUDA batch=8 repeat=3 0.0369 ms/step
+  CUDA batch=8 repeat=4 0.0431 ms/step
+  CUDA batch=8 repeat=5 0.0396 ms/step
+  validated CPU/CUDA Vz relative L2 6.5173e-07
+CASE 2D 1024 physical=1048576 padded=1115136 dt_ms=5.0000e-01 init_s=4.9010e-02
+  CPU batch=1 repeat=1 11.2306 ms/step
+  CPU batch=1 repeat=2 11.0674 ms/step
+  CPU batch=1 repeat=3 10.9286 ms/step
+  CPU batch=1 repeat=4 10.9286 ms/step
+  CPU batch=1 repeat=5 11.5677 ms/step
+  CUDA batch=1 repeat=1 0.7914 ms/step
+  CUDA batch=1 repeat=2 0.7947 ms/step
+  CUDA batch=1 repeat=3 0.7919 ms/step
+  CUDA batch=1 repeat=4 0.7881 ms/step
+  CUDA batch=1 repeat=5 0.7854 ms/step
+  CUDA batch=8 repeat=1 0.7863 ms/step
+  CUDA batch=8 repeat=2 0.7916 ms/step
+  CUDA batch=8 repeat=3 0.7939 ms/step
+  CUDA batch=8 repeat=4 0.7822 ms/step
+  CUDA batch=8 repeat=5 0.7917 ms/step
+  validated CPU/CUDA Vz relative L2 6.5173e-07
+CASE 2D 2048 physical=4194304 padded=4326400 dt_ms=5.0000e-01 init_s=1.9060e-01
+  CPU batch=1 repeat=1 28.6130 ms/step
+  CPU batch=1 repeat=2 29.2589 ms/step
+  CPU batch=1 repeat=3 29.8776 ms/step
+  CPU batch=1 repeat=4 32.1964 ms/step
+  CPU batch=1 repeat=5 32.7257 ms/step
+  CUDA batch=1 repeat=1 3.2033 ms/step
+  CUDA batch=1 repeat=2 3.5475 ms/step
+  CUDA batch=1 repeat=3 3.2116 ms/step
+  CUDA batch=1 repeat=4 3.1958 ms/step
+  CUDA batch=1 repeat=5 3.2625 ms/step
+  CUDA batch=8 repeat=1 3.1750 ms/step
+  CUDA batch=8 repeat=2 3.1752 ms/step
+  CUDA batch=8 repeat=3 3.2473 ms/step
+  CUDA batch=8 repeat=4 3.1790 ms/step
+  CUDA batch=8 repeat=5 3.1724 ms/step
+  validated CPU/CUDA Vz relative L2 6.5173e-07
+COMPLETE "D:\\Code\\visual_code\\Cmake_project\\CMake_pro_CUDA\\SeisWaveLab_Cartesian_Workspace\\out\\benchmarks\\cpu-cuda-2026-10-19\\formal-2d"

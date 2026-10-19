@@ -1,6 +1,19 @@
 # SeisWave Lab：二维弹性波模拟与地震记录查看器
 
-更新日期：2026-10-18。适用于当前 v2.0.0 工作区，三维操作另见 [Seis3D 使用指南](Seis3D_User_Guide.md)。本文包含实际 CUDA 计算截图、模型至采集的操作步骤，以及显示参数和数据格式的边界。本轮重新采集全部 8 张 2560×1494 完整窗口图；理论与二维约化见[完整说明](../PROJECT_MANUAL.md)，各维度的实际采样与边界约定仍独立。
+更新日期：2026-10-19。适用于当前 v2.0.0 工作区，三维操作另见 [Seis3D 使用指南](Seis3D_User_Guide.md)。本文包含实际 CUDA 计算截图、模型至采集的操作步骤，以及显示参数和数据格式的边界。本轮重新采集全部 8 张 2560×1494 完整窗口图；理论与二维约化见[完整说明](../PROJECT_MANUAL.md)，各维度的实际采样与边界约定仍独立。
+
+## 2026-10-19：CPU/CUDA、参数与记录面板
+
+主程序入口为外层 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`。
+
+1. **模型导入**：二维 Model I/O 仅保留 SEG-Y 物性组；选择 Vp、Vs、密度三个 `.sgy` / `.segy` 文件，设置原始空间间距、方向和密度单位转换，再加载。TXT/CSV 模型导入入口已移除。
+2. **当前参数**：左侧控制面板旁的“当前参数”页签并列显示当前生效值和待应用值，差异着色。点击“更新参数”应用；“撤销待应用参数”恢复草稿。修改网格尺寸会重建模型；修改时间、核心会重置波场，采集中禁用这些操作。
+3. **计算核心**：在“计算核心”选择自动、CPU/OpenMP 或 CUDA，并设置 CPU 并行线程，点击“应用计算核心”。自动优先 CUDA；无可用 CUDA 时回退 CPU。核心切换会清场，先完成需要保留的采集与导出。
+4. **性能**：“时间步计算耗时”查看求解耗时；“CPU / CUDA 效率对比”在独立波场比较当前二维模型，输出毫秒/步、耗时比与相对 L2 误差。CUDA 不可用时仍可运行 CPU 模拟，但无法实测双核心对比。
+5. **数据分析**：顶部选择来源、分量、全部道/单道；默认全部道。首道从 1 开始，输入首道与道数可以局部查看。显示样式与 AGC/增益选项收进按钮面板，恢复视图按钮重新适配曲线。导入与显示处理保持原始样本不变。
+6. **颜色增益**：二维默认 100，可调范围 0–1000，0 仅隐藏波场着色。
+
+代码布局及后端细节见 [代码架构](../development/CODE_ARCHITECTURE.md)。历史截图反映其采集时界面；当前控制面板和参数组默认在左侧。
 
 ## 1. 本轮改进
 
@@ -15,7 +28,7 @@
 
 ## 2. 启动与界面位置
 
-发布程序为外层 `out/bin/RelWithDebInfo/SeisWaveLab.exe`；Debug 为 `out/bin/Debug/SeisWaveLab.exe`。保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`，不要只拷贝 EXE。
+发布程序为外层 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`；Debug 为 `out/bin/Debug/SeisWaveLab_Cartesian.exe`。保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`，不要只拷贝 EXE。
 
 在首页选择二维沙盒。首页可切换语言及主题；二维控制面板也有语言选择。Paper Sand、Scientific Light、Arctic Lab、Warm Ivory 适合报告截图。界面主题改变控件外观，模型背景和波场颜色仍由 Visual 页独立控制。
 
@@ -320,7 +333,7 @@ python docs/tools/verify_shot_package.py "完整的数据包目录"
 从外层项目目录执行：
 
 ```powershell
-.\out\bin\RelWithDebInfo\SeisWaveLab.exe --capture-seis2d-workflow
+.\out\bin\RelWithDebInfo\SeisWaveLab_Cartesian.exe --capture-seis2d-workflow
 python SeisWaveLab_Cartesian/docs/tools/prepare_seis2d_screenshots.py
 ```
 
@@ -358,3 +371,31 @@ python SeisWaveLab_Cartesian/docs/tools/prepare_seis2d_screenshots.py
 - [构建与截图更新](../build/BUILDING.md)
 - [二维历史数值稳定性审查](../reviews/NUMERICAL_STABILITY_REVIEW.md)
 - [论文准备、验证矩阵与期刊建议](../publication/PUBLICATION_ROADMAP.md)
+
+## 二维外部吸收层与操作（2026-10-19）
+
+模型 NX×NZ 表示完整物理节点网格。GPU 在模型四周另行分配吸收／差分保护层，材料按边缘值外推；吸收层不再占用模型节点。自由表面的顶部只有镜像保护行，不作为顶部吸收层显示。物理坐标从 (0,0) 到 ((NX−1)dx,(NZ−1)dx)，深度向下。
+
+- **B** 或“吸收层（B）”：显示／隐藏真实外部吸收层，默认隐藏；只改变显示，不关闭吸收计算，不重启波场。
+- **滚轮**：整体缩放；**按住中键或右键拖动**：平移，拖出画布仍可继续，释放后结束。
+- **左键**：激发；勾选“连续激发”后按住左键以 0.1 秒的操作间隔加入新震源，不清空已有波场。模型编辑工具启用时左键用于画笔；拖动平移时抑制左键激发和绘制。
+- 正式“单炮激发／采集”使用单一固定震源，退出交互多源模式，冻结本炮几何与采样参数。
+- 波场采用曲网格同类的符号色带与振幅透明度叠加；十四套色带与底部色标共用同一颜色定义。模型网格和坐标主次网格分别控制，缩小时自动淡出密集节点线。
+
+文本和 SEG-Y 模型导入不再把吸收层写入模型尺寸；保留密度单位转换。模型导出及波场回放仅包含物理网格。单炮 manifest 的 grid.external_pml 指示是否使用外扩吸收域。
+
+波场使用浮点纹理传输，避免 8 位显示编码截断弱波。默认按物理区的当前幅值峰值归一化，色标显示对应参考振幅；可关闭自动归一化使用手动增益。显示缩放、透明度和色带不改变原始采集数据。
+
+### 参数分组与全部展开／折叠
+
+参数按职责折叠分组：计算核心、时间步耗时、CPU/CUDA 对比、模型/网格与边界、震源/子波、物性/预设/画笔、SEG-Y 导入导出、采样/检波器/采集/多炮、回放、波场/物性/网格显示。当前参数页分为当前与待应用参数、采集（二维集中在采集页）和参数更新。
+
+面板顶部“全部展开”“全部折叠”影响该面板所有组，包括暂未打开的页签；切换页签后仍保持该命令。每组也可单独点击标题展开/折叠，语言切换保留状态。折叠不会应用参数、改变波场或清空记录。
+
+当前 CPU/OpenMP 会话中的参数对照与记录分析器（CUDA 设备已屏蔽，来自实际计算）：
+
+![当前参数与记录分析器](../assets/seis2d/current-parameters-and-records.png)
+
+参数按组全部折叠后的界面：
+
+![参数分组折叠](../assets/seis2d/current-parameter-groups-folded.png)

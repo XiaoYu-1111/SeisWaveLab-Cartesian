@@ -6,6 +6,8 @@
 #include "AppTheme.h"
 #include "Seis3D_Sim.h"
 #include "Cuda_Seis3D.cuh"
+#include "CpuSolver3D.h"
+#include <omp.h>
 #include "ResourcePaths.h"
 #include "imgui.h"
 #include "implot.h"
@@ -48,7 +50,11 @@ ImGuiID sectionCommandKey3D() {
 // Preserve each scoped header's fold state while reading the panel-wide command outside the tab scope.
 bool sectionHeader3D(const char* label,ImGuiTreeNodeFlags flags) {
     const int command=ImGui::GetStateStorage()->GetInt(sectionCommandKey3D(),0);
-    if(command) ImGui::SetNextItemOpen(command==2,ImGuiCond_Always);
+    const auto revisionKey=sectionCommandKey3D()+1;const int revision=ImGui::GetStateStorage()->GetInt(revisionKey);
+    const auto seen=ImHashStr(label,0,ImGui::GetID("Seis3D.GroupRevision"));
+    if(ImGui::GetStateStorage()->GetInt(seen)!=revision) {
+        ImGui::SetNextItemOpen(command==2,ImGuiCond_Always);ImGui::GetStateStorage()->SetInt(seen,revision);
+    }
     return AppUi::Widgets::CollapsingHeader(label,flags);
 }
 
@@ -61,9 +67,8 @@ bool functionHeader3D(const char* label,AppUi::FunctionRole role,ImGuiTreeNodeFl
 // Apply expand/collapse only to the active panel during this frame, preserving every parameter.
 void drawSectionTools3D() {
     auto* storage=ImGui::GetStateStorage();const auto key=sectionCommandKey3D();
-    storage->SetInt(key,0);
-    if(AppUi::Widgets::SmallButton("Expand all")) storage->SetInt(key,2);
-    ImGui::SameLine();if(AppUi::Widgets::SmallButton("Collapse all")) storage->SetInt(key,1);
+    if(AppUi::Widgets::SmallButton("Expand all")) {storage->SetInt(key,2);storage->SetInt(key+1,storage->GetInt(key+1)+1);}
+    ImGui::SameLine();if(AppUi::Widgets::SmallButton("Collapse all")) {storage->SetInt(key,1);storage->SetInt(key+1,storage->GetInt(key+1)+1);}
     ImGui::Separator();
 }
 
@@ -82,7 +87,7 @@ void drawSourceFrequencyControls3D(Seis3D_State& s) {
             AppUi::Widgets::TextColored(AppUi::functionColor(AppUi::FunctionRole::Warning),"Frequency edit pending; current wavefield uses the active value.");
         const double frequency=s.editContext3D.frequency3D;
         if(std::isfinite(frequency)&&frequency>0) {
-            const double interval=double(s.context3D.dt3D)*s.samplingStride3D;
+            const double interval=s.sampleIntervalInMs3D?s.requestedSampleIntervalMs3D*.001:double(s.context3D.dt3D)*s.samplingStride3D;
             const double duration=interval*s.targetSamples3D;
             AppUi::Widgets::Text("At edited f0: %.1f solver steps / period",1/(frequency*s.context3D.dt3D));
             if(interval>0&&s.targetSamples3D>0) {
@@ -118,7 +123,7 @@ void drawTimeStepControls3D(Seis3D_State& s) {
         AppUi::Widgets::Text("CFL ceiling: %.3f ms",ceiling.safeDt3D*1000);
         auto candidate=c;validateContext3D(candidate);
         const auto dtUs=std::llround(double(candidate.dt3D)*1e6);
-        const auto intervalUs=dtUs*(std::max)(1,s.samplingStride3D);
+        const auto intervalUs=receiverSamplingIntervalUs3D(s,candidate.dt3D);
         AppUi::Widgets::Text("After rebuild: %.3f ms solver dt",dtUs/1000.0);
         AppUi::Widgets::Text("Sampling: %.3f ms | nominal window %.3f s",intervalUs/1000.0,
             double(intervalUs)*s.targetSamples3D/1e6);
@@ -501,6 +506,31 @@ void drawLegend3D(Seis3D_State& s) {
 }
 
 // Configure surface receiver bins and multi-line shots, locking geometry for each active capture.
+void drawSamplingControls3D(Seis3D_State& s) {
+    AppUi::Widgets::InputInt(fieldLabel3D("Samples per shot").c_str(),&s.targetSamples3D);
+    int samplingMode=s.sampleIntervalInMs3D?0:1;
+    if(AppUi::Widgets::Combo(fieldLabel3D("Sampling clock").c_str(),&samplingMode,"Uniform interval (ms)\0Solver stride (steps)\0"))
+        s.sampleIntervalInMs3D=samplingMode==0;
+    if(AppUi::Widgets::InputDouble(fieldLabel3D("Sampling interval (ms)").c_str(),&s.requestedSampleIntervalMs3D,0.1,1.0,"%.3f"))
+        s.sampleIntervalInMs3D=true;
+    if(AppUi::Widgets::Button("0.5 ms##sample3D")) {s.requestedSampleIntervalMs3D=0.5;s.sampleIntervalInMs3D=true;}
+    ImGui::SameLine();
+    if(AppUi::Widgets::Button("1 ms##sample3D")) {s.requestedSampleIntervalMs3D=1.0;s.sampleIntervalInMs3D=true;}
+    try {
+        s.samplingStride3D=receiverSamplingStride3D(s,s.context3D.dt3D);
+        AppUi::Widgets::Text("Actual sample interval: %.3f ms",receiverSamplingIntervalUs3D(s,s.context3D.dt3D)/1000.0);
+    } catch(const std::exception& e) {
+        AppUi::Widgets::TextColored(AppUi::functionColor(AppUi::FunctionRole::Danger),"%s",e.what());
+    }
+    ImGui::BeginDisabled(s.sampleIntervalInMs3D);
+    if(AppUi::Widgets::InputInt(fieldLabel3D("Sample stride (steps)").c_str(),&s.samplingStride3D)) {
+        s.samplingStride3D=(std::clamp)(s.samplingStride3D,1,10000);
+        s.sampleIntervalInMs3D=false;
+    }
+    ImGui::EndDisabled();
+    AppUi::Widgets::TextWrapped("Uniform output times use linear interpolation between solver steps; solver dt is unchanged.");
+}
+
 void drawAcquisitionControls3D(Seis3D_State& s) {
     drawShotImportControls3D(s);
     auto& q=s.survey3D;
@@ -535,8 +565,7 @@ void drawAcquisitionControls3D(Seis3D_State& s) {
     AppUi::Widgets::InputFloat2(fieldLabel3D("CMP bin size XY (m)").c_str(),q.cmpBinSize3D,"%.2f");
     }
     if(functionHeader3D("RECORDING / EXPORT",AppUi::FunctionRole::Acquisition)) {
-    AppUi::Widgets::InputInt(fieldLabel3D("Samples per shot").c_str(),&s.targetSamples3D); AppUi::Widgets::InputInt(fieldLabel3D("Sample stride (steps)").c_str(),&s.samplingStride3D);
-    AppUi::Widgets::Text("Actual sample interval: %.3f ms",s.samplingStride3D*s.context3D.dt3D*1000);
+    drawSamplingControls3D(s);
     AppUi::Widgets::InputText(fieldLabel3D("Export folder").c_str(),s.exportDirectory3D,sizeof(s.exportDirectory3D));
     if(AppUi::Widgets::Button("Browse export folder...",ImVec2(-1,0))) performAction3D(s,[&]{browseExportFolder3D(s);});
     AppUi::Widgets::InputText(fieldLabel3D("Shot file prefix").c_str(),s.exportPrefix3D,sizeof(s.exportPrefix3D));
@@ -624,10 +653,97 @@ void continueToolbar3D(const char* nextLabel) {
 
 using namespace Detail3D;
 
+void drawBackendControls3D(Seis3D_State& s) {
+ if(functionHeader3D("Compute backend",AppUi::FunctionRole::Simulation)) {
+  ImGui::BeginDisabled(s.recording3D||s.sequence3D);
+  AppUi::Widgets::Combo(fieldLabel3D("Backend").c_str(),&s.backend3D,"Auto (CUDA / CPU fallback)\0CPU / OpenMP\0CUDA\0");
+  AppUi::Widgets::SliderInt(fieldLabel3D("CPU workers").c_str(),&s.workers3D,1,omp_get_num_procs());
+  if(functionButton3D("Apply backend",AppUi::FunctionRole::Simulation,ImVec2(-1,0))) performAction3D(s,[&]{initializeSession3D(s,false);});
+  ImGui::EndDisabled();
+  if(s.ready3D) AppUi::Widgets::Text("%s: %s",AppUi::text("Current"),s.gpu3D.cpu3D?"CPU / OpenMP":"CUDA");
+  if(!s.backendStatus3D.empty()) AppUi::Widgets::TextWrapped("%s",s.backendStatus3D.c_str());
+ }
+ if(functionHeader3D("Time step cost",AppUi::FunctionRole::Simulation)) {
+  AppUi::Widgets::Text("%.3f ms / batch | %d steps / frame",s.computeMs3D,s.stepsPerFrame3D);
+  AppUi::Widgets::TextWrapped("Batch wall time includes receiver sampling and synchronization; display and export are excluded.");
+ }
+ if(functionHeader3D("CPU / CUDA efficiency comparison",AppUi::FunctionRole::Simulation)) {
+  AppUi::Widgets::TextWrapped("Standard 32 cubed comparison: identical material recipe, source, spacing and dt; CPML width 8. Four warm-up steps and twenty timed steps. Live data is retained.");
+  ImGui::BeginDisabled(s.running3D||s.recording3D||s.sequence3D);
+  if(functionButton3D("Run CPU / CUDA comparison",AppUi::FunctionRole::Simulation,ImVec2(-1,0)))
+   performAction3D(s,[&]{s.benchmarkResult3D=compareBackends3D(s.context3D,s.workers3D);});
+  ImGui::EndDisabled();
+  if(!s.benchmarkResult3D.empty()) AppUi::Widgets::TextWrapped("%s",s.benchmarkResult3D.c_str());
+ }
+}
+
+// Active values and staged edits stay visible together, independent of the control tabs.
+void drawCurrentParameters3D(Seis3D_State& s) {
+    const auto& c=s.context3D;
+    if(functionHeader3D("Active / draft parameters",AppUi::FunctionRole::Simulation,ImGuiTreeNodeFlags_DefaultOpen)) {
+    if(ImGui::BeginTable("CurrentDraft3D",3,ImGuiTableFlags_RowBg|ImGuiTableFlags_BordersInnerH)) {
+        ImGui::TableSetupColumn(AppUi::text("Parameter"));ImGui::TableSetupColumn(AppUi::text("Current"));ImGui::TableSetupColumn(AppUi::text("Draft"));ImGui::TableHeadersRow();
+        auto row=[](const char* label,double live,double draft) {
+            ImGui::TableNextRow();ImGui::TableNextColumn();AppUi::Widgets::TextUnformatted(label);
+            ImGui::TableNextColumn();ImGui::Text("%.4g",live);ImGui::TableNextColumn();
+            if(live!=draft) ImGui::PushStyleColor(ImGuiCol_Text,AppUi::functionColor(AppUi::FunctionRole::Warning));
+            ImGui::Text("%.4g",draft);if(live!=draft) ImGui::PopStyleColor();
+        };
+        const auto& e=s.editContext3D;
+        row("NX",c.nx3D,e.nx3D);row("NY",c.ny3D,e.ny3D);row("NZ",c.nz3D,e.nz3D);row("dx (m)",c.spacing3D,e.spacing3D);
+        row("f0 (Hz)",c.frequency3D,e.frequency3D);row("CPML",c.pml3D,e.pml3D);row("Vp (m/s)",c.vp3D,e.vp3D);row("Vs (m/s)",c.vs3D,e.vs3D);
+        row("rho",c.density3D,e.density3D);row("CPU threads",s.gpu3D.workers3D,s.workers3D);
+        ImGui::EndTable();
+    }
+    AppUi::Widgets::SeparatorText("Active simulation parameters");
+    if(!s.ready3D) AppUi::Widgets::TextWrapped("Initialize 3D to activate the staged parameters.");
+    else {
+        AppUi::Widgets::Text("Grid %d x %d x %d | %.1f m",c.nx3D,c.ny3D,c.nz3D,c.spacing3D);
+        AppUi::Widgets::Text("Solver dt: %.6f ms",double(c.dt3D)*1000);
+        AppUi::Widgets::Text("Step %llu | Time %.6f s",static_cast<unsigned long long>(s.step3D),s.step3D*double(c.dt3D));
+        AppUi::Widgets::TextWrapped("Live boundary: %s",boundaryName3D(c));
+        AppUi::Widgets::Text("CPML: %d | Vp max: %.1f m/s",c.reflecting3D?0:c.pml3D,c.maxVp3D);
+        AppUi::Widgets::Text("Vp / Vs: %.1f / %.1f m/s",c.vp3D,c.vs3D);
+        AppUi::Widgets::Text("Density: %.1f kg/m3",c.density3D);
+        AppUi::Widgets::Text("Active frequency: %.2f Hz | delay %.3f ms",c.frequency3D,1200/c.frequency3D);
+        AppUi::Widgets::Text("Source XYZ [%d,%d,%d]",s.source3D.x3D,s.source3D.y3D,s.source3D.z3D);
+        AppUi::Widgets::Text("Receivers: %d",int(s.receivers3D.size()));
+        try {
+            AppUi::Widgets::Text("Next capture interval: %.3f ms",receiverSamplingIntervalUs3D(s,c.dt3D)/1000.0);
+            AppUi::Widgets::Text("Samples per shot: %d",s.targetSamples3D);
+        } catch(const std::exception& e) {AppUi::Widgets::TextWrapped("%s",e.what());}
+        if(s.gather3D.sampleCount3D>0) {
+            AppUi::Widgets::Text("Captured interval: %.3f ms",s.gather3D.sampleIntervalUs3D/1000.0);
+            AppUi::Widgets::Text("Captured samples: %d / %d",s.gather3D.sampleCount3D,s.gather3D.targetSamples3D);
+        }
+    }
+    }
+    if(functionHeader3D("Acquisition Settings",AppUi::FunctionRole::Acquisition,ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::BeginDisabled(s.recording3D||s.sequence3D);
+    drawSamplingControls3D(s);
+    ImGui::EndDisabled();
+    }
+    if(functionHeader3D("Update simulation parameters",AppUi::FunctionRole::Model,ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::BeginDisabled(s.recording3D||s.sequence3D);
+    auto& edit=s.editContext3D;
+    int sizes[]={edit.nx3D,edit.ny3D,edit.nz3D};
+    if(AppUi::Widgets::InputInt3(fieldLabel3D("Nodes X/Y/Z").c_str(),sizes)) {edit.nx3D=sizes[0];edit.ny3D=sizes[1];edit.nz3D=sizes[2];}
+    AppUi::Widgets::InputFloat(fieldLabel3D("Grid spacing (m)").c_str(),&edit.spacing3D,1,10,"%.3f");
+    drawTimeStepControls3D(s);
+    AppUi::Widgets::InputFloat(fieldLabel3D("Ricker f0 (Hz)").c_str(),&edit.frequency3D,1,10,"%.2f");
+    AppUi::Widgets::InputFloat(fieldLabel3D("Vp (m/s)").c_str(),&edit.vp3D,100,1000,"%.1f");
+    AppUi::Widgets::InputFloat(fieldLabel3D("Vs (m/s)").c_str(),&edit.vs3D,100,1000,"%.1f");
+    AppUi::Widgets::InputFloat(fieldLabel3D("Density (kg/m3)").c_str(),&edit.density3D,100,1000,"%.1f");
+    AppUi::Widgets::TextWrapped("Model / boundary edits take effect after Rebuild 3D session.");
+    if(functionButton3D("Apply parameters + rebuild",AppUi::FunctionRole::Model,ImVec2(-1,0))) performAction3D(s,[&]{initializeSession3D(s,false);});
+    ImGui::EndDisabled();
+    }
+}
+
 // Stable dock names keep saved layouts compatible across mode switches and application restarts.
 static constexpr const char* panelNames3D[]={"Simulation controls###Seis3D.Controls","Display / materials###Seis3D.Display",
     "Inline X-Z###Seis3D.Inline","Crossline Y-Z###Seis3D.Crossline","Depth X-Y###Seis3D.Depth",
-    "Spatial volume###Seis3D.Volume","Receiver traces###Seis3D.Traces"};
+    "Spatial volume###Seis3D.Volume","Receiver traces###Seis3D.Traces","Current parameters###Seis3D.Parameters"};
 
 // Seed the dock tree only on first use or explicit preset/reset; dragging otherwise owns the layout.
 void buildDockLayout3D(Seis3D_State& s,ImGuiID dockId,ImVec2 size) {
@@ -638,6 +754,7 @@ void buildDockLayout3D(Seis3D_State& s,ImGuiID dockId,ImVec2 size) {
     ImGuiID controls=ImGui::DockBuilderSplitNode(center,ImGuiDir_Left,(std::clamp)(ImGui::GetFontSize()*23.0f/size.x,.22f,.38f),nullptr,&center);
     ImGui::DockBuilderDockWindow(panelNames3D[0],controls);
     ImGui::DockBuilderDockWindow(panelNames3D[1],controls);
+    ImGui::DockBuilderDockWindow(panelNames3D[7],controls);
     if(s.layoutPreset3D==2) {
         ImGui::DockBuilderDockWindow(panelNames3D[6],controls);
         for(int i=2;i<6;++i) ImGui::DockBuilderDockWindow(panelNames3D[i],center);
@@ -662,7 +779,7 @@ void buildDockLayout3D(Seis3D_State& s,ImGuiID dockId,ImVec2 size) {
         }
     }
     ImGui::DockBuilderFinish(dockId);
-    std::fill_n(s.panelsOpen3D,7,true);s.resetLayout3D=false;
+    std::fill_n(s.panelsOpen3D,8,true);s.resetLayout3D=false;
 }
 
 // Use the same state transitions as the controls; display shortcuts never apply preset defaults.
@@ -765,8 +882,8 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
         }
         AppUi::drawThemeMenu();AppUi::drawLanguageMenu();
         ImGui::Separator();
-        const char* labels[]={"Simulation controls","Display / materials","Inline","Crossline","Depth","Volume","Receiver traces"};
-        for(int i=0;i<7;++i) AppUi::Widgets::MenuItem(labels[i],nullptr,&s.panelsOpen3D[i]);
+        const char* labels[]={"Simulation controls","Display / materials","Inline","Crossline","Depth","Volume","Receiver traces","Current parameters"};
+        for(int i=0;i<8;++i) AppUi::Widgets::MenuItem(labels[i],nullptr,&s.panelsOpen3D[i]);
         ImGui::EndPopup();
     }
     continueToolbar3D("Reset views");if(functionButton3D("Reset views",AppUi::FunctionRole::Display)) {resetSliceViews3D(s);s.camera3D=VolumeCamera3D{};}
@@ -783,7 +900,7 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
         (s.totalVram3D-s.freeVram3D)/gibibyte3D,s.totalVram3D/gibibyte3D);
     AppUi::Widgets::TextColored(AppUi::palette().accent,"%s | Boundary display: %s",boundaryName3D(s.ready3D?s.context3D:s.editContext3D),s.showBoundary3D?"ON":"OFF");
     ImGuiWindowClass windowClass;windowClass.ClassId=ImGui::GetID("Seis3D.IsolatedWindows");windowClass.DockingAllowUnclassed=false;
-    const ImGuiID dockId=ImGui::GetID("Seis3D.Dockspace.v2");
+    const ImGuiID dockId=ImGui::GetID("Seis3D.Dockspace.v4");
     const ImVec2 dockSize((std::max)(1.0f,ImGui::GetContentRegionAvail().x),
         (std::max)(60.0f,ImGui::GetContentRegionAvail().y-ImGui::GetTextLineHeightWithSpacing()*2-10));
     if(!ImGui::DockBuilderGetNode(dockId)||s.resetLayout3D) buildDockLayout3D(s,dockId,dockSize);
@@ -801,7 +918,7 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
     AppUi::Widgets::TextColored(s.messageIsError3D?AppUi::functionColor(AppUi::FunctionRole::Danger):AppUi::palette().muted,"%s",s.message3D.c_str());
     if(ImGui::IsItemHovered()) AppUi::Widgets::SetTooltip("%s",s.message3D.c_str());
     ImGui::End();
-    for(int panel=0;panel<7;++panel) {
+    for(int panel=0;panel<8;++panel) {
         // Apply controls before rendering, and render textures before submitting ImGui images.
         if(panel==2) performAction3D(s,[&]{updateGraphics3D(s);});
         if(!s.panelsOpen3D[panel]) continue;
@@ -811,13 +928,14 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
         {
             const AppUi::FunctionRole roles[]={AppUi::FunctionRole::Simulation,AppUi::FunctionRole::Display,
                 AppUi::FunctionRole::Display,AppUi::FunctionRole::Display,AppUi::FunctionRole::Display,
-                AppUi::FunctionRole::Display,AppUi::FunctionRole::Acquisition};
+                AppUi::FunctionRole::Display,AppUi::FunctionRole::Acquisition,AppUi::FunctionRole::Simulation};
             AppUi::FunctionStyleScope panelColors(roles[panel]);
             visible=AppUi::Widgets::Begin(panelNames3D[panel],&s.panelsOpen3D[panel]);
         }
         if(visible) {
             ImGui::PushItemWidth((std::max)(80.0f,ImGui::GetContentRegionAvail().x*.55f));
-            if(panel<=1) drawSectionTools3D();
+            if(panel<=1||panel==7) drawSectionTools3D();
+            if(panel==0) drawBackendControls3D(s);
             if(panel==0 && ImGui::BeginTabBar("ControlTabs3D",ImGuiTabBarFlags_FittingPolicyScroll)) {
                 if(functionTab3D("Simulation",AppUi::FunctionRole::Simulation)) {drawSimulationControls3D(s);ImGui::EndTabItem();}
                 if(functionTab3D("Source",AppUi::FunctionRole::Source)) {drawSourceControls3D(s);ImGui::EndTabItem();}
@@ -829,6 +947,7 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
             if(panel>=2&&panel<=4) drawSlicePanel3D(s,panel-2);
             if(panel==5) drawVolumePanel3D(s);
             if(panel==6) drawTracePreview3D(s);
+            if(panel==7) drawCurrentParameters3D(s);
             ImGui::PopItemWidth();
         }
         ImGui::End();

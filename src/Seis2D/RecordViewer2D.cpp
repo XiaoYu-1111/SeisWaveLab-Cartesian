@@ -145,52 +145,51 @@ void renderRecordViewer2D(ViewerState2D& state) {
     const bool visible=AppUi::Widgets::Begin("Seismic Data Analyzer###Seis2D.RecordViewer",&state.isOpen);
     if(visible) {
         try {
-            const bool compact=ImGui::IsWindowDocked()&&ImGui::GetWindowHeight()<42*ImGui::GetFontSize();
-            if(compact&&AppUi::Widgets::Button("Record file / source")) ImGui::OpenPopup("Seis2D.RecordSource");
-            const bool fileControls=compact?ImGui::BeginPopup("Seis2D.RecordSource"):
-                AppUi::Widgets::CollapsingHeader("Record file / source",ImGuiTreeNodeFlags_DefaultOpen);
-            if(fileControls) {
-                ImGui::SetNextItemWidth(-1);AppUi::Widgets::InputText("##RecordPath2D",state.importPath,sizeof(state.importPath));
-                if(AppUi::Widgets::Button("Browse SEG-Y")) browseRecord2D(state);
-                ImGui::SameLine();if(AppUi::Widgets::Button("Import shot for display")) importRecord2D(state,viewerPath2D(state.importPath));
-                ImGui::SameLine();if(AppUi::Widgets::Button("Reset View")) state.fitRequest=true;
-                ImGui::SameLine();if(AppUi::Widgets::Button("Reset viewer display")) resetViewerDisplay2D(state);
-                if(compact) ImGui::EndPopup();
-            }
+            constexpr bool compact=true;
             const auto& record=state.records[state.dualComponent?std::clamp(state.component,0,1):0];
-            if(state.dualComponent) {if(compact) ImGui::SameLine();ImGui::SetNextItemWidth(compact?70:140);
-                if(AppUi::Widgets::Combo(compact?"Component":"Recorded component",&state.component,"Vz\0Vx\0")) state.fitRequest=true;}
-            if(compact) ImGui::SameLine();
-            ImGui::SetNextItemWidth(compact?120:180);if(AppUi::Widgets::Combo("Record view",&state.viewMode,"Receiver section\0Single trace\0")) state.fitRequest=true;
+            if(ImGui::BeginTable("RecordToolbar2D",3,ImGuiTableFlags_SizingStretchProp)) {
+                ImGui::TableSetupColumn("Source",0,.32f);ImGui::TableSetupColumn("Selection",0,.43f);ImGui::TableSetupColumn("Component",0,.25f);
+                ImGui::TableNextColumn();
+                if(AppUi::Widgets::Button("Record file / source",ImVec2(-1,0))) ImGui::OpenPopup("RecordSource2D");
+                if(ImGui::BeginPopup("RecordSource2D")) {
+                    ImGui::SetNextItemWidth(420);AppUi::Widgets::InputText("##RecordPath2D",state.importPath,sizeof(state.importPath));
+                    if(AppUi::Widgets::Button("Browse SEG-Y")) browseRecord2D(state);
+                    ImGui::SameLine();if(AppUi::Widgets::Button("Import shot for display")) importRecord2D(state,viewerPath2D(state.importPath));
+                    AppUi::Widgets::TextWrapped("Imported records and capture snapshots use the same viewer. Original samples are retained.");
+                    ImGui::EndPopup();
+                }
+                ImGui::TableNextColumn();ImGui::SetNextItemWidth(-1);
+                int selection=state.viewMode==1?1:state.showAllTraces?0:2;
+                if(AppUi::Widgets::Combo("##RecordSelection2D",&selection,"All traces\0Single trace\0Trace range\0")) {
+                    state.viewMode=selection==1?1:0;state.showAllTraces=selection==0;state.fitRequest=true;
+                }
+                ImGui::TableNextColumn();ImGui::SetNextItemWidth(-1);
+                if(state.dualComponent) {if(AppUi::Widgets::Combo("##RecordedComponent2D",&state.component,"Vz\0Vx\0")) state.fitRequest=true;}
+                else AppUi::Widgets::TextUnformatted(record.name.empty()?AppUi::text("Recorded component"):record.name.c_str());
+                ImGui::EndTable();
+            }
+            if(AppUi::Widgets::Button("Display Parameters")) ImGui::OpenPopup("RecordVisual2D");
+            if(ImGui::BeginPopup("RecordVisual2D")) {
+                Seismic::drawRecordVisualControls(state.recordStyle,state.palette,state.heatmapRange,state.densityOpacity,state.showWiggle,state.showHeatmap,state.positiveFill,state.signedFill);
+                if(AppUi::Widgets::Button("Reset viewer display")) resetViewerDisplay2D(state);
+                ImGui::EndPopup();
+            }
             ImGui::SameLine();drawTraceOptions2D(state);
+            ImGui::SameLine();if(AppUi::Widgets::Button("Reset View")) state.fitRequest=true;
             if(!record.traces.empty()) {
-                if(!compact) {ImGui::SameLine();AppUi::Widgets::TextDisabled("%d traces x %d samples | dt %.3f ms",int(record.traces.size()),int(record.traces.front().size()),record.sampleInterval*1000);}
-                if(state.viewMode==1) {ImGui::SetNextItemWidth(-110);if(AppUi::Widgets::SliderInt("Receiver",&state.selectedTrace,0,int(record.traces.size())-1)) state.fitRequest=true;}
-                else {
-                    if(compact&&AppUi::Widgets::Button("Record selection")) ImGui::OpenPopup("Seis2D.Selection");
-                    const bool selection=compact?ImGui::BeginPopup("Seis2D.Selection"):
-                        AppUi::Widgets::CollapsingHeader("Record selection",ImGuiTreeNodeFlags_DefaultOpen);
-                    if(selection) {
-                    const int total=int(record.traces.size());
-                    state.firstTrace=std::clamp(state.firstTrace,0,total-1);
-                    if(state.showAllTraces) {state.firstTrace=0;state.visibleTraces=total;}
-                    ImGui::SetNextItemWidth(180);if(AppUi::Widgets::InputInt("First trace (zero based)",&state.firstTrace)) {state.fitRequest=true;state.showAllTraces=false;}
-                    state.firstTrace=std::clamp(state.firstTrace,0,total-1);
-                    state.visibleTraces=std::clamp(state.visibleTraces,1,total-state.firstTrace);
-                    ImGui::SameLine();ImGui::SetNextItemWidth(140);if(AppUi::Widgets::SliderInt("Visible traces",&state.visibleTraces,1,total-state.firstTrace)) {state.fitRequest=true;state.showAllTraces=false;}
-                    if(AppUi::Widgets::SmallButton("Show all traces")) {state.firstTrace=0;state.visibleTraces=total;state.showAllTraces=true;state.fitRequest=true;}
-                    AppUi::Widgets::TextDisabled("Visible %d / %d | Maximum from first trace: %d",state.visibleTraces,total,total-state.firstTrace);
-                    if(compact) ImGui::EndPopup();
+                const int total=int(record.traces.size());
+                if(state.viewMode==1) {
+                    int channel=std::clamp(state.selectedTrace+1,1,total);ImGui::SetNextItemWidth(-1);
+                    if(AppUi::Widgets::SliderInt("Receiver",&channel,1,total)) {state.selectedTrace=channel-1;state.fitRequest=true;}
+                } else {
+                    int window[2]={state.firstTrace+1,state.showAllTraces?total:state.visibleTraces};
+                    ImGui::SetNextItemWidth(std::max(160.0f,ImGui::GetContentRegionAvail().x*.45f));
+                    if(AppUi::Widgets::InputInt2("First / visible traces",window)) {
+                        state.firstTrace=std::clamp(window[0]-1,0,total-1);state.visibleTraces=std::clamp(window[1],1,total-state.firstTrace);
+                        state.showAllTraces=false;state.fitRequest=true;
                     }
+                    ImGui::SameLine();if(AppUi::Widgets::SmallButton("Show all traces")) {state.showAllTraces=true;state.firstTrace=0;state.visibleTraces=total;state.fitRequest=true;}
                 }
-                if(compact) {if(state.viewMode==0) ImGui::SameLine();if(AppUi::Widgets::Button("Display Parameters")) ImGui::OpenPopup("Seis2D.Display");}
-                const bool displayControls=compact?ImGui::BeginPopup("Seis2D.Display"):AppUi::Widgets::CollapsingHeader("Display Parameters");
-                if(displayControls) {
-                    Seismic::drawRecordVisualControls(state.recordStyle,state.palette,state.heatmapRange,state.densityOpacity,
-                        state.showWiggle,state.showHeatmap,state.positiveFill,state.signedFill);
-                    if(compact) ImGui::EndPopup();
-                }
-                if(compact) {ImGui::SameLine();if(AppUi::Widgets::SmallButton("Reset View")) state.fitRequest=true;}
             }
             prepareViewerCache2D(state);
             if(!record.traces.empty()) {

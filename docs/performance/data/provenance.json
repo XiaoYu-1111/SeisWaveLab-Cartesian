@@ -1,0 +1,16 @@
+{
+  "note": "Working tree benchmark; source hashes describe the delivered reproducible harness. Optional FTZ experiment support was added after the main default-mode runs. Production solver source was unchanged during formal timings.",
+  "source_sha256": {
+    "benchmarks/ComputeBenchmark.cpp": "4437de7d3fd2b3b567c432d132cbba30054aae8a2c6464fcc6b32074ad048cda",
+    "src/Seis2D/CpuSolver2D.cpp": "2314ea4a4af8c5c0c16fdda4c0287e30b71a648af1b156dfa44f941583d215b1",
+    "src/Seis2D/SolverCells2D.h": "f81c93114db4fa5dbec52fad05505e86e6f9a5c7b8b272dabcb589b01e4e9bde",
+    "src/Seis2D/cuda/Cuda_Check.cu": "f9bb70ff69ee6fe7f40ba6d9a0c42f83e823e5223baca8914ea58fd028a019ed",
+    "src/Seis3D/CpuSolver3D.cpp": "6a943d68c589e25a3e2db8219ba0059f36e358d5e49466a65d7530a08cafc0ad",
+    "src/Seis3D/SolverCells3D.h": "e4a59cb3a46f6654bba63ad76be323c136aec3a70d32f4f9caf052e723c313d5",
+    "src/Seis3D/cuda/Cuda_Seis3D.cu": "f19493ebefbc2eed78b8ed3a0064b00a58e71dd881b17a0bd29b5d8a5ee87147",
+    "CMakeLists.txt": "95f3850feffdb79e37fdd3d74d5e578fd4251d44bdc4987127c80334af14f67c",
+    "benchmarks/RunSuite.ps1": "b8ca05c06df9c53782e70e6584f3b261a24b18b92bd7ae1ab81856f907e5ac46",
+    "benchmarks/RenderReport.py": "0c2f7e9c43f488e45e3775bf9dc35b92fff74bd2fc58de06e30d64231712a509"
+  },
+  "benchmark_exe_sha256": "4892aa5eb5be2e4d8eabc664f690c0336f5328e476d45d847d82f1fab52f7993"
+}

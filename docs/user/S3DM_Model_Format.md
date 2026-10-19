@@ -9,8 +9,8 @@
 文件保存规则与下列当前实现对应：
 
 - [`ModelIo3D.cpp`](../../src/Seis3D/ModelIo3D.cpp)：文件头、版本选择、大小检查、材料扫描与逐层导入/导出。
-- [`Cuda_Seis3D.cu`](../../cuda/Cuda_Seis3D.cu)：`uploadModelPlane3D`、`downloadModelPlane3D`，确定材料排列与 Lamé 参数转换。
-- [`Common3D.h`](../../include/Common3D.h)：当前程序的网格与内存约束。
+- [`Cuda_Seis3D.cu`](../../src/Seis3D/cuda/Cuda_Seis3D.cu)：`uploadModelPlane3D`、`downloadModelPlane3D`，确定材料排列与 Lamé 参数转换。
+- [`Common3D.h`](../../include/Seis3D/Common3D.h)：当前程序的网格与内存约束。
 
 配套读取代码：
 

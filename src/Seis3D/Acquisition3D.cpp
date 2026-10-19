@@ -185,6 +185,42 @@ void exportGather3D(Seis3D_State& s,const std::filesystem::path& directory) {
 }
 
 // Freeze observation geometry and allocate a bounded shot gather before resetting the wavefield.
+// Millisecond mode has its own output clock; stride mode retains accepted-step samples.
+int receiverSamplingStride3D(const Seis3D_State& s,double dt) {
+    if(!s.sampleIntervalInMs3D) return s.samplingStride3D;
+    receiverSamplingIntervalUs3D(s,dt);
+    if(!std::isfinite(dt)||dt<=0) throw std::invalid_argument("Invalid solver time step.");
+    return int((std::clamp)(std::round(s.requestedSampleIntervalMs3D/(dt*1000.0)),1.0,10000.0));
+}
+int receiverSamplingIntervalUs3D(const Seis3D_State& s,double dt) {
+    const double us=s.sampleIntervalInMs3D?s.requestedSampleIntervalMs3D*1000.0:dt*1e6*s.samplingStride3D;
+    if(!std::isfinite(us)||us<1||us>maxSegyIntervalUs3D)
+        throw std::invalid_argument("Sampling interval must be 0.001 .. 32.767 ms.");
+    return int(std::llround(us));
+}
+// Velocity states are staggered by half a solver step. Interpolate on the physical time axis.
+void appendGatherSamples3D(Seis3D_State& s) {
+    auto& g=s.gather3D;
+    if(!g.uniformSampling3D&&s.step3D%std::uint64_t(g.stride3D)!=0) return;
+    const auto values=sampleReceivers3D(s.gpu3D,s.context3D);
+    const std::size_t count=g.receivers3D.size()*3;
+    if(!g.uniformSampling3D) {
+        std::copy_n(values,count,g.samples3D.data()+std::size_t(g.sampleCount3D++)*count);
+        return;
+    }
+    const double now=(double(s.step3D)-0.5)*s.context3D.dt3D;
+    while(g.sampleCount3D<g.targetSamples3D) {
+        const double target=g.firstSampleTime3D+double(g.sampleCount3D)*g.sampleIntervalUs3D*1e-6;
+        if(target>now+1e-12) break;
+        const double alpha=(std::clamp)((target-g.previousSampleTime3D)/(now-g.previousSampleTime3D),0.0,1.0);
+        float* output=g.samples3D.data()+std::size_t(g.sampleCount3D)*count;
+        for(std::size_t i=0;i<count;++i) output[i]=float(g.previousReceiverSamples3D[i]*(1-alpha)+values[i]*alpha);
+        ++g.sampleCount3D;
+    }
+    g.previousReceiverSamples3D.assign(values,values+count);
+    g.previousSampleTime3D=now;
+}
+
 void startGather3D(Seis3D_State& s,int shotId) {
     const auto& c=s.context3D; const auto& source=s.source3D;
     if(source.x3D<1||source.x3D>=c.nx3D-1||source.y3D<1||source.y3D>=c.ny3D-1
@@ -192,13 +228,14 @@ void startGather3D(Seis3D_State& s,int shotId) {
         throw std::runtime_error("Place the source inside the model, at depth >=2, before capture.");
     for(float direction:source.direction3D) if(!std::isfinite(direction)) throw std::runtime_error("Invalid source direction.");
     configureReceivers3D(s);
+    s.samplingStride3D=receiverSamplingStride3D(s,s.context3D.dt3D);
     if(s.targetSamples3D<1||s.targetSamples3D>maxSegySamples3D||s.samplingStride3D<1||s.samplingStride3D>10000)
         throw std::runtime_error("Gather sample count must be 1..32767 with stride 1..10000.");
     for(int a=0;a<2;++a) {
         if(!std::isfinite(s.survey3D.cmpBinSize3D[a])||s.survey3D.cmpBinSize3D[a]<=0
             ||!std::isfinite(s.survey3D.worldOrigin3D[a])) throw std::runtime_error("Invalid CMP bin size or world origin.");
     }
-    const auto interval=std::llround(double(s.context3D.dt3D)*1e6)*s.samplingStride3D;
+    const auto interval=receiverSamplingIntervalUs3D(s,s.context3D.dt3D);
     if(interval>maxSegyIntervalUs3D) throw std::runtime_error("SEG-Y rev1 sample interval must not exceed 32767 us.");
     const std::size_t values=std::size_t(s.targetSamples3D)*s.receivers3D.size()*3;
     if(values*sizeof(float)>std::size_t(512)*1024*1024) throw std::runtime_error("Shot gather exceeds the 512 MiB CPU budget.");
@@ -206,7 +243,10 @@ void startGather3D(Seis3D_State& s,int shotId) {
     Gather3D gather; gather.context3D=s.context3D; gather.source3D=s.source3D; gather.survey3D=s.survey3D;
     gather.receivers3D=s.receivers3D; gather.targetSamples3D=s.targetSamples3D; gather.stride3D=s.samplingStride3D;
     gather.shotId3D=shotId; gather.sampleIntervalUs3D=int(interval);
-    gather.firstSampleTime3D=(gather.stride3D-0.5)*s.context3D.dt3D;
+    gather.uniformSampling3D=s.sampleIntervalInMs3D;
+    gather.firstSampleTime3D=gather.uniformSampling3D?0.0:(gather.stride3D-0.5)*s.context3D.dt3D;
+    gather.previousSampleTime3D=-0.5*s.context3D.dt3D;
+    if(gather.uniformSampling3D) gather.previousReceiverSamples3D.assign(gather.receivers3D.size()*3,0.0f);
     double maximumCoordinate=0;
     const double h=gather.context3D.spacing3D;
     const double sx=gather.survey3D.worldOrigin3D[0]+gather.source3D.x3D*h;

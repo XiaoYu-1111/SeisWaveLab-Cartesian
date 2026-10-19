@@ -1,4 +1,5 @@
 #include "Cuda_Check.cuh"
+#include "ExternalDomain2D.h"
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -204,12 +205,93 @@ static void checkPmlReflection(int scheme) {
     require(wallError > 0.0 && std::isfinite(ratio) && ratio < 0.5, "PML does not sufficiently reduce this homogeneous-case reflected error");
 }
 
+static void checkExternalAbsorber2D() {
+    for(int scheme=1;scheme<=3;++scheme) {
+        auto physical=makeContext(scheme,scheme==3,48);
+        physical.externalPml=true;physical.src_z_idx=2;physical.src_idx=2*physical.NX+2;
+        physical.rcv_grid_idx={0,physical.NX-1,(physical.NZ-1)*physical.NX,physical.src_idx+1};physical.num_rcv=4;
+        auto expanded=extendedContext2D(physical);
+        const int pad=physical.npml;
+        require(physical.NX==48&&expanded.NX==80,"Absorber consumed physical cells");
+        for(int z=0;z<physical.NZ;++z) for(int x=0;x<physical.NX;++x) {
+            const int k=(z+pad)*expanded.NX+x+pad;
+            require(expanded.rho[k]==physical.rho[z*physical.NX+x],"Physical material changed during extension");
+            require(expanded.dx[x+pad]==0&&expanded.dz[z+pad]==0,"Damping entered physical domain");
+        }
+        DeviceSimulation a(physical),b(expanded);
+        updateGpuReceivers(a.data,physical.rcv_grid_idx);
+        std::vector<int> indices(4);CUDA_CHECK(cudaMemcpy(indices.data(),a.data.d_rcv_grid_idx,4*sizeof(int),cudaMemcpyDeviceToHost));
+        require(indices==expanded.rcv_grid_idx,"Physical receiver indices were not translated");
+        for(int n=0;n<40;++n) {runGpuSimulationStep(a.data,n,physical,-1);runGpuSimulationStep(b.data,n,expanded,-1);}
+        std::vector<float> model(physical.total_grid),full(expanded.total_grid);
+        copyWavefieldToHost(a.data,model.data());copyWavefieldToHost(b.data,full.data());
+        float peak=0;for(int z=0;z<physical.NZ;++z) for(int x=0;x<physical.NX;++x) {
+            require(std::abs(model[z*physical.NX+x]-full[(z+pad)*expanded.NX+x+pad])<1e-8f,"External-domain source or cropped wavefield differs from reference");
+            peak=std::max(peak,std::abs(model[z*physical.NX+x]));
+        }
+        require(peak>0,"Near-edge physical source was not injected");
+        float4* display=nullptr;CUDA_CHECK(cudaMalloc(&display,size_t(a.data.total_grid)*sizeof(float4)));
+        const float range=generateScientificWavefield2D(a.data,display,20,2,true);
+        std::vector<float4> pixels(a.data.total_grid);CUDA_CHECK(cudaMemcpy(pixels.data(),display,pixels.size()*sizeof(float4),cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaFree(display));
+        require(std::abs(range-peak)<=peak*1e-5f,"Automatic display scale includes external ghost/PML cells or uses quantized samples");
+        for(int z=0;z<physical.NZ;++z) for(int x=0;x<physical.NX;++x) {
+            const auto pixel=pixels[(z+pad)*expanded.NX+x+pad];
+            require(std::abs(pixel.y-model[z*physical.NX+x]/range)<2e-5f,"Float display transport changed normalized amplitude");
+        }
+        std::vector<float> unchanged(model.size());copyWavefieldToHost(a.data,unchanged.data());
+        require(unchanged==model,"Display normalization modified physical amplitudes");
+        GPUSource source{};source.idx=physical.src_idx;source.amp=1;source.f_peak=100;source.t=.005f;
+        uploadActiveSources2D(a.data,{source});GPUSource mapped{};
+        CUDA_CHECK(cudaMemcpy(&mapped,a.data.d_active_sources,sizeof(mapped),cudaMemcpyDeviceToHost));
+        require(mapped.idx==expanded.src_idx,"Continuous source index not translated");
+        ReplayManager replay;replay.frames.push_back(model);replay.uploadFrameToGpu(0,a.data);
+        std::vector<float> replayed(model.size());copyWavefieldToHost(a.data,replayed.data());
+        require(replayed==model,"Physical-domain replay failed to restore the padded GPU fields");
+    }
+    std::cout<<"PASS: external 2D absorber, untouched physical grid, edge sources, receiver translation and physical replay.\n";
+}
+
+static void checkCpuBackend2D(bool compareCuda) {
+ for(int scheme=1;scheme<=3;++scheme) {
+  auto ctx=makeContext(scheme,scheme==3,48);ctx.externalPml=true;
+  GPUSimData cpu,cuda,serial;
+  struct Cleanup {GPUSimData& a;GPUSimData& b;GPUSimData& c;~Cleanup(){releaseGpuSimulation(a);releaseGpuSimulation(b);releaseGpuSimulation(c);}} cleanup{cpu,cuda,serial};
+  initializeGpuSimulation(cpu,ctx,true);cpu.workers=4;
+  initializeGpuSimulation(serial,ctx,true);serial.workers=1;
+  if(compareCuda) initializeGpuSimulation(cuda,ctx);
+  for(int n=0;n<80;++n) {
+   runGpuSimulationStep(cpu,n,ctx,-1);runGpuSimulationStep(serial,n,ctx,-1);
+   if(compareCuda) runGpuSimulationStep(cuda,n,ctx,-1);
+  }
+  std::vector<float> a(ctx.total_grid),b(a.size()),c(a.size());copyWavefieldToHost(cpu,a.data());copyWavefieldToHost(serial,c.data());
+  require(a==c,"CPU parallel wavefield differs from serial reference");
+  double norm=0,diff=0;for(float value:a) {require(std::isfinite(value),"CPU non-finite wavefield");norm+=double(value)*value;}
+  require(norm>0,"CPU source was not injected");
+  if(compareCuda) {
+   copyWavefieldToHost(cuda,b.data());for(size_t k=0;k<a.size();++k) diff+=std::pow(double(a[k])-b[k],2);
+   require(std::sqrt(diff/norm)<2e-4,"CPU/CUDA wavefield mismatch");
+   float ax,az,bx,bz;recordReceiverStepOnGpu(cpu,1,&ax,&az);recordReceiverStepOnGpu(cuda,1,&bx,&bz);
+   require(std::abs(az-bz)<1e-4f*std::sqrt(norm),"CPU/CUDA receiver mismatch");
+  }
+  std::vector<float4> pixels(cpu.total_grid);generateScientificWavefield2D(cpu,pixels.data(),0,2,true);
+  for(auto pixel:pixels) require(pixel.y==0,"Zero display gain is not zero on CPU");
+  std::vector<float> unchanged(a.size());copyWavefieldToHost(cpu,unchanged.data());require(a==unchanged,"CPU display modified wavefield");
+  ReplayManager replay;replay.frames.push_back(a);replay.uploadFrameToGpu(0,cpu);copyWavefieldToHost(cpu,b.data());require(a==b,"CPU replay roundtrip failed");
+  updateGpuReceivers(cpu,{});require(cpu.receiverCapacity==0,"CPU receiver cleanup failed");
+ }
+ std::cout<<"PASS: CPU serial/OpenMP 1/2/3, external PML, sources, receiver gather, zero display gain and replay"<<(compareCuda?", CUDA parity":"")<<".\n";
+}
+
 // 无 CUDA 设备时明确跳过 GPU 算例，不能把未执行的检查记为通过。
 int main() {
     try {
         checkPolynomialMoments();
         int deviceCount = 0;
-        if (cudaGetDeviceCount(&deviceCount) != cudaSuccess || deviceCount == 0) return 77;
+        const bool cudaAvailable=cudaGetDeviceCount(&deviceCount)==cudaSuccess&&deviceCount>0;
+        checkCpuBackend2D(cudaAvailable);
+        if (!cudaAvailable) return 77;
+        checkExternalAbsorber2D();
         checkCubicStressGradient(1, 1000.0f, false);
         checkCubicStressGradient(2, 1000.0f, false);
         checkCubicStressGradient(2, 100.0f, false);

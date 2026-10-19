@@ -1,6 +1,6 @@
 # SeisWave Lab 文档导航
 
-更新日期：2026-10-18。当前项目采用笛卡尔规则网格、平面地表，二维和三维工作区独立；曲网格项目分别维护。本目录在内层 Git 仓库内，可和源码一起提交。
+更新日期：2026-10-19。当前项目采用笛卡尔规则网格、平面地表，二维和三维工作区独立；曲网格项目分别维护。本目录在内层 Git 仓库内，可和源码一起提交。当前文档维护源位于本仓库；外层 `out/documentation`、`out/blog` 和 Word 文件是生成版本，日期与内容以各自生成记录为准。
 
 ## 阅读入口
 
@@ -16,6 +16,11 @@
 | Hexo 同名资源、NexT 与 MathJax SVG | [Hexo 公式设置](build/HEXO_MATH.md) |
 | Git 仓库、文档分类与生成产物 | [文件组织](development/REPOSITORY_LAYOUT.md) |
 | Cartesian 项目名、目录迁移与 VS 重新打开 | [项目命名](development/PROJECT_NAMING.md) |
+| Seis2D / Seis3D / SeisCommon 源码分类、参数与计算链路 | [代码架构](development/CODE_ARCHITECTURE.md)、[逐文件迁移清单](development/SOURCE_MIGRATION_2026-10-19.json) |
+| CPU/OpenMP、CUDA 回退及后端回归验证 | [后端验证](development/BACKEND_VALIDATION.md) |
+| 二维物理模型外置吸收域、B 键显示与画布交互 | [外置边界说明](development/EXTERNAL_DOMAIN_2D.md) |
+| 与曲网格软件统一的系列主题 | [主题规范](development/THEME_SERIES.md) |
+| 32 线程二维/三维六档模型 CPU/CUDA 实测 | [性能报告](performance/CPU_CUDA_REPORT.md)、[原始对比数据](performance/data/comparison.csv)、[复现步骤](../benchmarks/README.md) |
 | CUDA、CPML、自由表面、预算与 SEG-Y | [三维实现](development/SEIS3D_IMPLEMENTATION.md) |
 | 二维文件职责、生命周期与记录查看器 | [二维整理](development/SEIS2D_REFACTOR_AND_VIEWER.md) |
 | 本轮重新截图及发布检查 | [2026-10-18 更新记录](reviews/DOCUMENTATION_REFRESH_2026_10_18.md) |
@@ -36,8 +41,8 @@
 先从外层工作区运行：
 
 ```powershell
-& ./out/bin/RelWithDebInfo/SeisWaveLab.exe --capture-seis3d-workflow
-& ./out/bin/RelWithDebInfo/SeisWaveLab.exe --capture-seis2d-workflow
+& ./out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe --capture-seis3d-workflow
+& ./out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe --capture-seis2d-workflow
 ```
 
 再从内层 Git 仓库运行：

@@ -1,4 +1,5 @@
 #include <windows.h>
+101 ICON "@CMAKE_CURRENT_SOURCE_DIR@/resources/icons/SeisWaveLab.ico"
 
 // Version fields are configured by CMake and embedded into the built executable.
 1 VERSIONINFO
@@ -21,9 +22,9 @@ BEGIN
             VALUE "CompanyName", "XIAO YU\0"
             VALUE "FileDescription", "SeisWave Lab - Cartesian Elastic Wave Simulation\0"
             VALUE "FileVersion", "@PROJECT_VERSION@.0\0"
-            VALUE "InternalName", "SeisWaveLab\0"
+            VALUE "InternalName", "SeisWaveLab_Cartesian\0"
             VALUE "LegalCopyright", "XIAO YU / MIT License\0"
-            VALUE "OriginalFilename", "SeisWaveLab.exe\0"
+            VALUE "OriginalFilename", "SeisWaveLab_Cartesian.exe\0"
             VALUE "ProductName", "SeisWave Lab\0"
             VALUE "ProductVersion", "@PROJECT_VERSION@\0"
         END

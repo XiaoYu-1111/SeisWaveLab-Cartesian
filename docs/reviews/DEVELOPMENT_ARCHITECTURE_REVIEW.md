@@ -19,7 +19,7 @@ This is a workable single-process 2D workflow. The simulation state, UI state, f
 
 ### High priority
 
-- `CUDA_CHECK` in `CUDA_Kernels/Cuda_Check.cuh` prints an error and continues. Allocation or copy failures can therefore leave null/invalid device buffers that later kernels still use. Change CUDA-facing functions to return a structured status (or throw and catch at a deliberate application boundary), and check kernel launch errors after launches.
+- `CUDA_CHECK` in `include/Seis2D/Cuda_Check.cuh` prints an error and continues. Allocation or copy failures can therefore leave null/invalid device buffers that later kernels still use. Change CUDA-facing functions to return a structured status (or throw and catch at a deliberate application boundary), and check kernel launch errors after launches.
 - `SimulationContext` and `GPUSimData` represent a 2D grid with `NX`, `NZ`, `total_grid`, and `i * NX + j` indexing. `total_grid` is an `int`. A 3D grid needs 64-bit size calculations and explicit `x/y/z` strides before dimensions grow.
 - `recordReceiverStepOnGpu` allocates two host vectors and performs two blocking device-to-host copies for every sampled time step. Reuse host buffers and batch/pin transfers or use an asynchronous ring buffer before scaling receiver count and sample rate.
 

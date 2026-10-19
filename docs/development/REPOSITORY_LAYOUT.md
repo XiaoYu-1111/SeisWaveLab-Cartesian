@@ -1,6 +1,6 @@
 # 文件分类与仓库维护
 
-更新日期：2026-10-18。当前项目专注笛卡尔网格二维／三维模拟。
+更新日期：2026-10-19。当前项目专注笛卡尔网格二维／三维模拟。
 
 当前外层工作区名为 `SeisWaveLab_Cartesian_Workspace`，内层仓库为 `SeisWaveLab_Cartesian`。CMake 项目使用后者，主程序目标为 `SeisWaveLab`。重命名、旧缓存归档及重新打开 VS 的约定见[项目命名说明](PROJECT_NAMING.md)。
 
@@ -10,22 +10,24 @@ Git 仓库是内层 `SeisWaveLab_Cartesian`；父目录包含本机外层 CMake 
 
 | 目录 | 职责 | 保留方式 |
 | --- | --- | --- |
-| `Main_cpp`、`Main_header` | 应用入口、主页、双语、共享显示 | 源码 |
+| `src/SeisCommon`、`include/SeisCommon` | 应用入口、主页、双语、共享显示与 SEG-Y | 源码 |
 | `src/Seis2D`、`src/Seis3D` | 各维度会话、UI、采集与 I/O | 源码 |
-| `include`、`cuda`、`CUDA_Kernels` | 物理结构与 CUDA 算法 | 源码 |
+| `include/Seis2D`、`include/Seis3D`、各模块 `cuda` 子目录 | 物理结构、对外接口与 CUDA 算法 | 源码 |
 | `shaders`、`resources`、`resource_CUDA_V1` | 着色器及原始运行资源 | 源资源 |
 | `ImGui_docking`、`ImPlot` 等 | 现有第三方依赖 | 保留许可，不随意移动 |
 | `Pro_Model`、`Pro_Picture` | 旧版模型／图片资源 | 先核对引用，不能按名称认定冗余 |
 | `docs/PROJECT_MANUAL.md` | 理论与流程的统一维护源 | 主要文档 |
 | `docs/user` | 各维度操作、格式、图集 | 分类文档 |
 | `docs/build`、`development` | 编译、Hexo、实现与本页 | 分类文档 |
+| `docs/performance` | 最新 CPU/CUDA 报告、图表、原始逐轮数据与运行环境 | 正式结果，随仓库维护 |
+| `benchmarks` | 复用生产求解器的测试入口、运行与报告脚本 | 源工具；运行输出进入外层 `out` |
 | `docs/reviews`、`publication` | 历史审查与论文准备 | 保留其时间和证据范围 |
 | `docs/history` | 旧说明 | 历史资料 |
 | `docs/assets/seis3d/full`、`docs/assets/seis2d` | 本次完整 PNG 与摘要 | 当前发表图片 |
 | `docs/assets/history/seis3d` | 旧局部截图和旧样式 | 历史图片；旧文档链接同步更新 |
 | `docs/tools`、`docs/examples` | 发布工具与独立读数据示例 | 源工具 |
 
-此次整理不重构数值源文件，不移动 SDK／第三方资源，不更改既有用户代码；历史审查保留原日期。
+2026-10-19 按 Seis2D / Seis3D / SeisCommon 重组源码与头文件，新增 CPU/OpenMP 计算路径；第三方依赖与资源保留。详见 [代码架构](CODE_ARCHITECTURE.md)，历史审查保留原日期。
 
 ## 2. 统一外层 out
 
@@ -34,11 +36,12 @@ Git 仓库是内层 `SeisWaveLab_Cartesian`；父目录包含本机外层 CMake 
 | 外层 out 子目录 | 用途 |
 | --- | --- |
 | `build`、`bin`、`lib` | CMake 缓存、程序、运行资源及库 |
+| `benchmarks/cpu-cuda-2026-10-19` | 本机性能测试输出；正式结果同步到仓库 `docs/performance` |
 | `screenshots/seis3d-full` | 独立三维截图和本轮实际采集数据 |
 | `documentation/SeisWaveLab` | 可离线阅读的图文包 |
 | `blog/SeisWaveLab` | Hexo source 树、发布说明与 ZIP |
-| `docs`、`docs-work` | 既有 Word 文件与排版中间数据 |
-| `archive`、`refactor-backups` | 旧产物及人工备份 |
+| `docs` | 当前 Word 文件（旧渲染中间目录已清理） |
+| 旧产物及人工备份 | 2026-10-19 已按最新版保留策略清理 |
 | `checks`、`tools`、`videos` | 检查输出、本机脚本及视频 |
 
 用户采集数据、录像、备份及旧项目暂存不作自动删除；先确认用途再归档。`.vs` 是 IDE 缓存，不应提交；VS 使用期间也不为目录整洁而强删。
@@ -54,3 +57,13 @@ python -B docs/tools/package_documentation.py
 ```
 
 打包仅包含白名单文档、当前 41 张完整图片、示例及来源说明，不把 EXE、PDB、模型体、SEG-Y、旧裁切图或渲染缓存加入博客 ZIP。检查结果记录于发布包 `package-validation.json`。本机输出不加入 Git，不自动提交或推送。
+
+## 当前资源与输出
+
+正式图标：`resources/icons`；窗口 PNG 部署源：`resource_CUDA_V1/images/icon_Seis.png`。早期图标草案及迁移历史脚本已清理。真实截图统一写入 `out/screenshots/application/2d`、`3d`，回归截图位于 `out/screenshots/regression`。
+
+本机构建脚本统一为 `out/tools/Build-Workspace.cmd`（程序）与 `out/tools/Build-Workspace.cmd checks`（含三维回归目标）；通用构建命令见构建说明。
+
+## 最新版本保留策略
+
+2026-10-19 删除外层历史备份、旧 Debug 产物、迁移暂存、文档渲染中间目录和上一代发布输出。内层 Git 工作树保留当前完整源码、正式资源、文档及第三方依赖；`.git` 未改写，文档引用的历史理论和图片仍作为参考资料保留。主程序仅输出为 `SeisWaveLab_Cartesian.exe`，CMake 构建目标仍为 `SeisWaveLab`。

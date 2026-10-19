@@ -11,8 +11,8 @@
 | 内层 Git 仓库目录 | `SeisWaveLab_Cartesian` |
 | CMake 项目 | `SeisWaveLab_Cartesian` |
 | 主程序构建目标 | `SeisWaveLab` |
-| 主入口源文件 | `Main_cpp/SeisWaveLab.cpp` |
-| 程序 | `SeisWaveLab.exe` |
+| 主入口源文件 | `src/SeisCommon/SeisWaveLab.cpp` |
+| 程序 | `SeisWaveLab_Cartesian.exe` |
 | 窗口标题 | SeisWave Lab — Cartesian Elastic Wave Simulation \| v2.0.0 |
 | 物理模块 | `Seis2D`、`Seis3D` |
 
@@ -33,7 +33,7 @@ CMake_pro_CUDA/
 
 旧 CMake 缓存写有旧源码绝对路径，迁移时归档到 `out/archive/project-rename-2026-10-18/build`；旧 `.vs` 缓存也归入同处的专用目录。在新目录重新配置生成缓存，不通过文本替换旧缓存续用。
 
-外层发布配置为 RelWithDebInfo，构建目录 `out/build/x64-Release`，程序 `out/bin/RelWithDebInfo/SeisWaveLab.exe`；Debug 同理为 `out/build/x64-Debug` 与 `out/bin/Debug`。独立内层构建继续使用外层 `out/build/standalone/<配置>`。
+外层发布配置为 RelWithDebInfo，构建目录 `out/build/x64-Release`，程序 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`；Debug 同理为 `out/build/x64-Debug` 与 `out/bin/Debug`。独立内层构建继续使用外层 `out/build/standalone/<配置>`。
 
 ```powershell
 cmake --build out/build/x64-Release --target SeisWaveLab --parallel 4

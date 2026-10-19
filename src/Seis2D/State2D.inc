@@ -3,8 +3,8 @@ static SimulationContext simulationContext2D;
 static GPUSimData        gpuData2D;
 static bool              initialized2D = false;
 
-inline bool resetSimRequested2D = false; 
-inline bool resetViewportRequested2D = false; 
+inline bool resetSimRequested2D = false;
+inline bool resetViewportRequested2D = false;
 
 inline int   gridWidth2D = 1000;
 inline int   gridHeight2D = 500;
@@ -19,10 +19,10 @@ inline int   tempPml2D = 50;
 
 inline int   currentIt2D = 0;
 inline float elapsedRunWallTime2D = 0.0f;
-inline float colorScale2D = 20.0f;
+inline float colorScale2D = 100.0f;
 inline int   showComponent2D = 2;     // 0: velocity magnitude, 1: Vx, 2: Vz.
-inline int   waveStyle2D = 4;     
-inline int   modelStyle2D = 1; 
+inline int   waveStyle2D = 1;
+inline int   modelStyle2D = 4;
 inline int   stepsPerFrame2D = 20;
 inline bool  showHUD2D = true;
 inline bool  showMonitorPar2D = false;
@@ -30,15 +30,15 @@ inline bool  showMonitorPar2D = false;
 inline int   editSrcX2D = 500;
 inline int   editSrcZ2D = 125;
 inline float editAngle2D = 0.0f;
-inline float editAmp2D = 1.0f; 
-inline int   editSourceType2D = 0;    
+inline float editAmp2D = 1.0f;
+inline int   editSourceType2D = 0;
 
 inline float      viewZoom2D = 1.0f;
 inline ImVec2     viewOffset2D = { 0.0f, 0.0f };
 inline bool       firstAlignNeeded2D = false;
 inline Parameters parameters2D;
 
-inline bool                  multiSourceMode2D = false;
+inline bool                  multiSourceMode2D = true;
 inline std::vector<GPUSource> activeSources2D;
 inline bool                  infiniteMode2D = false;
 
@@ -53,17 +53,17 @@ inline ImVec4 uiAccent2D = ImVec4(0.5f, 1.0f, 0.5f, 1.0f);
 
 inline bool isMouseInside2D = false;
 
-inline int currentScene2D = SCENE_TWO_LAYER; 
+inline int currentScene2D = SCENE_TWO_LAYER;
 
-inline float editVp2D = 2000.0f; 
-inline float editVs2D = 1400.0f; 
-inline float editDensity2D = 2000.0f; 
+inline float editVp2D = 2000.0f;
+inline float editVs2D = 1400.0f;
+inline float editDensity2D = 2000.0f;
 
-inline GLuint modelTex2D = 0; 
+inline GLuint modelTex2D = 0;
 
-inline bool  showGrid2D = true;  
-inline float uiGridSpacing2D = 10.0f; 
-inline float uiGridOpacity2D = 1.0f;  
+inline bool  showGrid2D = true;
+inline float uiGridSpacing2D = 10.0f;
+inline float uiGridOpacity2D = 1.0f;
 
 inline static bool        showSuccessPopup2D = false;
 inline static bool        showErrorPopup2D = false;
@@ -75,14 +75,14 @@ inline float cachedMaxVs2D = 0.0f;
 inline float cachedMinVs2D = 0.0f;
 inline float cachedMaxRho2D = 0.0f;
 inline float cachedMinRho2D = 0.0f;
-inline float cachedVramMb2D = 0.0f; 
+inline float cachedVramMb2D = 0.0f;
 
 inline bool convertRho2D=true;
 
-inline float editSegyDx2D = 1.0f; 
-inline float exportTargetDx2D = 1.0f; 
+inline float editSegyDx2D = 1.0f;
+inline float exportTargetDx2D = 1.0f;
 
-inline ReplayManager replay2D; 
+inline ReplayManager replay2D;
 
 struct ReceiverPosition2D {
     int x;
@@ -90,18 +90,18 @@ struct ReceiverPosition2D {
 };
 
 struct AcquisitionState2D {
-    float samplingRateHz = 10000.0f; 
-    float totalDurationSec = 0.5f;    
-    int   numChannels = 100;     
-    int   startX = 100;     
-    int   endX = 900;     
-    int   receiverDepth = 150;     
+    float samplingRateHz = 10000.0f;
+    float totalDurationSec = 0.5f;
+    int   numChannels = 100;
+    int   startX = 100;
+    int   endX = 900;
+    int   receiverDepth = 150;
 
-    std::vector<ReceiverPosition2D> receivers; 
-    bool isShowarray = true;            
-    bool isRecording = false;           
+    std::vector<ReceiverPosition2D> receivers;
+    bool isShowarray = true;
+    bool isRecording = false;
 
-    float totalTimer = 0.0f;      
+    float totalTimer = 0.0f;
     int   currentFileIndex = 1;
     int samplingStepStride = 1;
     int capturedSamples = 0;
@@ -133,9 +133,10 @@ struct AcquisitionState2D {
         auto frozenReceivers=receivers;
         const int sourceX=simulationContext2D.src_idx%simulationContext2D.NX;
         const int requestedZ=simulationContext2D.src_idx/simulationContext2D.NX;
-        const int sourceZ=simulationContext2D.flag_type==3&&simulationContext2D.upFlag?std::max(requestedZ,simulationContext2D.npml+1):requestedZ;
+        const int sourceZ=simulationContext2D.flag_type==3&&simulationContext2D.upFlag?std::max(requestedZ,1):requestedZ;
         candidate.nx=simulationContext2D.NX;candidate.nz=simulationContext2D.NZ;
         candidate.spacing=simulationContext2D.h;candidate.solverDt=simulationContext2D.dt;
+        candidate.externalPml=simulationContext2D.externalPml;
         candidate.npml=simulationContext2D.npml;candidate.formulation=simulationContext2D.flag_type;
         candidate.freeSurface=simulationContext2D.flag_type==3&&simulationContext2D.upFlag;
         candidate.sourceX=sourceX;candidate.sourceZ=sourceZ;
@@ -166,11 +167,11 @@ enum ShotSequenceState2D {
 
 struct ShotSequence2D {
     ShotSequenceState2D state = AUTO_ACQ_IDLE;
-    int          startX = 100;       
-    int          shotDepthZ = 60;        
-    int          shotIntervalX = 60;        
-    int          totalShots = 10;        
-    int          currentShotIdx = 0;         
+    int          startX = 100;
+    int          shotDepthZ = 60;
+    int          shotIntervalX = 60;
+    int          totalShots = 10;
+    int          currentShotIdx = 0;
 
     // Prepare the first shot and extend the run length to cover its requested recording duration.
     void start() {
@@ -187,14 +188,14 @@ struct ShotSequence2D {
         state = AUTO_ACQ_RUNNING;
         if (required_steps > 0) {
             simulationContext2D.nt = required_steps;
-            tempNt2D = required_steps; 
+            tempNt2D = required_steps;
 
             generateRickerWavelet(simulationContext2D.wavelet, simulationContext2D.nt, simulationContext2D.dt, sourceFrequency2D, sourceDelay2D);
         }
     }
 };
 
-inline ShotSequence2D autoAcquisition2D; 
+inline ShotSequence2D autoAcquisition2D;
 
 typedef int nvmlReturn_t;
 #define NVML_SUCCESS 0
@@ -235,9 +236,9 @@ struct DeviceMonitor2D {
     void load() {
         if (handle) return;
 #ifdef _WIN32
-        handle = LoadLibraryA("nvml.dll"); 
+        handle = LoadLibraryA("nvml.dll");
 #else
-        handle = dlopen("libnvidia-ml.so", RTLD_LAZY); 
+        handle = dlopen("libnvidia-ml.so", RTLD_LAZY);
 #endif
         if (!handle) return;
 
@@ -286,3 +287,39 @@ struct DeviceMonitor2D {
 inline DeviceMonitor2D deviceMonitor2D;
 
 ViewerState2D recordViewer2D;
+
+inline bool showBoundary2D=false;
+inline int domainPad2D() {return simulationContext2D.externalPml?std::max(simulationContext2D.npml,kStencilRadius):0;}
+inline int viewWidth2D() {return simulationContext2D.NX-1+(showBoundary2D?2*domainPad2D():0);}
+inline bool freeTop2D() {return simulationContext2D.flag_type==3&&simulationContext2D.upFlag;}
+inline int viewHeight2D() {return simulationContext2D.NZ-1+(showBoundary2D?(freeTop2D()?domainPad2D():2*domainPad2D()):0);}
+inline int viewOriginZ2D() {return showBoundary2D&&!freeTop2D()?-domainPad2D():0;}
+inline int viewOrigin2D() {return showBoundary2D?-domainPad2D():0;}
+inline int selectedBackend2D=0; // Auto, CPU/OpenMP, CUDA.
+inline int workerCount2D=std::max(1,std::min(8,cpuWorkerLimit2D()));
+inline double stepMilliseconds2D=0,stepsPerSecond2D=0;
+inline std::string backendStatus2D;
+inline void initializeExternalSimulation2D(GPUSimData& gpu,SimulationContext& context) {
+    context.externalPml=true;
+    const bool available=getCudaDeviceInfo().success&&std::getenv("SEISWAVE_FORCE_CPU")==nullptr;
+    const bool cpu=selectedBackend2D==1||!available;
+    backendStatus2D=!available?"CUDA unavailable: CPU / OpenMP fallback":"";
+    try {::initializeGpuSimulation(gpu,context,cpu);}
+    catch(const std::exception& e) {
+        if(cpu) throw;
+        backendStatus2D=std::string("CUDA initialization failed; CPU fallback: ")+e.what();
+        ::initializeGpuSimulation(gpu,context,true);
+    }
+    gpu.workers=workerCount2D;
+}
+
+inline bool showWave2D=true,showMaterial2D=true;
+inline float waveOpacity2D=1.0f;
+
+inline bool panActive2D=false,showModelMesh2D=true;
+inline float meshOpacity2D=.15f;
+
+inline double lastInjectTime2D=-1.0;
+
+inline bool automaticWaveScale2D=true;
+inline float currentWaveReference2D=1.0f;

@@ -36,14 +36,21 @@ if(NOT TARGET CUDA::cudart OR NOT TARGET CUDA::cuda_driver)
 endif()
 option(SEISSIM_BUILD_SOLVER_TESTS "Build 2D record and CUDA solver regression checks" OFF)
 enable_testing()
+find_package(OpenMP REQUIRED COMPONENTS CXX)
+if(NOT TARGET OpenMP::OpenMP_CXX)
+    set(OpenMP_FIND_COMPONENTS CXX)
+    include("${CMAKE_ROOT}/Modules/FindOpenMP.cmake")
+endif()
 
 set(TARGET_NAME "SeisWaveLab")
 
 # Public product metadata has one version source; generated files stay in the outer build tree.
-configure_file("Main_header/AppInfo.h.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/AppInfo.h" @ONLY)
+configure_file("include/SeisCommon/AppInfo.h.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/AppInfo.h" @ONLY)
 if(WIN32)
     enable_language(RC)
     configure_file("resources/SeisWaveLab.rc.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/SeisWaveLab.rc" @ONLY)
+    set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/generated/SeisWaveLab.rc" PROPERTIES
+        OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/SeisWaveLab.ico")
 endif()
 
 # ==========================================
@@ -70,11 +77,11 @@ file(GLOB IMGUIDocking_SRCS
 )
 
 # CUDA 核函数文件
-file(GLOB CUDA_USER_SOURCES "CUDA_Kernels/Cuda_Check.cu")
-file(GLOB CUDA_USER_HEADERS "CUDA_Kernels/Cuda_Check.cuh")
+file(GLOB CUDA_USER_SOURCES "src/Seis2D/cuda/Cuda_Check.cu")
+file(GLOB CUDA_USER_HEADERS "include/Seis2D/Cuda_Check.cuh")
 
 # 项目主源文件
-set(PROJECT_SRCS "Main_cpp/SeisWaveLab.cpp" "Main_cpp/DocumentationCapture3D.h")
+set(PROJECT_SRCS "src/SeisCommon/SeisWaveLab.cpp" "src/SeisCommon/DocumentationCapture3D.h")
 
 # STB Image (仅头文件)
 set(STB_SRCS "stb_image/stb_image_write.h")
@@ -85,20 +92,20 @@ set(STB_SRCS "stb_image/stb_image_write.h")
 add_executable(${TARGET_NAME}
     ${IMGUIDocking_SRCS}
     ${STB_SRCS}
-    ${PROJECT_SRCS} 
+    ${PROJECT_SRCS}
     ${CUDA_USER_SOURCES}
     ${CUDA_USER_HEADERS}
-    "Main_header/Common.h" "Main_header/AppShortcuts.h"
-    "Main_header/ResourcePaths.h"
-    "Main_cpp/ResourcePaths.cpp"
-    "Main_cpp/SeismicIO.cpp"
-    "Main_header/TraceProcessing.h" "Main_header/SeismicViewer2D.h" "Main_header/WavePalettes.h" "Main_header/RecordVisuals.h"
-    "src/Seis2D/Simulation2D.cpp" "src/Seis2D/RecordData2D.cpp" "src/Seis2D/RecordViewer2D.cpp" "src/Seis2D/ShotExport2D.cpp" "Main_header/ShotExport2D.h"
+    "include/SeisCommon/Common.h" "include/SeisCommon/AppShortcuts.h"
+    "include/SeisCommon/ResourcePaths.h"
+    "src/SeisCommon/ResourcePaths.cpp"
+    "src/SeisCommon/SeismicIO.cpp"
+    "include/SeisCommon/TraceProcessing.h" "include/Seis2D/SeismicViewer2D.h" "include/SeisCommon/WavePalettes.h" "include/SeisCommon/RecordVisuals.h"
+    "src/Seis2D/CpuSolver2D.cpp" "src/Seis2D/Simulation2D.cpp" "src/Seis2D/RecordData2D.cpp" "src/Seis2D/RecordViewer2D.cpp" "src/Seis2D/ShotExport2D.cpp" "include/Seis2D/ShotExport2D.h" "include/Seis2D/ExternalDomain2D.h"
     "src/Seis2D/State2D.inc" "src/Seis2D/Material2D.inc" "src/Seis2D/Canvas2D.inc" "src/Seis2D/Numerics2D.inc" "src/Seis2D/ModelPresets2D.inc" "src/Seis2D/ModelIo2D.inc"
-    "src/Seis2D/Acquisition2D.inc" "src/Seis2D/Workflow2D.inc" "src/Seis2D/Workspace2D.inc" "src/Seis2D/DockWorkspace2D.inc" "src/Seis2D/ExportPanel2D.inc")
+    "src/Seis2D/Acquisition2D.inc" "src/Seis2D/Workflow2D.inc" "src/Seis2D/Workspace2D.inc" "src/Seis2D/DockWorkspace2D.inc" "src/Seis2D/ExportPanel2D.inc" "src/Seis2D/ParameterGroups2D.inc" "src/Seis2D/ParameterPanel2D.inc" "src/Seis2D/Performance2D.inc" "src/Seis2D/CpuSolver2D.h" "src/Seis2D/SolverCells2D.h")
 source_group("Seis2D\\Core" FILES "src/Seis2D/Simulation2D.cpp" "src/Seis2D/State2D.inc" "src/Seis2D/Numerics2D.inc" "src/Seis2D/Material2D.inc" "src/Seis2D/ModelPresets2D.inc" "src/Seis2D/Workflow2D.inc")
 source_group("Seis2D\\IO" FILES "src/Seis2D/ModelIo2D.inc" "src/Seis2D/Acquisition2D.inc" "src/Seis2D/RecordData2D.cpp" "src/Seis2D/ShotExport2D.cpp" "src/Seis2D/ExportPanel2D.inc")
-source_group("Seis2D\\UI" FILES "src/Seis2D/Workspace2D.inc" "src/Seis2D/Canvas2D.inc" "src/Seis2D/RecordViewer2D.cpp" "Main_header/SeismicViewer2D.h" "src/Seis2D/DockWorkspace2D.inc")
+source_group("Seis2D\\UI" FILES "src/Seis2D/Workspace2D.inc" "src/Seis2D/Canvas2D.inc" "src/Seis2D/RecordViewer2D.cpp" "include/Seis2D/SeismicViewer2D.h" "src/Seis2D/DockWorkspace2D.inc")
 if(WIN32)
     target_sources(${TARGET_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated/SeisWaveLab.rc")
     target_link_libraries(${TARGET_NAME} PRIVATE bcrypt.lib ole32.lib uuid.lib comdlg32.lib)
@@ -108,7 +115,7 @@ endif()
 # 5. 编译选项与标准设置
 # ==========================================
 set_target_properties(${TARGET_NAME} PROPERTIES
-    OUTPUT_NAME "SeisWaveLab"
+    OUTPUT_NAME "SeisWaveLab_Cartesian"
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CUDA_STANDARD 17
@@ -154,12 +161,15 @@ set_property(TARGET ${TARGET_NAME} APPEND PROPERTY LINK_DEPENDS ${RESOURCE_FILES
 # 7. 配置头文件路径 (Include)
 # ==========================================
 target_include_directories(${TARGET_NAME} PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/Main_header"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/SeisCommon"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/Seis2D"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/Seis3D"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Seis2D"
     "${CMAKE_CURRENT_SOURCE_DIR}/ImGui_docking"
     "${CMAKE_CURRENT_SOURCE_DIR}/ImPlot"
     "${CMAKE_CURRENT_SOURCE_DIR}/stb_image"
-    "${CMAKE_CURRENT_SOURCE_DIR}/CUDA_Kernels"
-    
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/Seis2D"
+
     # 第三方库
     "${SEISWAVE_GLM_ROOT}"
     "${SEISWAVE_GLEW_ROOT}/include"
@@ -181,6 +191,7 @@ target_link_directories(${TARGET_NAME} PRIVATE
 target_compile_definitions(${TARGET_NAME} PRIVATE GLEW_STATIC)
 
 target_link_libraries(${TARGET_NAME} PRIVATE
+    OpenMP::OpenMP_CXX
     # OpenGL
     glfw3.lib
     glew32s.lib
@@ -188,7 +199,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     user32.lib
     gdi32.lib
     shell32.lib
-    
+
     # SDL2
     #SDL2.lib
     #SDL2_image.lib
@@ -207,23 +218,24 @@ source_group("Source Files\\ImGui" FILES ${IMGUIDocking_SRCS})
 
 # 三维求解与渲染拥有独立编译目标，不复用二维上下文或快速数学编译选项。
 add_library(Seis3D STATIC
-    "include/Common3D.h" "include/Seis3D_Sim.h"
-    "cuda/Cuda_Seis3D.cuh" "cuda/Cuda_Seis3D.cu" "src/Seis3D_Sim.cpp"
+    "src/Seis3D/CpuSolver3D.cpp"
+    "include/Seis3D/Common3D.h" "include/Seis3D/Seis3D_Sim.h"
+    "include/Seis3D/Cuda_Seis3D.cuh" "src/Seis3D/cuda/Cuda_Seis3D.cu" "src/Seis3D/Simulation3D.cpp"
     "src/Seis3D/Renderer3D.cpp" "src/Seis3D/Workspace3D.cpp" "src/Seis3D/SliceView3D.cpp" "src/Seis3D/TraceView3D.cpp"
     "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/VtiExport3D.cpp" "src/Seis3D/Acquisition3D.cpp" "src/Seis3D/ModelPresets3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp"
     "src/Seis3D/Internal3D.h" "src/Seis3D/Visual3D.h")
 get_target_property(SEIS3D_SHARED_INCLUDE_DIRS ${TARGET_NAME} INCLUDE_DIRECTORIES)
 get_target_property(SEIS3D_SHARED_LINK_DIRS ${TARGET_NAME} LINK_DIRECTORIES)
-add_library(AppUi STATIC "Main_header/AppTheme.h" "Main_cpp/AppTheme.cpp"
-    "Main_header/AppLanguage.h" "Main_header/AppWidgets.h" "Main_cpp/AppLanguage.cpp" "Main_cpp/AppTranslations.inc"
-    "Main_header/HomeScreen.h" "Main_cpp/HomeScreen.cpp" "Main_cpp/OperationManual.cpp" "Main_header/AppInfo.h.in")
-target_include_directories(AppUi PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Main_header" "${CMAKE_CURRENT_BINARY_DIR}/generated" PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS})
+add_library(AppUi STATIC "include/SeisCommon/AppTheme.h" "src/SeisCommon/AppTheme.cpp"
+    "include/SeisCommon/AppLanguage.h" "include/SeisCommon/AppWidgets.h" "src/SeisCommon/AppLanguage.cpp" "src/SeisCommon/AppTranslations.inc"
+    "include/SeisCommon/HomeScreen.h" "src/SeisCommon/HomeScreen.cpp" "src/SeisCommon/OperationManual.cpp" "include/SeisCommon/AppInfo.h.in")
+target_include_directories(AppUi PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/SeisCommon" "${CMAKE_CURRENT_BINARY_DIR}/generated" PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS})
 target_compile_definitions(AppUi PRIVATE GLEW_STATIC)
 set_target_properties(AppUi PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON MSVC_DEBUG_INFORMATION_FORMAT Embedded)
 if(MSVC)
     target_compile_options(AppUi PRIVATE /utf-8)
 endif()
-target_include_directories(Seis3D PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/cuda")
+target_include_directories(Seis3D PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/Seis3D" "${CMAKE_CURRENT_SOURCE_DIR}/include/Seis3D" "${CMAKE_CURRENT_SOURCE_DIR}/src/Seis3D")
 target_include_directories(Seis3D PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS})
 target_link_directories(Seis3D PRIVATE ${SEIS3D_SHARED_LINK_DIRS})
 target_compile_definitions(Seis3D PRIVATE GLEW_STATIC)
@@ -233,7 +245,7 @@ if(MSVC)
     target_compile_options(Seis3D PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>
         $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>)
 endif()
-target_link_libraries(Seis3D PRIVATE AppUi CUDA::cudart glew32s.lib opengl32.lib)
+target_link_libraries(Seis3D PRIVATE OpenMP::OpenMP_CXX AppUi CUDA::cudart glew32s.lib opengl32.lib)
 if(WIN32)
     target_link_libraries(Seis3D PRIVATE comdlg32.lib ole32.lib uuid.lib shell32.lib)
 endif()
@@ -265,7 +277,7 @@ endif()
 option(SEIS3D_BUILD_WORKSPACE_CHECKS "Build CUDA/GL workspace regression" OFF)
 if(SEIS3D_BUILD_WORKSPACE_CHECKS)
     add_executable(Seis3DWorkspaceRegression "tests/Seis3DWorkspaceRegression.cpp"
-        "Main_cpp/ResourcePaths.cpp" ${IMGUIDocking_SRCS})
+        "src/SeisCommon/ResourcePaths.cpp" ${IMGUIDocking_SRCS})
     target_include_directories(Seis3DWorkspaceRegression PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_directories(Seis3DWorkspaceRegression PRIVATE ${SEIS3D_SHARED_LINK_DIRS})
     target_compile_definitions(Seis3DWorkspaceRegression PRIVATE GLEW_STATIC)
@@ -281,17 +293,24 @@ endif()
 
 # 无图形窗口的二维数值回归程序，直接调用生产 CUDA 求解器。
 if(SEISSIM_BUILD_SOLVER_TESTS)
-    add_executable(Seis2DRecordRegression "tests/Seis2DRecordRegression.cpp" "src/Seis2D/RecordData2D.cpp" "src/Seis2D/ShotExport2D.cpp" "Main_cpp/SeismicIO.cpp")
+    add_executable(SeisBackend3DRegression "tests/Backend3DRegression.cpp")
+    target_include_directories(SeisBackend3DRegression PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS})
+    target_link_directories(SeisBackend3DRegression PRIVATE ${SEIS3D_SHARED_LINK_DIRS})
+    target_link_libraries(SeisBackend3DRegression PRIVATE Seis3D CUDA::cudart)
+    set_target_properties(SeisBackend3DRegression PROPERTIES CXX_STANDARD 20 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+    add_test(NAME Backend3DRegression COMMAND SeisBackend3DRegression)
+    set_tests_properties(Backend3DRegression PROPERTIES TIMEOUT 180)
+    add_executable(Seis2DRecordRegression "tests/Seis2DRecordRegression.cpp" "src/Seis2D/RecordData2D.cpp" "src/Seis2D/ShotExport2D.cpp" "src/SeisCommon/SeismicIO.cpp")
     if(WIN32)
         target_link_libraries(Seis2DRecordRegression PRIVATE bcrypt.lib)
     endif()
-    target_include_directories(Seis2DRecordRegression PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Main_header")
+    target_include_directories(Seis2DRecordRegression PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/SeisCommon" "${CMAKE_CURRENT_SOURCE_DIR}/include/Seis2D")
     set_target_properties(Seis2DRecordRegression PROPERTIES CXX_STANDARD 20 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
     if(MSVC)
         target_compile_options(Seis2DRecordRegression PRIVATE /utf-8)
     endif()
     add_test(NAME Seis2DRecordRegression COMMAND Seis2DRecordRegression)
-    add_executable(SeisSimSolverRegression "tests/SolverRegression.cpp" ${CUDA_USER_SOURCES})
+    add_executable(SeisSimSolverRegression "tests/SolverRegression.cpp" "src/Seis2D/CpuSolver2D.cpp" ${CUDA_USER_SOURCES})
     get_target_property(SOLVER_TEST_INCLUDES ${TARGET_NAME} INCLUDE_DIRECTORIES)
     get_target_property(SOLVER_TEST_LINK_DIRS ${TARGET_NAME} LINK_DIRECTORIES)
     get_target_property(SOLVER_TEST_OPTIONS ${TARGET_NAME} COMPILE_OPTIONS)
@@ -301,7 +320,42 @@ if(SEISSIM_BUILD_SOLVER_TESTS)
     target_compile_definitions(SeisSimSolverRegression PRIVATE GLEW_STATIC)
     set_target_properties(SeisSimSolverRegression PROPERTIES
         CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CUDA_STANDARD 17 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
-    target_link_libraries(SeisSimSolverRegression PRIVATE CUDA::cudart)
+    target_link_libraries(SeisSimSolverRegression PRIVATE CUDA::cudart OpenMP::OpenMP_CXX)
     add_test(NAME SolverRegression COMMAND SeisSimSolverRegression)
     set_tests_properties(SolverRegression PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77)
+endif()
+
+# Ship the CUDA runtime so CPU fallback also starts on machines without a CUDA Toolkit installation.
+if(WIN32)
+    file(GLOB SEISWAVE_CUDART_DLL "${CUDAToolkit_BIN_DIR}/cudart64*.dll")
+    foreach(runtime IN LISTS SEISWAVE_CUDART_DLL)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${runtime}" "$<TARGET_FILE_DIR:${TARGET_NAME}>" VERBATIM)
+    endforeach()
+endif()
+
+# Deploy the compiler's redistributable runtime, including OpenMP, beside the program.
+if(MSVC)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    set(CMAKE_INSTALL_OPENMP_LIBRARIES TRUE)
+    include(InstallRequiredSystemLibraries)
+    foreach(runtime IN LISTS CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${runtime}" "$<TARGET_FILE_DIR:${TARGET_NAME}>" VERBATIM)
+    endforeach()
+endif()
+
+# Optional, reproducible production-solver performance suite (outside automated correctness ctest).
+option(SEISWAVE_BUILD_BENCHMARKS "Build CPU/OpenMP and CUDA performance suite" OFF)
+if(SEISWAVE_BUILD_BENCHMARKS)
+    add_executable(SeisComputeBenchmark "benchmarks/ComputeBenchmark.cpp" "src/Seis2D/CpuSolver2D.cpp" ${CUDA_USER_SOURCES})
+    get_target_property(BENCHMARK_INCLUDES ${TARGET_NAME} INCLUDE_DIRECTORIES)
+    get_target_property(BENCHMARK_LINK_DIRS ${TARGET_NAME} LINK_DIRECTORIES)
+    get_target_property(BENCHMARK_OPTIONS ${TARGET_NAME} COMPILE_OPTIONS)
+    target_include_directories(SeisComputeBenchmark PRIVATE ${BENCHMARK_INCLUDES})
+    target_link_directories(SeisComputeBenchmark PRIVATE ${BENCHMARK_LINK_DIRS})
+    target_compile_options(SeisComputeBenchmark PRIVATE ${BENCHMARK_OPTIONS})
+    target_compile_definitions(SeisComputeBenchmark PRIVATE GLEW_STATIC)
+    set_target_properties(SeisComputeBenchmark PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CUDA_STANDARD 17 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+    target_link_libraries(SeisComputeBenchmark PRIVATE Seis3D CUDA::cudart OpenMP::OpenMP_CXX)
 endif()

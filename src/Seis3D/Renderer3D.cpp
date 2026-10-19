@@ -141,7 +141,7 @@ void initializeGraphics3D(Seis3D_State& s) {
     glGenBuffers(1,&g.stagingBuffer3D); glBindBuffer(GL_PIXEL_UNPACK_BUFFER,g.stagingBuffer3D);
     glBufferData(GL_PIXEL_UNPACK_BUFFER,GLsizeiptr(g.layout3D.totalSamples3D*2*sizeof(float)),nullptr,GL_STREAM_DRAW);
     if (glGetError()!=GL_NO_ERROR) throw std::runtime_error("Seis3D OpenGL allocation failed.");
-    requireCuda3D(cudaGraphicsGLRegisterBuffer(&g.interop3D,g.stagingBuffer3D,cudaGraphicsRegisterFlagsWriteDiscard),"register Seis3D staging");
+    if(!s.gpu3D.cpu3D) requireCuda3D(cudaGraphicsGLRegisterBuffer(&g.interop3D,g.stagingBuffer3D,cudaGraphicsRegisterFlagsWriteDiscard),"register Seis3D staging");
 }
 
 // Apply one transfer function to both linked slices and the exploratory volume.
@@ -179,6 +179,13 @@ void updateGraphics3D(Seis3D_State& s) {
     if(!extract && g.rendered3D && settings==g.renderedSettings3D) return;
     GLStateScope3D saved;
     if (extract) {
+        float velocityMaximum=0;
+        if(s.gpu3D.cpu3D) {
+            std::vector<float> output(g.layout3D.totalSamples3D*2);
+            extractViews3D(s.gpu3D,s.context3D,output.data(),g.layout3D,s.slice3D,s.component3D,s.materialComponent3D,s.showVolume3D,s.viewMaximum3D,s.materialRange3D,s.showBoundary3D,&velocityMaximum);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER,g.stagingBuffer3D);
+            glBufferSubData(GL_PIXEL_UNPACK_BUFFER,0,GLsizeiptr(output.size()*sizeof(float)),output.data());
+        } else {
         requireCuda3D(cudaGraphicsMapResources(1,&g.interop3D,s.gpu3D.stream3D),"map Seis3D views");
         struct Mapping3D {
             cudaGraphicsResource_t* resource3D; cudaStream_t stream3D; bool mapped3D=true;
@@ -188,12 +195,14 @@ void updateGraphics3D(Seis3D_State& s) {
         float* output=nullptr; std::size_t capacity=0;
         requireCuda3D(cudaGraphicsResourceGetMappedPointer(reinterpret_cast<void**>(&output),&capacity,g.interop3D),"get Seis3D staging pointer");
         if (capacity<g.layout3D.totalSamples3D*2*sizeof(float)) throw std::runtime_error("Seis3D staging capacity mismatch.");
-        float velocityMaximum=0;
         extractViews3D(s.gpu3D,s.context3D,output,g.layout3D,s.slice3D,s.component3D,s.materialComponent3D,s.showVolume3D,s.viewMaximum3D,s.materialRange3D,s.showBoundary3D,&velocityMaximum);
         s.scaleComponent3D=s.component3D;
         s.referenceMaximum3D=s.component3D==4?s.viewMaximum3D:velocityMaximum;
         s.scalePeak3D=(std::max)(s.scalePeak3D,s.referenceMaximum3D);
         requireCuda3D(cudaGraphicsUnmapResources(1,&g.interop3D,s.gpu3D.stream3D),"unmap Seis3D views"); mapping.mapped3D=false;
+        }
+        s.scaleComponent3D=s.component3D;s.referenceMaximum3D=s.component3D==4?s.viewMaximum3D:velocityMaximum;
+        s.scalePeak3D=(std::max)(s.scalePeak3D,s.referenceMaximum3D);
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER,g.stagingBuffer3D);
         for(int p=0;p<3;++p) {
             glBindTexture(GL_TEXTURE_2D,g.scalarTextures3D[p]);

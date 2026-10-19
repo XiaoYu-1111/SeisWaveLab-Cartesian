@@ -1,0 +1,1730 @@
+#include "AppWidgets.h"
+#include "AppShortcuts.h"
+// SeisWaveLab.h: 应用入口所需的界面、状态与模拟模块。
+// 或项目特定的包含文件。
+
+#pragma once
+#include <vector>
+#include <deque>
+#include <cmath>
+#include <algorithm>
+
+//自己编写的头文件
+#include "Common.h"
+#include "Cuda_Check.cuh"
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+#include "ResourcePaths.h"
+#include"Seis_Sim.h"
+#include "Seis3D_Sim.h"
+#include "AppTheme.h"
+#include "HomeScreen.h"
+
+constexpr float PI = 3.14159265358979323846f;
+
+void SetupImGuiStyle() {
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    // ==========================================================
+    // 1. 几何形状 (Geometry) - 模仿 macOS Big Sur+ 的圆润感
+    // ==========================================================
+    style.WindowRounding = 10.0f; // 窗口大圆角
+    style.ChildRounding = 6.0f;
+    style.FrameRounding = 6.0f;  // 输入框/按钮圆角
+    style.GrabRounding = 12.0f; // 滚动条/滑块手柄变成圆形
+    style.PopupRounding = 6.0f;
+    style.ScrollbarRounding = 9.0f;
+    style.TabRounding = 6.0f;
+
+    style.WindowBorderSize = 0.0f; // 现代风格去边框
+    style.FrameBorderSize = 0.0f;
+    style.PopupBorderSize = 1.0f; // 弹窗保留细边框以增加立体感
+
+    // 增加间距，让界面更透气（Apple 风格的精髓）
+    style.ItemSpacing = ImVec2(8, 6);
+    style.WindowPadding = ImVec2(16, 16);
+    style.FramePadding = ImVec2(10, 6); // 按钮稍微胖一点
+
+    // ==========================================================
+    // 2. 配色方案 (Palette) - 深空灰 + 系统蓝
+    // ==========================================================
+    ImVec4* colors = style.Colors;
+
+    // --- 核心色调 ---
+    // Apple 系统蓝 (System Blue)
+    ImVec4 accent = ImVec4(0.00f, 0.48f, 1.00f, 1.00f);
+    ImVec4 accentHover = ImVec4(0.12f, 0.56f, 1.00f, 1.00f);
+    ImVec4 accentActive = ImVec4(0.00f, 0.36f, 0.85f, 1.00f);
+
+    // 背景色 (类似于 Finder/Xcode 的深色背景)
+    ImVec4 bgMain = ImVec4(0.11f, 0.11f, 0.11f, 1.00f); // 极深灰
+    ImVec4 bgPanel = ImVec4(ImVec4(0.12f, 0.13f, 0.18f, 1.0f)); // 稍亮的面板灰
+    //0.12f, 0.13f, 0.18f, 1.0f
+    ImVec4 bgInput = ImVec4(0.22f, 0.22f, 0.22f, 1.00f); // 输入框灰
+
+    // --- 赋值 ---
+    colors[ImGuiCol_WindowBg] = bgPanel; // 窗口背景
+    colors[ImGuiCol_ChildBg] = bgMain;  // 子窗口背景（更有层次）
+    colors[ImGuiCol_PopupBg] = ImVec4(0.18f, 0.18f, 0.18f, 0.96f);
+
+    // 边框 (微妙的分割线)
+    colors[ImGuiCol_Border] = ImVec4(0.28f, 0.28f, 0.28f, 1.00f);
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+
+    // 标题栏
+    colors[ImGuiCol_TitleBg] = bgPanel;
+    colors[ImGuiCol_TitleBgActive] = bgPanel; // Mac 标题栏不随激活变色，靠红绿灯按钮区分(ImGui做不到)，所以保持一致
+    colors[ImGuiCol_TitleBgCollapsed] = bgPanel;
+
+    // 文本
+    colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.00f); // SF Pro White
+    colors[ImGuiCol_TextDisabled] = ImVec4(0.85f, 0.85f, 0.85f, 1.00f);
+
+    // 输入框 & 控件底色
+    colors[ImGuiCol_FrameBg] = bgInput;
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.26f, 0.26f, 1.00f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.30f, 0.30f, 0.30f, 1.00f);
+
+    // 按钮 (Mac 风格通常是深灰底，按下变深)
+    colors[ImGuiCol_Button] = ImVec4(0.26f, 0.26f, 0.28f, 1.00f);
+    colors[ImGuiCol_ButtonHovered] = accentHover; // 悬停时用蓝色提示
+    colors[ImGuiCol_ButtonActive] = accentActive;
+
+    // 勾选框 & 滑块 (使用强调色)
+    colors[ImGuiCol_CheckMark] = accent;
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.80f, 0.80f, 0.80f, 1.00f); // Mac 滑块头通常是白/浅灰色的圆点
+    colors[ImGuiCol_SliderGrabActive] = accent; // 拖动时变蓝
+
+    // 滚动条 (极简)
+    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.11f, 0.11f, 0.11f, 0.00f); // 透明轨道
+    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.40f, 0.40f, 0.40f, 0.60f); // 半透明灰条
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.40f, 0.40f, 0.40f, 1.00f);
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
+
+    // 列表头 & 选中项
+    colors[ImGuiCol_Header] = ImVec4(0.00f, 0.48f, 1.00f, 0.20f); // 淡淡的蓝色背景
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.00f, 0.48f, 1.00f, 0.40f);
+    colors[ImGuiCol_HeaderActive] = accent;
+
+    // 分割线
+    colors[ImGuiCol_Separator] = ImVec4(0.28f, 0.28f, 0.28f, 1.00f);
+    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
+    colors[ImGuiCol_SeparatorActive] = accent;
+
+    // 绘图线
+    colors[ImGuiCol_PlotLines] = accent;
+    colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+    colors[ImGuiCol_PlotHistogram] = accent;
+    colors[ImGuiCol_PlotHistogramHovered] = accentHover;
+}
+
+// 跳过缺失字体；文件无法读取时让 ImGui 返回空指针，以便执行备用字体逻辑。
+inline ImFont* tryLoadFontFile(const std::filesystem::path& fontPath, float fontSize,
+    const ImFontConfig* fontConfig = nullptr, const ImWchar* glyphRanges = nullptr) {
+    std::error_code error;
+    if (!std::filesystem::is_regular_file(fontPath, error)) {
+        return nullptr;
+    }
+    ImFontConfig config = fontConfig ? *fontConfig : ImFontConfig();
+    config.Flags |= ImFontFlags_NoLoadError;
+    const std::string encodedPath = pathToUtf8(fontPath);
+    return ImGui::GetIO().Fonts->AddFontFromFileTTF(
+        encodedPath.c_str(), fontSize, &config, glyphRanges);
+}
+
+// 创建界面上下文、加载可用字体并初始化 GLFW/OpenGL 后端。
+void Init_Imgui(GLFWwindow* window) {
+    // 1. 检查版本并创建上下文
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImPlot::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Keep dock layouts beside the executable, independent of the launch working directory.
+    static const std::string imguiSettingsPath = pathToUtf8(getExecutableDirectory() / "imgui.ini");
+    io.IniFilename = imguiSettingsPath.c_str();
+
+    // 2. 配置 Flags
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    // 3. 加载主字体后再合并中文字体，缺失字体时逐级回退。
+    float baseSize = 26.0f / 1.5f;
+    float scaleFactor = 1.5f;
+    float fontSize = baseSize * scaleFactor;
+
+    // 获取 ImGui 内置的中文常用字形范围
+    const ImWchar* glyph_ranges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+
+    const std::filesystem::path systemFontDirectory = getSystemFontDirectory();
+    ImFont* font = tryLoadFontFile(resolveResourcePath("font/consola.ttf"), fontSize);
+    if (font == nullptr) {
+        font = tryLoadFontFile(systemFontDirectory / "consola.ttf", fontSize);
+    }
+    if (font == nullptr) {
+        ImFontConfig defaultFontConfig;
+        defaultFontConfig.SizePixels = fontSize;
+        font = io.Fonts->AddFontDefault(&defaultFontConfig);
+        fprintf(stderr, "Warning: Base font unavailable, using ImGui default.\n");
+    }
+    io.FontDefault = font;
+
+    // 第二步：配置字体合并选项
+    ImFontConfig font_config;
+    font_config.MergeMode = true;        // 开启合并模式
+    font_config.PixelSnapH = true;       // 像素对齐，字体更清晰
+
+    // 第三步：加载中文字体，并增加检测与备选方案
+    ImFont* cn_font = tryLoadFontFile(resolveResourcePath("font/msyh.ttc"), fontSize, &font_config, glyph_ranges);
+
+    // [新增] 如果项目目录下的中文字体加载失败，尝试从 Windows 系统目录加载
+    if (cn_font == nullptr) {
+        fprintf(stderr, "Warning: Failed to load custom msyh.ttc, trying system fonts...\n");
+
+        // 尝试 1：系统目录下的微软雅黑
+        cn_font = tryLoadFontFile(systemFontDirectory / "msyh.ttc", fontSize, &font_config, glyph_ranges);
+
+        if (cn_font == nullptr) {
+            // 尝试 2：系统目录下的黑体（作为最后的防线）
+            cn_font = tryLoadFontFile(systemFontDirectory / "simhei.ttf", fontSize, &font_config, glyph_ranges);
+
+            // 如果所有的中文字体都失败了
+            if (cn_font == nullptr) {
+                fprintf(stderr, "Error: Failed to load ANY Chinese font. Chinese characters will show as '?'.\n");
+            }
+        }
+    }
+
+    // 4. 设置样式
+    SetupImGuiStyle();
+    AppUi::initializeTheme();
+    AppUi::initializeLanguage();
+    Seis2D::setInterfaceAccent2D(AppUi::palette().accent);
+
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // 5. 初始化后端
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 430");
+}
+
+// 绘制欢迎/登录界面
+// 辅助函数：将 HSV 转为 ImU32 格式
+ImU32 GetColorFromHSV(float h, float s, float v, float a) {
+    float r, g, b;
+    ImGui::ColorConvertHSVtoRGB(h, s, v, r, g, b);
+    return ImGui::ColorConvertFloat4ToU32(ImVec4(r, g, b, a));
+}
+// 主界面0，中转切换
+// Draw the shared application home screen and apply its requested route.
+void RenderIntroScreen0(SimState& state,const GpuInfo& info,int winW,int winH,bool& isIntroMode,AsyncLoader& loader) {
+    (void)loader;
+    state.currentScreen=drawHomeScreen(info,winW,winH);
+    isIntroMode=state.currentScreen==AppScreen::Intro0;
+}
+// 界面1，初始版本界面
+void RenderIntroScreen1(SimState& state, int winW, int winH, bool& isIntroMode, AsyncLoader& loader) {
+    // 1. 计算缩放因子 (以 1920x1080 为基准)
+    float scale = (float)winW / 1920.0f;
+    // 强制限制缩放范围，防止极端分辨率下过大或过小
+    scale = fmax(0.5f, fmin(scale, 2.0f));
+
+    // 背景色
+    ImVec4 bgColor = ImVec4(0.12f, 0.13f, 0.18f, 0.2f);
+
+    // 2. 全屏窗口设置
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2((float)winW, (float)winH));
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, bgColor);
+
+    if (AppUi::Widgets::Begin("IntroFullscreen", nullptr,
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav)) {
+
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+        // === 基础布局变量 ===
+        float commonMargin = 80.0f * scale;
+        float headerY = commonMargin;
+        float blockY = commonMargin + 280.0f * scale;
+
+        // =====================================================
+        // 3. 渲染：对称钛金背景
+        // =====================================================
+        ImGuiIO& io = ImGui::GetIO();
+        ImVec2 screenCenter(winW * 0.5f, winH * 0.52f);
+        ImVec2 mPosRel = ImVec2(io.MousePos.x - screenCenter.x, io.MousePos.y - screenCenter.y);
+        //ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+        float subStep = 25.0f * scale, mainStep = 125.0f * scale;
+        auto DrawSymmetricGrid = [&](float step, ImU32 col, bool drawDots) {
+            for (float x = 0; screenCenter.x + x < winW || screenCenter.x - x > 0; x += step) {
+                drawList->AddLine(ImVec2(screenCenter.x + x, 0), ImVec2(screenCenter.x + x, (float)winH), col, 1.0f);
+                if (x > 0) drawList->AddLine(ImVec2(screenCenter.x - x, 0), ImVec2(screenCenter.x - x, (float)winH), col, 1.0f);
+            }
+            for (float y = 0; screenCenter.y + y < winH || screenCenter.y - y > 0; y += step) {
+                drawList->AddLine(ImVec2(0, screenCenter.y + y), ImVec2((float)winW, screenCenter.y + y), col, 1.0f);
+                if (y > 0) drawList->AddLine(ImVec2(0, screenCenter.y - y), ImVec2((float)winW, screenCenter.y - y), col, 1.0f);
+            }
+            if (drawDots) {
+                for (float x = 0; screenCenter.x + x < winW || screenCenter.x - x > 0; x += step) {
+                    for (float y = 0; screenCenter.y + y < winH || screenCenter.y - y > 0; y += step) {
+                        drawList->AddCircleFilled(ImVec2(screenCenter.x + x, screenCenter.y + y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                        if (x > 0) drawList->AddCircleFilled(ImVec2(screenCenter.x - x, screenCenter.y + y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                        if (y > 0) drawList->AddCircleFilled(ImVec2(screenCenter.x + x, screenCenter.y - y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                        if (x > 0 && y > 0) drawList->AddCircleFilled(ImVec2(screenCenter.x - x, screenCenter.y - y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                    }
+                }
+            }
+            };
+        DrawSymmetricGrid(subStep, IM_COL32(255, 255, 255, 5), false);
+        DrawSymmetricGrid(mainStep, IM_COL32(255, 255, 255, 15), true);
+
+
+        // [区域 1] 左上角：主标题
+        ImGui::SetCursorPos(ImVec2(commonMargin, headerY));
+        ImGui::BeginGroup();
+        {
+            ImGui::SetWindowFontScale(4.2f * scale);
+            AppUi::Widgets::TextColored(ImVec4(0.0f, 0.85f, 1.0f, 1.0f), "ELASTIC WAVE");
+            AppUi::Widgets::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "SIMULATION GPU");
+
+            ImGui::Spacing();
+            ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.0f, 0.85f, 1.0f, 0.5f));
+            ImGui::Separator();
+            ImGui::PopStyleColor();
+
+            ImGui::Spacing();
+            ImGui::SetWindowFontScale(1.5f * scale);
+            AppUi::Widgets::TextColored(ImVec4(0.6f, 0.7f, 0.8f, 1.0f), "High-Performance Finite-Difference Solver v3.0");
+        }
+        ImGui::EndGroup();
+
+        // [区域 2] 右上角：技术参数
+        float rightBlockWidth = 600.0f * scale;
+        ImGui::SetCursorPos(ImVec2(winW - rightBlockWidth - commonMargin, blockY));
+        ImGui::BeginGroup();
+        {
+            ImGui::SetWindowFontScale(1.8f * scale);
+            AppUi::Widgets::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "// SYSTEM SPECS");
+
+            ImGui::SetWindowFontScale(1.0f * scale);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.85f, 0.9f, 1.0f));
+            ImGui::Columns(2, "SpecsCols", false);
+            ImGui::SetColumnWidth(0, 200.0f * scale);
+
+            float lineSpacing = 8.0f * scale;
+            auto DrawSpec = [&](const char* label, const char* value, bool isColored = false, ImVec4 color = ImVec4(1, 1, 1, 1)) {
+                AppUi::Widgets::Text("%s", label); ImGui::NextColumn();
+                if (isColored) AppUi::Widgets::TextColored(color, "%s", value);
+                else AppUi::Widgets::Text("%s", value);
+                ImGui::NextColumn();
+                ImGui::Dummy(ImVec2(0, lineSpacing)); ImGui::NextColumn(); ImGui::Dummy(ImVec2(0, lineSpacing)); ImGui::NextColumn();
+                };
+
+            DrawSpec("Architecture:", "OpenGL 4.3 Compute", true, ImVec4(0.0f, 0.8f, 1.0f, 1.0f));
+            DrawSpec("Time Scheme:", "Leapfrog (2nd Order)");
+            DrawSpec("Space Scheme:", "Staggered Grid (L8)");
+            DrawSpec("Boundary:", "CPML / Rigid / Free");
+            DrawSpec("Resolution:", "Dynamic Grid");
+            DrawSpec("Developer:", "XIAO YU", true, ImVec4(1.0f, 0.85f, 0.4f, 1.0f));
+            DrawSpec("License:", "MIT License", true, ImVec4(0.6f, 1.0f, 0.6f, 1.0f));
+            DrawSpec("Copyright:", "(c) 2025 All Rights Reserved");
+
+            ImGui::Columns(1);
+            ImGui::PopStyleColor();
+        }
+        ImGui::EndGroup();
+
+        // [区域 3] 中间左侧：功能列表
+        ImGui::SetCursorPos(ImVec2(commonMargin, blockY));
+        ImGui::BeginGroup();
+        {
+            ImGui::SetWindowFontScale(1.8f * scale);
+            AppUi::Widgets::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "// CORE FEATURES");
+            ImGui::SetWindowFontScale(1.0f * scale);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.95f, 1.0f, 1.0f));
+
+            float itemH = 15.0f * scale;
+            const char* features[] = { "GPU-Accelerated Compute Shader Kernel", "High-Order Staggered Grid FDM (L8)", "CPML Absorbing Boundary Conditions", "Heterogeneous Media (Solid / Fluid / Vacuum)", "Real-time Multi-Component Wavefield Rendering", "Dynamic Source Injection & Seismic Recording" };
+
+            for (const char* f : features) {
+                ImGui::Bullet(); AppUi::Widgets::Text("%s", f);
+                ImGui::Dummy(ImVec2(0, itemH));
+            }
+            ImGui::PopStyleColor();
+        }
+        ImGui::EndGroup();
+        // [区域 5] 高级多节点波动曲线
+        {
+            double t = ImGui::GetTime();
+            float startX = commonMargin - commonMargin;
+            float endX = winW;
+            float waveAreaWidth = endX - startX;
+
+            float baseCenterY = winH - 250.0f * scale;
+            int numLayers = 16;
+            int segments = 50; // 每一条曲线包含 20 个段，增加曲线的精细度
+
+            for (int i = 0; i < numLayers; ++i) {
+                float layerOffset = ((float)i / (float)numLayers - 0.5f) * (150.0f * scale);
+                float currentY = baseCenterY + layerOffset + sin(t * 0.3f) * 20.0f * scale;
+
+                // 颜色定义
+                float hue = fmod(t * 0.08f + (float)i / (float)numLayers, 1.0f);
+                ImU32 col = GetColorFromHSV(hue, 0.6f, 0.9f, 0.4f - (i * 0.02f));
+
+                // 开始构建路径
+                drawList->PathClear();
+                for (int j = 0; j <= segments; ++j) {
+                    float ratio = (float)j / (float)segments;
+                    float x = startX + waveAreaWidth * ratio;
+
+                    // 多个波形叠加：sin(频率 * x + 时间)
+                    // 频率随 j 增加而变化，产生多变起伏
+                    float wave = sin(ratio * 12.0f + t + (float)i * 0.5f) * (30.0f * scale) +
+                        cos(ratio * 12.0f + t * 0.5f) * (10.0f * scale);
+
+                    drawList->PathLineTo(ImVec2(x, currentY + wave));
+                }
+
+                // 绘制路径 (细线条)
+                float thickness = (0.6f + (float)i * 0.05f) * scale;
+                drawList->PathStroke(col, false, thickness);
+            }
+        }
+
+        // =================================================
+    // [区域 4] 左下角：时间与状态提示
+    // =================================================
+        // 定义一个统一的底部对齐参考高度 (距离底部的固定距离)
+        float bottomPadding = commonMargin * 0.5f;
+        float bottomLineY = winH - bottomPadding;
+        {
+            std::time_t now = std::time(nullptr);
+            struct tm now_tm;
+            localtime_s(&now_tm, &now);
+            char timeBuf[64];
+            std::strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &now_tm);
+
+            // 测量组的高度以便向上偏移，使组的底部对齐到底线
+            // 简单的做法是直接设定高度
+            ImGui::SetCursorPos(ImVec2(commonMargin, bottomLineY - 100.0f * scale));
+
+            ImGui::BeginGroup();
+            {
+                ImGui::SetWindowFontScale(3.8f * scale);
+                AppUi::Widgets::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", timeBuf);
+
+                ImGui::SetWindowFontScale(1.2f * scale);
+                float blinkAlpha = 0.3f + 0.7f * (0.5f * (1.0f + sin(ImGui::GetTime() * 4.0f)));
+                AppUi::Widgets::TextColored(ImVec4(0.2f, 1.0f, 0.2f, blinkAlpha), "SYSTEM ONLINE");
+            }
+            ImGui::EndGroup();
+        }
+
+        // =================================================
+        // [区域 5] 右下角：启动按钮
+        // =================================================
+        {
+            float btnWidth = 260.0f * scale;
+            float btnHeight = 65.0f * scale;
+
+            // 让按钮组底部对齐到 bottomLineY
+            // posY = 目标底部线 - 按钮组总高度
+            float groupHeight = btnHeight + 30.0f * scale; // 按钮高度 + 提示文字高度 + 间距
+            float posY = bottomLineY - groupHeight;
+            float posX = winW - btnWidth - commonMargin;
+
+            ImGui::SetCursorPos(ImVec2(posX, posY));
+            ImGui::BeginGroup();
+            {
+                // ... (按钮代码保持不变) ...
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 32.0f * scale);
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 0.8f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.15f, 0.15f, 0.9f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.05f, 0.05f, 1.0f));
+
+                if (loader.isLoading || loader.isDataReady) {
+                    ImGui::BeginDisabled();
+                    AppUi::Widgets::Button("LOADING...", ImVec2(btnWidth, btnHeight));
+                    ImGui::EndDisabled();
+                }
+                else {
+                    //if (AppUi::Widgets::Button("LAUNCH SIMULATION", ImVec2(btnWidth, btnHeight)))
+                    if (AppUi::Widgets::Button((const char*)u8"运行模拟/返回", ImVec2(btnWidth, btnHeight)))
+                    {
+                        state.currentScreen = AppScreen::Intro0; isIntroMode = false;
+                    }
+                }
+                ImGui::PopStyleColor(3);
+                ImGui::PopStyleVar();
+
+                // 提示文字
+                ImGui::Dummy(ImVec2(0, 8 * scale));
+                std::string hint = "PRESS [SPACE] TO INITIALIZE";
+                float textWidth = AppUi::Widgets::CalcTextSize(hint.c_str()).x;
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (btnWidth - textWidth * 0.8f) * 0.5f);
+                ImGui::SetWindowFontScale(0.9f * scale);
+                AppUi::Widgets::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", hint.c_str());
+            }
+            ImGui::EndGroup();
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleColor(1);
+    ImGui::PopStyleVar(3);
+}
+
+//GPU版本生命游戏
+void ReallocateSimulation(GLHandles& gl, int newW, int newH) {
+    // 1. 同步 GPU，确保当前没有任务在跑
+    glFinish();
+    cudaDeviceSynchronize();
+
+    // 2. 彻底销毁旧资源
+    if (gl.cudaRes) {
+        cudaGraphicsUnregisterResource(gl.cudaRes);
+        gl.cudaRes = nullptr;
+    }
+
+    // 释放 CUDA 显存并置空（防止悬空指针）
+    auto SafeFree = [](void** ptr) {
+        if (*ptr) { cudaFree(*ptr); *ptr = nullptr; }
+        };
+    SafeFree((void**)&gl.d_current);
+    SafeFree((void**)&gl.d_next);
+    SafeFree((void**)&gl.d_heatData);
+
+    // 释放 OpenGL 纹理
+    if (gl.lifeTex) {
+        glDeleteTextures(1, &gl.lifeTex);
+        gl.lifeTex = 0;
+    }
+
+    // 3. 更新尺寸
+    gl.simW = newW;
+    gl.simH = newH;
+
+    // 4. 分配新显存 (注意检查错误)
+    cudaMalloc(&gl.d_current, (size_t)gl.simW * gl.simH);
+    cudaMalloc(&gl.d_next, (size_t)gl.simW * gl.simH);
+    cudaMalloc(&gl.d_heatData, (size_t)gl.simW * gl.simH * sizeof(float));
+
+    // 初始清零
+    cudaMemset(gl.d_current, 0, (size_t)gl.simW * gl.simH);
+    cudaMemset(gl.d_heatData, 0, (size_t)gl.simW * gl.simH * sizeof(float));
+
+    // 5. 创建新 OpenGL 纹理
+    glGenTextures(1, &gl.lifeTex);
+    glBindTexture(GL_TEXTURE_2D, gl.lifeTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, gl.simW, gl.simH, 0, GL_RED, GL_FLOAT, nullptr);
+
+    // 必须设置过滤，否则采样会出错
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // 6. 重新建立 CUDA 映射 (互操作核心)
+    cudaGraphicsGLRegisterImage(&gl.cudaRes, gl.lifeTex, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
+
+    // 7. 重新初始化 CUDA 内部随机数状态 (重要！)
+    initializeCudaLife(gl.simW, gl.simH);
+
+    // 8. 填充初始随机种子，防止黑屏
+    seedCudaLife(gl.d_current, gl.simW, gl.simH, 0.2f);
+
+    cudaDeviceSynchronize();
+}
+
+void RenderLifeGameScreen_GPU(SimState& state, int winW, int winH, GLHandles& gl, const GpuInfo& info) {
+    // 可选演示首次进入时才创建缓冲区，首页和地震模拟不承担其启动显存开销。
+    if (!gl.lifeTex) ReallocateSimulation(gl, gl.simW, gl.simH);
+    ImGuiIO& io = ImGui::GetIO();
+
+    const float scale = (float)winW / 1920.0f;
+
+    // --- [1. 模拟参数持久化] ---
+    static int generation = 0;
+    static float totalSimTime = 0.0f;
+    static float tickTimer = 0.0f;
+    static float tickRate = 0.05f; // 步频 (秒/代)
+    static int population = 0;
+
+
+    static ImVec4 coreColor = ImVec4(0.35f, 0.98f, 0.0f, 1.0f);  // 核心绿
+    static ImVec4 trailColor = ImVec4(0.85f, 0.96f, 0.8f, 1.0f); // 尾迹浅绿
+
+    // 在 Shader 里分别传入两个 Uniform
+
+    static float randomDensity = 0.20f;
+
+    // 人口历史记录 (用于曲线)
+    static std::vector<float> popHistory(18000, 0.0f);
+    static int hIdx = 0;
+    static bool showHUD = true;           // 控制面板开关
+
+    // 1. 映射资源 (每一帧都要做)
+    cudaGraphicsMapResources(1, &gl.cudaRes, 0);
+    cudaGraphicsSubResourceGetMappedArray(&gl.cudaArray, gl.cudaRes, 0, 0);
+
+    // --- [1. 定义持久化的视图变量] ---
+    static float viewZoom = 1.0f;
+    static ImVec2 viewOffset = { 0.0f, 0.0f };
+    // --- [2. 鼠标缩放与平移逻辑] ---
+    if (!io.WantCaptureMouse) {
+        // A. 滚轮缩放
+        if (io.MouseWheel != 0) {
+            float mouseSpeed = 0.1f * viewZoom; // 缩放灵敏度随当前缩放倍数调整
+            viewZoom += io.MouseWheel * mouseSpeed;
+            if (viewZoom < 0.1f) viewZoom = 0.1f;   // 最小缩放
+            if (viewZoom > 1000.0f) viewZoom = 1000.0f; // 最大缩放
+        }
+        // B. 中键平移 (Button 2)
+        if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+            // 根据缩放级别调整平移速度，确保平移跟手
+            viewOffset.x -= io.MouseDelta.x / (winW * viewZoom);
+            viewOffset.y += io.MouseDelta.y / (winH * viewZoom); // Y翻转
+        }
+    }
+    // --- [5. 核心修正：鼠标交互逻辑] ---
+    // --- [核心修正：计算比例修正] ---
+    float winAspect = (float)winW / (float)winH;
+    float simAspect = (float)gl.simW / (float)gl.simH;
+    ImVec2 aspectCorr = { 1.0f, 1.0f };
+    if (winAspect > simAspect) {
+        aspectCorr.x = winAspect / simAspect;
+    }
+    else {
+        aspectCorr.y = simAspect / winAspect;
+    }
+
+    static int brushRadius = 1;
+    // --- [鼠标交互逻辑更新] ---
+    if (!io.WantCaptureMouse) {
+        if (ImGui::IsMouseDown(0) || ImGui::IsMouseDown(1)) {
+            // 1. 归一化鼠标 [0, 1]
+            float normX = io.MousePos.x / (float)winW;
+            float normY = 1.0f - (io.MousePos.y / (float)winH);
+
+            // 2. 逆运算 (加入 aspectCorr)
+            // 注意：这里是乘法，因为在 VS 里是除法
+            float worldX = (normX - 0.5f) * (aspectCorr.x / viewZoom) + 0.5f + viewOffset.x;
+            float worldY = (normY - 0.5f) * (aspectCorr.y / viewZoom) + 0.5f + viewOffset.y;
+
+            int mx = (int)(worldX * (float)gl.simW);
+            int my = (int)(worldY * (float)gl.simH);
+
+            if (mx >= 0 && mx < gl.simW && my >= 0 && my < gl.simH) {
+                paintCudaLife(gl.d_current, gl.d_heatData, gl.simW, gl.simH, mx, my, brushRadius, ImGui::IsMouseDown(1));
+                // 重要：为了让交互更即时，涂抹时也同步一下 d_next，防止被下一帧逻辑覆盖
+                cudaMemcpy(gl.d_next, gl.d_current, gl.simW * gl.simH, cudaMemcpyDeviceToDevice);
+            }
+        }
+    }
+    // --- [3. CUDA 计算部分] ---
+
+    struct RuleSet { const char* name; int b; int s; };
+    static RuleSet rules[] = {
+        {"Conway's Life (B3/S23)",  (1 << 3), (1 << 2) | (1 << 3)},
+        {"HighLife (B36/S23)",      (1 << 3) | (1 << 6), (1 << 2) | (1 << 3)},
+        {"Seeds (B2/S--)",          (1 << 2), 0},
+        {"WalledCities (B45678/S2345)", (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 8), (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5)},
+        {"Amoeba (B357/S1358)",     (1 << 3) | (1 << 5) | (1 << 7), (1 << 1) | (1 << 3) | (1 << 5) | (1 << 8)}
+    };
+    static int currentRuleIdx = 0;
+    static float trailDecay = 0.99f; // 默认衰减系数
+    bool logicStepPerformed = false;
+
+    // 1. 处理逻辑演化（只有在运行时且计时器到达时触发）
+    if (state.running) {
+        tickTimer += io.DeltaTime;
+        totalSimTime += io.DeltaTime;
+
+        if (tickTimer >= tickRate) {
+            tickTimer = 0;
+            generation++;
+
+            // 执行逻辑计算 (paused = false)
+            updateCudaLife(gl.d_current, gl.d_next, gl.d_heatData, gl.simW, gl.simH, io.DeltaTime,
+                false, trailDecay, rules[currentRuleIdx].b, rules[currentRuleIdx].s);
+
+            // 交换细胞状态缓冲区
+            cudaMemcpy(gl.d_current, gl.d_next, (size_t)gl.simW * gl.simH, cudaMemcpyDeviceToDevice);
+
+            logicStepPerformed = true;
+
+            if (generation % 10 == 0) {
+                population = getCudaLifePopulation(gl.d_current, gl.simW, gl.simH);
+            }
+        }
+    }
+
+    // 2. 【核心修复：视觉刷新】
+    // 如果本帧没有进行逻辑演化（或者处于暂停状态），我们也必须更新一次热力图。
+    // 这样做是为了：1. 保证尾迹平滑消失；2. 保证鼠标画上去的点立刻显示（即便暂停）。
+    if (!logicStepPerformed) {
+        // 仅视觉计算 (paused = true)
+        updateCudaLife(gl.d_current, gl.d_next, gl.d_heatData, gl.simW, gl.simH, io.DeltaTime,
+            true, trailDecay, rules[currentRuleIdx].b, rules[currentRuleIdx].s);
+    }
+    // 更新历史曲线数据
+   // 在 RenderLifeGameScreen_GPU 内部
+    static float maxPopFound = 1000.0f; // 动态最大值
+    static float samplingTimer = 0.0f;
+
+    // 控制采样频率：每秒采样 60 次，无论帧率多高
+    samplingTimer += io.DeltaTime;
+    if (samplingTimer >= 1.0f / 60.0f) {
+        samplingTimer = 0.0f;
+        popHistory[hIdx] = (float)population;
+        hIdx = (hIdx + 1) % 1800;
+
+        // 动态调整 Y 轴上限：找到历史最大值，并预留 10% 的页边距
+        float currentMax = 0;
+        for (float v : popHistory) if (v > currentMax) currentMax = v;
+        maxPopFound = std::max(maxPopFound, currentMax);
+    }
+
+    cudaMemcpy2DToArray(
+        gl.cudaArray, 0, 0,
+        gl.d_heatData,
+        gl.simW * sizeof(float), // 这里是 Source Pitch
+        gl.simW * sizeof(float), // 这里是 Width in bytes
+        gl.simH,                 // 这里是 Height
+        cudaMemcpyDeviceToDevice
+    );
+    cudaGraphicsUnmapResources(1, &gl.cudaRes, 0);
+
+    // --- [3. 渲染背景与全屏网格] ---
+    glViewport(0, 0, winW, winH);
+    glUseProgram(gl.renderProg);
+
+    // 传递缩放和平移参数
+    glUniform2f(glGetUniformLocation(gl.renderProg, "winSize"), (float)winW, (float)winH);
+    glUniform2f(glGetUniformLocation(gl.renderProg, "simSize"), (float)gl.simW, (float)gl.simH);
+    glUniform2f(glGetUniformLocation(gl.renderProg, "viewOffset"), viewOffset.x, viewOffset.y);
+    glUniform1f(glGetUniformLocation(gl.renderProg, "viewZoom"), viewZoom);
+
+    glUniform3f(glGetUniformLocation(gl.renderProg, "coreColor"), coreColor.x, coreColor.y, coreColor.z);
+    glUniform3f(glGetUniformLocation(gl.renderProg, "trailColor"), trailColor.x, trailColor.y, trailColor.z);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gl.lifeTex);
+    glUniform1i(glGetUniformLocation(gl.renderProg, "lifeTexture"), 0);
+    glBindVertexArray(gl.quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    const float barHeight = 48.0f * scale;
+
+    // --- [4. 顶部状态栏 (专业终端风格优化)] ---
+    ImGui::SetNextWindowPos({ 0, 0 });
+    ImGui::SetNextWindowSize({ (float)winW, barHeight });
+
+    // 背景色：深色半透明，增加一点青色调
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.01f, 0.04f, 0.05f, 0.85f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10 * scale, 0));
+
+    AppUi::Widgets::Begin("TopBar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar);
+    {
+        float centerY = 14.0f * scale; // 统一垂直居中对齐线
+
+        // --- A. 左侧：硬件标识 ---
+        ImGui::SetCursorPos({ 20 * scale, centerY });
+        if (info.success) {
+            AppUi::Widgets::TextDisabled("HOST:"); ImGui::SameLine();
+            AppUi::Widgets::TextColored(coreColor, "%s", info.name);
+            ImGui::SameLine();
+            AppUi::Widgets::TextDisabled("| CC:"); ImGui::SameLine();
+            AppUi::Widgets::TextColored(coreColor, "%d.%d", info.computeCapabilityMajor, info.computeCapabilityMinor);
+        }
+        else {
+            AppUi::Widgets::TextColored({ 1, 0, 0, 1 }, "CORE_OFFLINE // NO_CUDA_DETECTED");
+        }
+
+        // --- B. 中间：模拟状态 (自动居中) ---
+        int h = (int)totalSimTime / 3600, m = ((int)totalSimTime / 60) % 60, s = (int)totalSimTime % 60;
+        char statusStr[128];
+        sprintf_s(statusStr, "RUNTIME: %02d:%02d:%02d  >>  GEN: %d  >>  UNITS: %d", h, m, s, generation, population);
+
+        float textWidth = AppUi::Widgets::CalcTextSize(statusStr).x;
+        ImGui::SetCursorPos({ (winW - textWidth) * 0.5f, centerY });
+        AppUi::Widgets::TextColored(coreColor, "%s", statusStr);
+
+        // --- C. 右侧：性能与控制 ---
+        float rightSectionWidth = 260.0f * scale;
+        ImGui::SetCursorPos({ (float)winW - rightSectionWidth, centerY - 2.0f * scale });
+
+        // FPS 显示 (带平滑逻辑)
+        static float displayFPS = 60.0f;
+        displayFPS = displayFPS * 0.95f + io.Framerate * 0.05f;
+
+        // 根据性能动态变色
+        ImVec4 fpsColor = (displayFPS < 30.0f) ? ImVec4(1, 0.4f, 0.4f, 1) : ImVec4(0.4f, 0.8f, 0.6f, 0.8f);
+        AppUi::Widgets::TextColored(fpsColor, "[ %.0f FPS ]", displayFPS);
+
+        ImGui::SameLine(0, 20 * scale);
+
+        // HUD 切换（需要恢复 Inputs 否则 Checkbox 点不了）
+        ImGui::SetCursorPosY(centerY - 5.0f * scale);
+        ImGui::PushStyleColor(ImGuiCol_CheckMark, coreColor);
+        // 注意：因为 TopBar 设置了 NoInputs，我们要局部开启或者单独处理 Checkbox
+        // 这里建议将 TopBar 的 NoInputs 去掉，或者在 Begin 标记里删除它
+        AppUi::Widgets::Checkbox("HUD_OSD", &showHUD);
+        ImGui::PopStyleColor();
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+
+    // --- 装饰线：增加厚度感 ---
+    ImDrawList* topDraw = ImGui::GetForegroundDrawList();
+    // 极细的发光线
+    topDraw->AddLine({ 0, barHeight }, { (float)winW, barHeight }, IM_COL32(0, 255, 200, 60), 1.0f);
+    // 底部微微的阴影
+    topDraw->AddRectFilled({ 0, barHeight }, { (float)winW, barHeight + 4 * scale }, IM_COL32(0, 0, 0, 40));
+
+    // --- [4. 悬浮控制窗 (可调整大小 + 磨砂玻璃)] ---
+    if (showHUD) {
+        // --- [5. 悬浮控制窗 (磨砂玻璃风格)] ---
+        ImGui::SetNextWindowPos({ 30 * scale, 80 * scale }, ImGuiCond_FirstUseEver);
+        //ImGui::SetNextWindowSize({ 340 * scale, 620 * scale });
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.95f, 1.0f, 0.98f, 0.5f));// 0.95f, 1.0f, 0.98f, 0.18f
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 1, 0.2f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
+
+        // 静态变量用于存储 UI 输入值（避免输入时立即触发重分配）
+        static int inputW = gl.simW;
+        static int inputH = gl.simH;
+
+        if (AppUi::Widgets::Begin("LAB_CONTROLS", &showHUD)) {
+
+            // A. 规则切换 (Dropdown)
+            AppUi::Widgets::TextColored(coreColor, "EVOLUTION_PROTOCOL");
+            if (AppUi::Widgets::BeginCombo("##Rules", rules[currentRuleIdx].name)) {
+                for (int i = 0; i < IM_ARRAYSIZE(rules); i++) {
+                    bool is_selected = (currentRuleIdx == i);
+                    if (AppUi::Widgets::Selectable(rules[i].name, is_selected)) {
+                        currentRuleIdx = i;
+                        // 切换规则时通常自动重随机一次
+                        seedCudaLife(gl.d_current, gl.simW, gl.simH, 0.2f);
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::Separator();
+
+            // B. 视觉模式切换 (经典 vs 强化)
+            static bool classicMode = false;
+            if (AppUi::Widgets::Checkbox("CLASSIC_VISUAL_MODE", &classicMode)) {
+                if (classicMode) {
+                    trailDecay = 0.0f; // 经典模式无尾迹
+                    coreColor = { 0.35f, 0.98f, 0.0f, 1.0f }; // 经典绿
+                }
+                else {
+                    trailDecay = 0.99f;
+                    coreColor = ImVec4(0.35f, 0.98f, 0.0f, 1.0f);  // 核心绿
+                    trailColor = ImVec4(0.85f, 0.96f, 0.8f, 1.0f); // 尾迹浅绿
+                }
+            }
+
+            AppUi::Widgets::TextColored(coreColor, "SYSTEM_CONFIGURATION");
+            // 分辨率输入
+            AppUi::Widgets::InputInt("WIDTH", &inputW);
+            AppUi::Widgets::InputInt("HEIGHT", &inputH);
+
+            // 限制范围防止崩溃
+            if (inputW < 64) inputW = 64; if (inputH < 64) inputH = 64;
+            if (inputW > 8192) inputW = 8192; if (inputH > 8192) inputH = 8192;
+
+            // --- [新增：常用分辨率预设行] ---
+            AppUi::Widgets::Text("PRESETS:");
+            float btnWidth = (ImGui::GetContentRegionAvail().x - (ImGui::GetStyle().ItemSpacing.x * 4)) / 5.0f;
+
+            if (AppUi::Widgets::Button("720P", { btnWidth, 0 })) { inputW = 1280; inputH = 720; }
+            ImGui::SameLine();
+            if (AppUi::Widgets::Button("1080P", { btnWidth, 0 })) { inputW = 1920; inputH = 1080; }
+            ImGui::SameLine();
+            if (AppUi::Widgets::Button("2K", { btnWidth, 0 })) { inputW = 2560; inputH = 1440; }
+            ImGui::SameLine();
+            if (AppUi::Widgets::Button("4K", { btnWidth, 0 })) { inputW = 3840; inputH = 2160; }
+            ImGui::SameLine();
+            if (AppUi::Widgets::Button("8K", { btnWidth, 0 })) { inputW = 7680; inputH = 4320; }
+
+            if (AppUi::Widgets::Button("APPLY & REBOOT CORE", { -1, 40 })) {
+                ReallocateSimulation(gl, inputW, inputH);
+                viewZoom = 1.0f; viewOffset = { 0,0 };
+                cudaMemcpy(gl.d_next, gl.d_current, gl.simW * gl.simH, cudaMemcpyDeviceToDevice);
+            }
+            // 显示当前实际尺寸
+            AppUi::Widgets::Text("CURRENT_GRID: %d x %d", gl.simW, gl.simH);
+            AppUi::Widgets::Text("TOTAL_CELLS: %d", gl.simW * gl.simH);
+            // D. 性能与人口图表
+            char overlay[64];
+            sprintf_s(overlay, "CUR: %d | MAX: %.0f", population, maxPopFound);
+
+            ImGui::PushStyleColor(ImGuiCol_PlotLines, trailColor); // 线条颜色随主题变
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0.3f)); // 背景透明
+
+            ImGui::PlotLines("##Flux",
+                popHistory.data(),
+                1800,
+                hIdx,
+                overlay,
+                0.0f,               // 最小
+                maxPopFound * 1.1f, // 最大 (动态)
+                ImVec2(-1, 100 * scale)
+            );
+
+            ImGui::PopStyleColor(2);
+
+            AppUi::Widgets::Text("POPULATION: %d Units", population);
+
+            AppUi::Widgets::Text("VIEW_ZOOM: %.2fx", viewZoom);
+            if (AppUi::Widgets::Button("RESET VIEW")) { viewZoom = 1.0f; viewOffset = { 0,0 }; }
+
+            ImGui::Separator();
+            // --- [3. UI 控制部分] ---
+
+            // A. 初始化
+            AppUi::Widgets::TextColored(coreColor, "PRESET_BIOMASS");
+            if (AppUi::Widgets::Button("RANDOM_SEED", { -1, 35 * scale })) {
+                seedCudaLife(gl.d_current, gl.simW, gl.simH, randomDensity);
+                generation = 0;
+                totalSimTime = 0;
+            }
+            AppUi::Widgets::SliderFloat("DENSITY", &randomDensity, 0.01f, 0.5f);
+
+            if (AppUi::Widgets::Button("RESET WORLD", { -1, 35 * scale })) {
+                seedCudaLife(gl.d_current, gl.simW, gl.simH, 0.0f);
+                generation = 0;
+                totalSimTime = 0;
+                cudaMemcpy(gl.d_next, gl.d_current, gl.simW * gl.simH, cudaMemcpyDeviceToDevice);
+            }
+
+            ImGui::Separator();
+
+            // B. 环境参数
+            AppUi::Widgets::TextColored(coreColor, "ENVIRONMENT");
+            AppUi::Widgets::ColorEdit3("ACTIVE_CORE", (float*)&coreColor, ImGuiColorEditFlags_NoInputs);
+            AppUi::Widgets::ColorEdit3("BIOMASS_TRAIL", (float*)&trailColor, ImGuiColorEditFlags_NoInputs);
+
+            AppUi::Widgets::TextColored(coreColor, "VISUAL_EFFECTS");
+            // 滑块范围 0.0 (无轨迹) 到 0.99 (超长轨迹)
+            AppUi::Widgets::SliderFloat("TRAIL_DECAY", &trailDecay, 0.0f, 0.99f, "%.2f");
+            if (ImGui::IsItemHovered())
+                AppUi::Widgets::SetTooltip("Lower = Crisper blinking\nHigher = Longer trails");
+
+            AppUi::Widgets::SliderInt("BRUSH_SIZE", &brushRadius, 1, 50);
+
+            AppUi::Widgets::SliderFloat("TICK_SPD", &tickRate, 0.001f, 0.2f, "%.3fs");
+
+            AppUi::Widgets::Checkbox("ENABLE_VSYNC", &state.vsyncEnabled);
+            if (ImGui::IsItemDeactivatedAfterEdit()) glfwSwapInterval(state.vsyncEnabled ? 1 : 0);
+
+            // C. 运行控制
+            bool isPaused = !state.running;
+            if (AppUi::Widgets::Checkbox("PAUSE_SIMULATION", &isPaused)) state.running = !isPaused;
+
+
+            // E. 退出按钮
+            ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 55 * scale);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.6f));
+            if (AppUi::Widgets::Button("TERMINATE_SESSION", { -1, 35 * scale })) {
+                state.currentScreen = AppScreen::Intro0;
+            }
+            ImGui::PopStyleColor();
+        }
+
+        ImGui::End();
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(2);
+
+    }
+}
+
+//界面4,HAM 界面设计
+void RenderHamStationScreen(SimState& state, int winW, int winH) {
+    float scale = (float)winW / 1920.0f;
+    double t = ImGui::GetTime();
+    ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+    ImVec2 screenCenter(winW * 0.5f, winH * 0.5f);
+
+    static bool showLeftPanel = true;  // 控制 STATION_INFO
+    static bool showRightPanel = true; // 控制 PHONETIC_REF
+
+    // =====================================================
+    // 1. 渲染：对称钛金背景
+    // =====================================================
+
+    float subStep = 25.0f * scale, mainStep = 125.0f * scale;
+    auto DrawSymmetricGrid = [&](float step, ImU32 col, bool drawDots) {
+        for (float x = 0; screenCenter.x + x < winW || screenCenter.x - x > 0; x += step) {
+            drawList->AddLine(ImVec2(screenCenter.x + x, 0), ImVec2(screenCenter.x + x, (float)winH), col, 1.0f);
+            if (x > 0) drawList->AddLine(ImVec2(screenCenter.x - x, 0), ImVec2(screenCenter.x - x, (float)winH), col, 1.0f);
+        }
+        for (float y = 0; screenCenter.y + y < winH || screenCenter.y - y > 0; y += step) {
+            drawList->AddLine(ImVec2(0, screenCenter.y + y), ImVec2((float)winW, screenCenter.y + y), col, 1.0f);
+            if (y > 0) drawList->AddLine(ImVec2(0, screenCenter.y - y), ImVec2((float)winW, screenCenter.y - y), col, 1.0f);
+        }
+        if (drawDots) {
+            for (float x = 0; screenCenter.x + x < winW || screenCenter.x - x > 0; x += step) {
+                for (float y = 0; screenCenter.y + y < winH || screenCenter.y - y > 0; y += step) {
+                    drawList->AddCircleFilled(ImVec2(screenCenter.x + x, screenCenter.y + y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                    if (x > 0) drawList->AddCircleFilled(ImVec2(screenCenter.x - x, screenCenter.y + y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                    if (y > 0) drawList->AddCircleFilled(ImVec2(screenCenter.x + x, screenCenter.y - y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                    if (x > 0 && y > 0) drawList->AddCircleFilled(ImVec2(screenCenter.x - x, screenCenter.y - y), 3.0f * scale, IM_COL32(0, 255, 255, 35));
+                }
+            }
+        }
+        };
+    DrawSymmetricGrid(subStep, IM_COL32(255, 255, 255, 5), false);
+    DrawSymmetricGrid(mainStep, IM_COL32(255, 255, 255, 15), true);
+
+    // 计算呼吸频率：周期约 3 秒，范围在 0.3 到 1.0 之间
+    float morsePulse = (sinf((float)t * 2.0f) * 0.35f) + 0.65f;
+    // 定义配色方案
+    const ImVec4 COL_SIGNAL_WHITE = { 0.9f, 0.95f, 1.0f, 1.0f };    // 电子冷白
+    const ImVec4 COL_AMBER_TUBE = { 1.0f, 0.7f, 0.1f, morsePulse }; // 呼吸琥珀金
+    const ImVec4 COL_TECH_GREY = { 0.6f, 0.7f, 0.8f, 0.5f };     // 钛金辅助灰
+    const ImVec4 COL_SDR_CYAN = { 0.0f, 0.9f, 1.0f, 0.8f };     // SDR 专用青
+
+    // =====================================================
+    // 0. 顶部系统工具栏 (OSD Controller)
+    // =====================================================
+    float toolbarH = 50.0f * scale;
+    ImGui::SetNextWindowPos({ 0, 0 });
+    ImGui::SetNextWindowSize({ (float)winW, toolbarH });
+
+    // 样式：超薄半透明钛金条
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.01f, 0.02f, 0.03f, 0.85f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+
+    if (AppUi::Widgets::Begin("##TopToolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings)) {
+
+        // 绘制底部的青色装饰细线
+        ImDrawList* tDraw = ImGui::GetWindowDrawList();
+        tDraw->AddLine({ 0, toolbarH - 1 }, { (float)winW, toolbarH - 1 }, IM_COL32(0, 255, 255, 40), 1.0f);
+
+        ImGui::SetCursorPos({ 20 * scale, 10 * scale });
+        AppUi::Widgets::TextColored(COL_SDR_CYAN, "BI9DIU // CONSOLE_OSD_v2.0");
+
+        // --- 居中的控制按钮组 ---
+        float btnW = 140.0f * scale;
+        ImGui::SetCursorPos({ (winW - btnW * 2 - 10 * scale) * 0.5f, 8 * scale });
+
+        auto DrawToggleButton = [&](const char* label, bool& state) {
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+
+            // 根据开关状态切换颜色：激活时青色，关闭时暗灰色
+            if (state) {
+                ImGui::PushStyleColor(ImGuiCol_Text, COL_SIGNAL_WHITE);
+                ImGui::PushStyleColor(ImGuiCol_Border, COL_SDR_CYAN);
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0.5f, 0.5f, 0.2f));
+            }
+            else {
+                ImGui::PushStyleColor(ImGuiCol_Text, COL_TECH_GREY);
+                ImGui::PushStyleColor(ImGuiCol_Border, COL_TECH_GREY);
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.1f, 0.1f, 0.2f));
+            }
+
+            if (AppUi::Widgets::Button(label, { btnW, 30 * scale })) {
+                state = !state;
+            }
+
+            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar(2);
+            };
+
+        DrawToggleButton("MONITOR_L", showLeftPanel);
+        ImGui::SameLine(0, 10 * scale);
+        DrawToggleButton("REFERENCE_R", showRightPanel);
+
+        // --- 右侧系统频率显示 ---
+        ImGui::SetCursorPos({ winW - 220 * scale, 12 * scale });
+        AppUi::Widgets::TextColored(COL_AMBER_TUBE, "OSD_FREQ: %.1f FPS", io.Framerate);
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+
+    // =====================================================
+    // 2. 高级多层彩虹波动曲线 (SDR 频谱风格优化版)
+    // =====================================================
+    {
+        float startX = 0, endX = (float)winW;
+        float baseCenterY = winH * 0.75f;
+        int numLayers = 12;
+        int segments = 100; // 稍微增加段数，使颜色过渡更平滑
+
+        for (int i = 0; i < numLayers; ++i) {
+            float layerOffset = ((float)i / (float)numLayers - 0.5f) * (180.0f * scale);
+            float currentY = baseCenterY + layerOffset;
+
+            // 基础波形参数计算
+            auto GetWaveY = [&](float ratio, int layerIdx) {
+                float x = startX + (endX - startX) * ratio;
+                // 电波干涉公式
+                float wave = sinf(ratio * 8.0f + (float)t * 1.5f + (float)layerIdx * 0.4f) * (40.0f * scale) +
+                    cosf(ratio * 15.0f - (float)t * 0.8f) * (15.0f * scale);
+
+                // 鼠标靠近时波形隆起
+                float dToMouse = fabsf(x - io.MousePos.x);
+                if (dToMouse < 300 * scale) {
+                    wave *= (1.0f + 1.5f * (1.0f - dToMouse / (300 * scale)));
+                }
+                return currentY + wave;
+                };
+
+            for (int j = 0; j < segments; ++j) {
+                float r1 = (float)j / (float)segments;
+                float r2 = (float)(j + 1) / (float)segments;
+
+                float x1 = startX + (endX - startX) * r1;
+                float x2 = startX + (endX - startX) * r2;
+                float y1 = GetWaveY(r1, i);
+                float y2 = GetWaveY(r2, i);
+
+                // --- 核心修改：彩虹颜色计算 ---
+                // Hue (色相) 随位置 (r1) 和 时间 (t) 变化
+                // 加入 i * 0.05f 让不同层的颜色产生相位差，看起来更有深度
+                float hue = fmodf(r1 + (float)t * 0.1f + i * 0.05f, 1.0f);
+
+                // 使用 ImGui 自带的 HSV 到 RGB 转换
+                ImVec4 colV4 = ImColor::HSV(hue, 0.7f, 0.9f);
+                // 设置透明度：层数越靠外越透明
+                colV4.w = (0.35f - i * 0.03f);
+                ImU32 col = ImGui::ColorConvertFloat4ToU32(colV4);
+
+                // 绘制主色线段
+                drawList->AddLine({ x1, y1 }, { x2, y2 }, col, (1.2f + i * 0.2f) * scale);
+
+                // 可选：增加一层极细的白色芯线，增强“高能电波”感
+                drawList->AddLine({ x1, y1 }, { x2, y2 }, IM_COL32(255, 255, 255, (int)(colV4.w * 100)), 0.5f * scale);
+            }
+        }
+    }
+    // =====================================================
+// 3. 左侧实时状态窗口 (色彩同步优化版)
+// =====================================================
+
+    const ImVec4 COL_STATUS_GREEN = { 0.2f, 1.0f, 0.5f, 0.4f + 0.6f * morsePulse }; // 呼吸绿
+
+    ImGui::SetNextWindowPos({ 60 * scale, 80 * scale });
+    ImGui::SetNextWindowSize({ 400 * scale, 420 * scale });
+
+    // 样式：磨砂金属感
+
+
+    ImGuiWindowFlags infoFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings;
+
+    if (showLeftPanel) {
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.04f, 0.06f, 0.85f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 12.0f);
+        // 边框呼吸：跟随系统节拍的青色微光
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.9f, 1.0f, 0.1f + 0.2f * morsePulse));
+        if (AppUi::Widgets::Begin("STATION_INFO", nullptr, infoFlags)) {
+            // --- 1. 系统呼吸灯 ---
+            ImGui::Spacing();
+            AppUi::Widgets::TextColored(COL_STATUS_GREEN, "● SYSTEM_OPERATIONAL");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // --- 2. 实时系统时间 (Signal White) ---
+            std::time_t now = std::time(nullptr);
+            struct tm ltm;
+            localtime_s(&ltm, &now);
+
+            ImGui::SetWindowFontScale(2.8f * scale); // 进一步加大时间显示
+            AppUi::Widgets::TextColored(COL_SIGNAL_WHITE, "%02d:%02d:%02d", ltm.tm_hour, ltm.tm_min, ltm.tm_sec);
+
+            ImGui::SetWindowFontScale(1.0f * scale);
+            AppUi::Widgets::TextColored(COL_TECH_GREY, "UTC/LOCAL_STATION_CHRONO");
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // --- 3. UV段频率参考 (SDR Cyan & Amber) ---
+            AppUi::Widgets::TextColored(COL_SDR_CYAN, "[ RF_SPECTRUM_RANGE ]");
+            ImGui::Spacing();
+
+            // 标签用灰色，数值用琥珀色，模拟老式仪表感
+            AppUi::Widgets::TextColored(COL_TECH_GREY, "VHF BAND :");
+            ImGui::SameLine(140 * scale);
+            AppUi::Widgets::TextColored(COL_AMBER_TUBE, "144.000 - 148.000 MHz");
+
+            AppUi::Widgets::TextColored(COL_TECH_GREY, "UHF BAND :");
+            ImGui::SameLine(140 * scale);
+            AppUi::Widgets::TextColored(COL_AMBER_TUBE, "430.000 - 440.000 MHz");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // --- 4. 驻波比实时监控 (SWR) ---
+            static float swr = 1.15f;
+            swr = 1.12f + 0.04f * sinf((float)t * 4.0f);
+
+            AppUi::Widgets::TextColored(COL_SDR_CYAN, "ANT_SWR_LOAD :");
+            ImGui::SameLine();
+            // 数值根据状态变色，但默认保持琥珀色以同步
+            ImVec4 currentSwrCol = swr < 1.5f ? COL_AMBER_TUBE : ImVec4(1, 0.2f, 0.2f, 1.0f);
+            AppUi::Widgets::TextColored(currentSwrCol, "%.2f", swr);
+
+            // 进度条使用 SDR 青色
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, COL_SDR_CYAN);
+            ImGui::ProgressBar((swr - 1.0f) * 1.0f, ImVec2(-1, 8 * scale), "");
+            ImGui::PopStyleColor();
+
+            // --- 5. 底部装饰标签 (与中央面板呼应) ---
+            ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 35 * scale);
+            AppUi::Widgets::TextColored(COL_SIGNAL_WHITE, "OP: BI9DIU // QTH: XIAN_CHINA");
+        }
+        ImGui::End();
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar(2);
+    }
+
+    // =====================================================
+    // 4. 中央呼号与监控 (色彩美学优化版)
+    // =====================================================
+
+    ImGuiWindowFlags callsignFlags = ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoInputs |
+        ImGuiWindowFlags_NoNav |
+        ImGuiWindowFlags_NoBackground |
+        ImGuiWindowFlags_NoSavedSettings;
+
+    float callsignWinWidth = 1000.0f * scale;
+    ImGui::SetNextWindowPos({ screenCenter.x - callsignWinWidth * 0.5f, screenCenter.y - 180 * scale });
+    ImGui::SetNextWindowSize({ callsignWinWidth, 500 * scale });
+
+    if (AppUi::Widgets::Begin("##CenterCallsign", nullptr, callsignFlags))
+    {
+        // 1. 主呼号：高能电子白 (Beacon Layer)
+        ImGui::SetWindowFontScale(7.5f * scale);
+        const char* callSignText = "BI9DIU";
+        float mainTextWidth = AppUi::Widgets::CalcTextSize(callSignText).x;
+
+        // 绘制底层辉光 (增强深邃感)
+        for (int i = 0; i < 2; i++) {
+            AppUi::Widgets::drawText(drawList,NULL, 7.5f * scale * 100.0f / 100.0f,
+                { screenCenter.x - mainTextWidth * 0.5f + 2.0f * scale, screenCenter.y - 145 * scale },
+                IM_COL32(0, 200, 255, 15), callSignText);
+        }
+
+        ImGui::SetCursorPosX((callsignWinWidth - mainTextWidth) * 0.5f);
+        AppUi::Widgets::TextColored(COL_SIGNAL_WHITE, callSignText);
+
+        // 2. 莫尔斯电码：呼吸琥珀金 (Pulse Layer)
+        ImGui::SetWindowFontScale(2.0f * scale);
+        const char* morseText = "-...  ..  ----.  -..  ..  ..-";
+        float morseWidth = AppUi::Widgets::CalcTextSize(morseText).x;
+
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 10.0f * scale);
+        ImGui::SetCursorPosX((callsignWinWidth - morseWidth) * 0.5f);
+        AppUi::Widgets::TextColored(COL_AMBER_TUBE, morseText);
+
+        // 3. 字母解释法：钛金辅助灰 (Metadata Layer)
+        // 采用更理性的灰色，让主信息更突出
+        ImGui::SetWindowFontScale(1.15f * scale);
+        const char* phoneticBreakdown = "BRAVO  INDIA  NINER  DELTA  INDIA  UNIFORM";
+        float phWidth = AppUi::Widgets::CalcTextSize(phoneticBreakdown).x;
+
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f * scale);
+        ImGui::SetCursorPosX((callsignWinWidth - phWidth) * 0.5f);
+        AppUi::Widgets::TextColored(COL_TECH_GREY, phoneticBreakdown);
+
+        // 4. 装饰分割线 (增加横向延伸感)
+        float lineLen = 400.0f * scale;
+        ImVec2 cursorLine = ImGui::GetCursorScreenPos();
+        drawList->AddLine(
+            { screenCenter.x - lineLen * 0.5f, cursorLine.y + 10.0f * scale },
+            { screenCenter.x + lineLen * 0.5f, cursorLine.y + 10.0f * scale },
+            IM_COL32(0, 255, 255, 40), 1.0f);
+
+        // 5. 副标题：SDR 专用青 (Brand Layer)
+        ImGui::SetWindowFontScale(1.8f * scale);
+        const char* subText = ">> AMATEUR RADIO STATION DE XIAN";
+        float subTextWidth = AppUi::Widgets::CalcTextSize(subText).x;
+
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20.0f * scale);
+        ImGui::SetCursorPosX((callsignWinWidth - subTextWidth) * 0.5f);
+        AppUi::Widgets::TextColored(COL_SDR_CYAN, subText);
+    }
+    ImGui::End();
+    // =====================================================
+    // 5. 集中式字母解释法面板 (两列高清版)
+    // =====================================================
+    const char* phonetic[] = {
+        "ALPHA", "BRAVO", "CHARLIE", "DELTA", "ECHO", "FOXTROT", "GOLF", "HOTEL",
+        "INDIA", "JULIETT", "KILO", "LIMA", "MIKE", "NOVEMBER", "OSCAR", "PAPA",
+        "QUEBEC", "ROMEO", "SIERRA", "TANGO", "UNIFORM", "VICTOR", "WHISKEY", "X-RAY",
+        "YANKEE", "ZULU"
+    };
+
+    // 调整尺寸：变宽（以容纳两列），变矮（因为行数减半）
+    float panelWidth = 560.0f * scale;
+    float panelHeight = 520.0f * scale;
+    ImGui::SetNextWindowPos({ winW - panelWidth - 60.0f * scale, 80.0f * scale });
+    ImGui::SetNextWindowSize({ panelWidth, panelHeight });
+
+
+    ImGuiWindowFlags refFlags = ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoSavedSettings;
+
+    if (showRightPanel) {
+        // 样式设置
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.04f, 0.06f, 0.75f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.2f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 12.0f);
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 1, 1, 0.2f));
+        if (AppUi::Widgets::Begin("PHONETIC_REF", nullptr, refFlags)) {
+            // --- 标题居中 ---
+            ImGui::SetWindowFontScale(1.0f * scale);
+            float titleWidth = AppUi::Widgets::CalcTextSize(" [ NATO PHONETIC REFERENCE ]").x;
+            ImGui::SetCursorPosX((panelWidth - titleWidth) * 0.5f);
+            AppUi::Widgets::TextColored({ 0, 1, 1, 1 }, " [ NATO PHONETIC REFERENCE ]");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // --- 两列列表部分 ---
+            ImGui::SetWindowFontScale(0.9f * scale); // 稍微调大一点列表字体
+
+            float col2Offset = panelWidth * 0.5f; // 第二列的起始偏移量
+
+            for (int i = 0; i < 13; i++) { // 循环 13行
+                // --- 第一列 (A-M) ---
+                int idx1 = i;
+                ImGui::SetCursorPosX(25.0f * scale);
+                AppUi::Widgets::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "%c", 'A' + idx1);
+                ImGui::SameLine(70.0f * scale);
+                AppUi::Widgets::TextColored({ 1.0f, 1.0f, 1.0f, 0.85f }, "%s", phonetic[idx1]);
+
+                // --- 第二列 (N-Z) ---
+                int idx2 = i + 13;
+                ImGui::SameLine(col2Offset + 20.0f * scale);
+                AppUi::Widgets::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "%c", 'A' + idx2);
+                ImGui::SameLine(col2Offset + 65.0f * scale);
+                AppUi::Widgets::TextColored({ 1.0f, 1.0f, 1.0f, 0.85f }, "%s", phonetic[idx2]);
+
+                // 每行行间距
+                ImGui::Dummy(ImVec2(0, 6.0f * scale));
+
+                // 每隔 4 行加一个超淡的装饰线，增加理性刻度感
+                if (i % 4 == 3 && i < 12) {
+                    ImGui::Separator();
+                    ImGui::Dummy(ImVec2(0, 2.0f * scale));
+                }
+            }
+        }
+        ImGui::End();
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar(2);
+    }
+
+    // =====================================================
+// 6. 底部操作栏
+// =====================================================
+    float btnW = 320 * scale, btnH = 70 * scale;
+
+    // A. 设置按钮窗口的属性
+    ImGuiWindowFlags btnWindowFlags = ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoBackground |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoSavedSettings;
+
+    // B. 设置窗口位置（对应你原来的 SetCursorPos 逻辑）
+    ImGui::SetNextWindowPos({ winW - btnW - 80 * scale, winH - btnH - 80 * scale });
+    ImGui::SetNextWindowSize({ btnW + 20, btnH + 20 }); // 稍微多给一点点空间
+
+    // C. 开启窗口
+    if (AppUi::Widgets::Begin("##LaunchButtonWindow", nullptr, btnWindowFlags))
+    {
+        // 在透明窗口内部设置样式
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 40.0f * scale);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.4f, 0.5f, 0.6f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.6f, 0.8f, 0.8f));
+
+        // 现在按钮有“家”了，Debug 窗口就会消失
+        if (AppUi::Widgets::Button("LAUNCH SIMULATION", { btnW, btnH })) {
+            state.currentScreen = AppScreen::Intro0;
+        }
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+    }
+    ImGui::End(); // 结束按钮窗口
+
+    // 7. 底部装饰性莫尔斯电码 (绿色呼吸灯效果)
+    // =====================================================
+
+    // 定义电台绿色 (经典荧光绿)
+    ImU32 morseColor = IM_COL32(50, 255, 130, (int)(255 * morsePulse));
+
+    // 定义背部辉光颜色 (更透、更柔和)
+    ImU32 morseGlow = IM_COL32(0, 255, 100, (int)(60 * morsePulse));
+    // 1. 绘制底层辉光 (稍微偏移或重复绘制以增加发光感)
+    AppUi::Widgets::drawText(drawList,NULL, 1.2f * scale * 50.0f,
+        { 80 * scale + 1.5f, winH - 60 * scale + 1.5f },
+        morseGlow, "-... .. ----. -.. .. ..-");
+
+    // 2. 绘制主体呼吸灯文字
+    AppUi::Widgets::drawText(drawList,NULL, 1.2f * scale * 50.0f,
+        { 80 * scale, winH - 60 * scale },
+        morseColor, "-... .. ----. -.. .. ..-");
+
+}
+
+//GPU信息界面
+void RenderCudaDiagnosticsScreen(SimState& state, const GpuInfo& info, int winW, int winH) {
+    const float scale = (float)winW / 1920.0f;
+    ImGuiIO& io = ImGui::GetIO();
+    ImDrawList* draw = ImGui::GetBackgroundDrawList();
+
+    // --- [1. 磨砂玻璃背景渲染] ---
+    draw->AddRectFilledMultiColor({ 0,0 }, { (float)winW, (float)winH },
+        IM_COL32(5, 15, 20, 255), IM_COL32(10, 30, 35, 255),
+        IM_COL32(2, 10, 15, 255), IM_COL32(5, 20, 25, 255));
+
+    draw->AddRectFilled({ 0,0 }, { (float)winW, (float)winH }, IM_COL32(100, 200, 255, 10));
+
+    float gridSize = 64.0f * scale;
+    for (float x = 0; x < winW; x += gridSize)
+        draw->AddLine({ x, 0 }, { x, (float)winH }, IM_COL32(0, 255, 200, 15));
+    for (float y = 0; y < winH; y += gridSize)
+        draw->AddLine({ 0, y }, { (float)winW, y }, IM_COL32(0, 255, 200, 15));
+
+    // --- [2. 顶部状态栏] ---
+    ImGui::SetNextWindowPos({ 0, 0 });
+    ImGui::SetNextWindowSize({ (float)winW, 50.0f * scale });
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.05f, 0.06f, 0.8f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+    AppUi::Widgets::Begin("DiagTopBar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs);
+    {
+        ImGui::SetCursorPos({ 20 * scale, 15 * scale });
+        AppUi::Widgets::TextColored({ 0.0f, 1.0f, 0.8f, 1.0f }, "CORE_DIAGNOSTICS // DEVICE_ID: %s", info.success ? "ACTIVE" : "ERROR");
+
+        float fpsX = (float)winW - 150.0f * scale;
+        ImGui::SetCursorPos({ fpsX, 15 * scale });
+        AppUi::Widgets::TextDisabled("[ %.0f FPS ]", io.Framerate);
+    }
+    ImGui::End();
+
+    ImGui::PopStyleVar(1);
+    ImGui::PopStyleColor(1);
+
+    // --- [3. 主信息面板布局] ---
+    ImVec2 panelSize = { 650 * scale, 750 * scale }; // 略微加宽以适应文字
+    ImGui::SetNextWindowPos({ (winW - panelSize.x) * 0.5f, (winH - panelSize.y) * 0.5f + 25 * scale });
+    ImGui::SetNextWindowSize(panelSize);
+
+    // 磨砂玻璃样式 - 准备 Push
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.15f, 0.18f, 0.65f)); // 增加不透明度提高可读性
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 1.0f, 0.8f, 0.3f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 15.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
+
+    ImVec4 neonCyan = ImVec4(0.0f, 1.0f, 0.9f, 1.0f);
+    ImVec4 neonGreen = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+
+    if (AppUi::Widgets::Begin("DIAG_PANEL", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove)) {
+
+        ImGui::SetCursorPosY(30 * scale);
+        // 安全检查：防止字体列表为空时崩溃
+        if (!io.Fonts->Fonts.empty()) {
+            ImGui::PushFont(io.Fonts->Fonts[0]);
+        }
+
+        ImGui::Indent(30 * scale);
+
+        // A. 硬件标识块
+        AppUi::Widgets::TextColored(neonCyan, ">>> HARDWARE_IDENTITY");
+        ImGui::Separator();
+        ImGui::Spacing();
+        AppUi::Widgets::Text("GPU_MODEL:"); ImGui::SameLine();
+        AppUi::Widgets::TextColored(neonGreen, "%s", info.success ? info.name : "N/A");
+        AppUi::Widgets::Text("ARCH_TYPE:"); ImGui::SameLine();
+        AppUi::Widgets::TextColored(neonGreen, "NVIDIA (SM %d.%d)", info.computeCapabilityMajor, info.computeCapabilityMinor);
+
+        ImGui::Dummy({ 0, 25 * scale });
+
+        // B. 计算核心规格块
+        AppUi::Widgets::TextColored(neonCyan, ">>> COMPUTE_SPECIFICATIONS");
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Columns(2, "spec_cols", false);
+        ImGui::SetColumnWidth(0, 280 * scale); // 宽度微调
+
+        AppUi::Widgets::Text("CUDA_CORES:");
+        AppUi::Widgets::TextColored(neonGreen, "%d Units", info.cudaCores);
+        ImGui::Spacing();
+        AppUi::Widgets::Text("SM_COUNT:");
+        AppUi::Widgets::TextColored(neonGreen, "%d SMs", info.multiProcessorCount);
+
+        ImGui::NextColumn();
+
+        AppUi::Widgets::Text("L2_CACHE_STATUS:");
+        AppUi::Widgets::TextColored(neonGreen, "DATA_LOCKED");
+        ImGui::Spacing();
+        AppUi::Widgets::Text("CLOCK_SPEED:");
+        AppUi::Widgets::TextColored(neonGreen, "%.1f GHz", (float)info.clockRate / 1000000.0f);
+
+        ImGui::Columns(1);
+        ImGui::Dummy({ 0, 25 * scale });
+
+        // C. 显存状态块
+        AppUi::Widgets::TextColored(neonCyan, ">>> VRAM_CAPACITY_ANALYSIS");
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        float vram_gb = (float)info.totalMem / (1024.0f * 1024.0f * 1024.0f);
+        AppUi::Widgets::Text("DEDICATED_VIDEO_MEMORY:");
+
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f, 0.8f, 0.7f, 0.8f));
+        char vram_label[32]; sprintf_s(vram_label, "%.2f GB TOTAL", vram_gb);
+        // 修正宽度计算：使用 -30*scale 以填满右边距
+        ImGui::ProgressBar(vram_gb / 16.0f, ImVec2(-30 * scale, 28 * scale), vram_label);
+        ImGui::PopStyleColor(1);
+
+        ImGui::Dummy({ 0, 40 * scale });
+
+        // D. 系统操作区
+        ImGui::Separator();
+        if (AppUi::Widgets::Button("RUN_SIMULATION_STRESS_TEST", { -30 * scale, 45 * scale })) {
+            // Logic for stress test
+        }
+
+        // 底部退出区域
+        ImGui::SetCursorPosY(panelSize.y - 70 * scale);
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 0.8f));
+        if (AppUi::Widgets::Button("TERMINATE_DIAGNOSTIC_SESSION", { -30 * scale, 35 * scale })) {
+            state.currentScreen = AppScreen::Intro0;
+        }
+        ImGui::PopStyleColor(2);
+
+        ImGui::Unindent();
+
+        if (!io.Fonts->Fonts.empty()) {
+            ImGui::PopFont();
+        }
+    }
+    ImGui::End();
+
+    // 修复：Pop 数量必须与 Push 严格对应
+    ImGui::PopStyleVar(2);   // 对应 WindowRounding, WindowBorderSize
+    ImGui::PopStyleColor(2); // 对应 WindowBg, Border
+}
+
+bool IsIntroScreen(AppScreen screen) {
+    return (screen == AppScreen::Intro0 || screen == AppScreen::Intro1);
+}
+
+void RenderApp(AppScreen screen, SimState& state, const GpuInfo& info, int winW, int winH, GLHandles& gl, AsyncLoader& loader,
+    Seis3D::Seis3D_State& state3D) {
+    AppUi::LegacyContrastScope legacyContrast(screen!=AppScreen::Intro0&&screen!=AppScreen::SeisSim_3D&&screen!=AppScreen::UserManual);
+
+    switch (screen) {
+    case AppScreen::Intro0:
+        RenderIntroScreen0(state, info, winW, winH, state.isIntroMode, loader);
+        break;
+    case AppScreen::Intro1:
+        RenderIntroScreen1(state, winW, winH, state.isIntroMode, loader);
+        break;
+    case AppScreen::LifeGame2:
+        RenderLifeGameScreen_GPU(state, winW, winH, gl, info);
+        break;
+    case AppScreen::HamStation:
+        RenderHamStationScreen(state, winW, winH);
+        break;
+    case AppScreen::CudaDiagno:
+        RenderCudaDiagnosticsScreen(state, info, winW, winH);
+        break;
+    case AppScreen::UserManual:
+        state.currentScreen=drawOperationManualScreen(winW,winH);
+        break;
+    case AppScreen::SeisSim_GPU:
+        // 调用我们下面实现的专业地震模拟渲染窗口
+        Seis2D::renderSimulation2D(state, winW, winH, gl, info);
+        break;
+    case AppScreen::SeisSim_3D:
+        if (Seis3D::renderScreen3D(state3D, winW, winH)) state.currentScreen = AppScreen::Intro0;
+        break;
+
+    default: break;
+    }
+}
+
+//检查是否有操作
+void CheckIdleStatus(GLFWwindow* window, SimState& state) {
+    double currentTime = glfwGetTime();
+    bool inputDetected = false;
+
+    // 1. 检查鼠标移动
+    double mx, my;
+    glfwGetCursorPos(window, &mx, &my);
+    if (abs(mx - state.lastMouseX) > 1.0 || abs(my - state.lastMouseY) > 1.0) {
+        inputDetected = true;
+        state.lastMouseX = mx;
+        state.lastMouseY = my;
+    }
+
+    // 2. 检查鼠标点击
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ||
+        glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        inputDetected = true;
+    }
+
+    // 3. 检查键盘输入 (简单检查几个常用键，或者使用 GLFW 回调更全面)
+    // 这里简单检查 ImGui 是否捕获了键盘，或者是否有任意键按下
+    // 注意：ImGui::GetIO().WantCaptureKeyboard 只能说明 ImGui 在处理，也算一种操作
+    if (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse) {
+        inputDetected = true;
+    }
+
+    //// 4. 更新状态
+    //if (inputDetected) {
+    //    state.lastInputTime = currentTime;
+    //}
+    //else {
+    //    // 如果正在运行模拟，且超过了空闲时间
+    //    if (!state.isIntroMode && (currentTime - state.lastInputTime > state.idleTimeout)) {
+    //        state.isIntroMode = true; // 自动进入屏保/欢迎页
+    //        state.running = false;    // 可选：暂停模拟以省电
+    //        //state.RenderVisualization = false; // 可选：关闭渲染
+    //        std::cout << "[System] Idle timeout reached. Returning to Intro Screen." << std::endl;
+    //    }
+    //}
+}
+
+// 冷切换只释放二维工作区，保留主程序的通用渲染资源和着色器。
+void releaseSeismicWorkspace2D(GLHandles& gl, SimState& state) {
+    state.running=false;
+    Seis2D::releaseSimulation2D(gl);
+}
+
+//资源清理
+void cleanup(GLHandles& gl) {
+    releaseCudaLife();
+    Seis2D::releaseSimulation2D(gl);
+    if(gl.seisProg) {glDeleteProgram(gl.seisProg);gl.seisProg=0;}
+    // --- 1. 注销 CUDA 与 OpenGL 的互操作资源 ---
+    if (gl.cudaRes) {
+        // 在删除 OpenGL 纹理之前，必须先注销注册的资源
+        cudaGraphicsUnregisterResource(gl.cudaRes);
+        gl.cudaRes = nullptr;
+    }
+
+    // --- 2. 释放 CUDA 申请的逻辑缓冲区 (显存) ---
+    if (gl.d_current) {
+        cudaFree(gl.d_current);
+        gl.d_current = nullptr;
+    }
+    if (gl.d_next) {
+        cudaFree(gl.d_next);
+        gl.d_next = nullptr;
+    }
+    if (gl.d_heatData) {
+        cudaFree(gl.d_heatData);
+        gl.d_heatData = nullptr;
+    }
+
+    // --- 3. 清理 OpenGL 纹理 ---
+    if (gl.lifeTex) {
+        glDeleteTextures(1, &gl.lifeTex);
+        gl.lifeTex = 0;
+    }
+
+    // --- 4. 清理基础几何资源 (原有逻辑) ---
+    if (gl.quadVBO) {
+        glDeleteBuffers(1, &gl.quadVBO);
+        gl.quadVBO = 0;
+    }
+    if (gl.quadVAO) {
+        glDeleteVertexArrays(1, &gl.quadVAO);
+        gl.quadVAO = 0;
+    }
+
+    // --- 5. 清理着色器程序 (原有逻辑) ---
+    if (gl.renderProg) {
+        glDeleteProgram(gl.renderProg);
+        gl.renderProg = 0;
+    }
+
+    // 重置 CUDA 数组指针（它是通过映射获取的，不需要单独释放）
+    gl.cudaArray = nullptr;
+}
+
+//处理键盘操作
+void ProcessInput(GLFWwindow* window, SimConfig& cfg, SimState& state, GLHandles& gl) {
+    (void)window;(void)cfg;(void)gl;
+    if(!AppUi::workspaceShortcutsAvailable()) return;
+    // 三维快捷键由三维状态机自己处理，不能修改二维全局画笔或运行状态。
+    if (state.currentScreen == AppScreen::SeisSim_3D) {
+        if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Tab, false))
+            state.currentScreen = AppScreen::Intro0;
+        return;
+    }
+    if(ImGui::GetIO().WantTextInput) return;
+    // 只有在用户没有在任何 ImGui 文本框/输入框中编辑时，快捷键才起作用 (安全保护)
+    if (!ImGui::GetIO().WantTextInput) {
+
+        // Tab 在工作区与首页间切换，不再轮转到遗留/实验页面。
+        if (ImGui::IsKeyPressed(ImGuiKey_Tab, false)) {
+            state.currentScreen = state.currentScreen == AppScreen::Intro0
+                ? AppScreen::SeisSim_GPU
+                : AppScreen::Intro0;
+            state.isIntroMode = state.currentScreen == AppScreen::Intro0;
+        }
+        if(state.currentScreen!=AppScreen::SeisSim_GPU) return;
+
+        // =========================================================
+        // 【新增 1】：R 键重置视角信号发射
+        // =========================================================
+        if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+            Seis2D::requestViewReset2D();
+        }
+
+        // =========================================================
+        // 【新增 2】：C 键重置模拟信号发射
+        // =========================================================
+        if (ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+            Seis2D::requestFieldReset2D();
+        }
+    }
+
+    // Edge-triggered events cannot fire later when a key held during editing regains workspace focus.
+    if(ImGui::IsKeyPressed(ImGuiKey_Space,false)) state.running=!state.running;
+    if(ImGui::IsKeyPressed(ImGuiKey_1,false)) state.brushType=TOOL_NONE;
+    if(ImGui::IsKeyPressed(ImGuiKey_2,false)) state.brushType=TOOL_HIGH;
+    if(ImGui::IsKeyPressed(ImGuiKey_3,false)) state.brushType=TOOL_LOW;
+    if(ImGui::IsKeyPressed(ImGuiKey_4,false)) state.brushType=TOOL_WALL;
+    if(ImGui::IsKeyPressed(ImGuiKey_5,false)) state.brushType=TOOL_ERASER;
+}

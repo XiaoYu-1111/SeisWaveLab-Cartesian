@@ -26,8 +26,10 @@ void constrainSliceCamera3D(SliceCamera3D& camera) {
 }
 
 // Use identical UV bounds for drawing, overlays and coordinate picking on all three planes.
-SliceBounds3D sliceBounds3D(const Seis3D_State& s,int plane,const SliceCamera3D& camera) {
-    const float halfExtent=0.5f/camera.zoom3D;
+SliceBounds3D sliceBounds3D(const Seis3D_State& s,int plane,SliceCamera3D& camera,ImVec2 visibleExtent) {
+    const ImVec2 halfExtent(visibleExtent.x*.5f,visibleExtent.y*.5f);
+    camera.center3D[0]=(std::clamp)(camera.center3D[0],halfExtent.x,1-halfExtent.x);
+    camera.center3D[1]=(std::clamp)(camera.center3D[1],halfExtent.y,1-halfExtent.y);
     const auto& l=s.gl3D.layout3D;const auto& c=s.context3D;
     const int axes[2]={plane==1?1:0,plane==2?1:2};
     const int physical[3]={c.nx3D,c.ny3D,c.nz3D};
@@ -36,19 +38,13 @@ SliceBounds3D sliceBounds3D(const Seis3D_State& s,int plane,const SliceCamera3D&
         const int a=axes[j];start[j]=-float(l.domainOrigin3D[a])/l.domainSize3D[a];
         extent[j]=float(physical[a])/l.domainSize3D[a];
     }
-    return {{start[0]+(camera.center3D[0]-halfExtent)*extent[0],start[1]+(camera.center3D[1]-halfExtent)*extent[1]},
-        {start[0]+(camera.center3D[0]+halfExtent)*extent[0],start[1]+(camera.center3D[1]+halfExtent)*extent[1]}};
+    return {{start[0]+(camera.center3D[0]-halfExtent.x)*extent[0],start[1]+(camera.center3D[1]-halfExtent.y)*extent[1]},
+        {start[0]+(camera.center3D[0]+halfExtent.x)*extent[0],start[1]+(camera.center3D[1]+halfExtent.y)*extent[1]}};
 }
 
-// Keep the sample beneath the pointer stationary while changing magnification, until an edge is met.
-void zoomSliceAtPointer3D(SliceCamera3D& camera,ImVec2 pointer,float wheel) {
-    const float oldExtent=1.0f/camera.zoom3D;
-    const ImVec2 anchor(camera.center3D[0]+(pointer.x-0.5f)*oldExtent,
-        camera.center3D[1]+(pointer.y-0.5f)*oldExtent);
+// Scale the entire fitted section about its current center, independent of mouse position.
+void zoomSlice3D(SliceCamera3D& camera,float wheel) {
     camera.zoom3D=(std::clamp)(camera.zoom3D*std::exp((std::clamp)(wheel,-20.0f,20.0f)*0.18f),1.0f,maximumSliceZoom3D);
-    const float newExtent=1.0f/camera.zoom3D;
-    camera.center3D[0]=anchor.x-(pointer.x-0.5f)*newExtent;
-    camera.center3D[1]=anchor.y-(pointer.y-0.5f)*newExtent;
     constrainSliceCamera3D(camera);
 }
 
@@ -146,7 +142,7 @@ void resetSliceViews3D(Seis3D_State& s) {
     for(auto& camera:s.sliceCameras3D) camera=SliceCamera3D{};
 }
 
-// Draw a full-resolution slice with pointer-anchored zoom, captured panning and physical picking.
+// Draw a full-resolution slice with centered whole-section zoom, captured panning and physical picking.
 void drawSlicePanel3D(Seis3D_State& s,int plane) {
     AppUi::FunctionStyleScope colors(AppUi::FunctionRole::Display);
     ImGui::PushID(plane);
@@ -175,7 +171,8 @@ void drawSlicePanel3D(Seis3D_State& s,int plane) {
         float(plane==1?s.context3D.ny3D:s.context3D.nx3D)/(plane==2?s.context3D.ny3D:s.context3D.nz3D);
     const float rulerWidth=AppUi::Widgets::CalcTextSize("-99999").x+10;
     const ImVec2 imageArea((std::max)(8.0f,available.x-rulerWidth),(std::max)(8.0f,available.y-ImGui::GetTextLineHeight()-8));
-    const ImVec2 size=imageArea.x/imageArea.y>ratio?ImVec2(imageArea.y*ratio,imageArea.y):ImVec2(imageArea.x,imageArea.x/ratio);
+    const ImVec2 fittedSize=imageArea.x/imageArea.y>ratio?ImVec2(imageArea.y*ratio,imageArea.y):ImVec2(imageArea.x,imageArea.x/ratio);
+    const ImVec2 size((std::min)(imageArea.x,fittedSize.x*camera.zoom3D),(std::min)(imageArea.y,fittedSize.y*camera.zoom3D));
     const auto cursor=ImGui::GetCursorPos();
     ImGui::SetCursorPos(ImVec2(cursor.x+rulerWidth+(imageArea.x-size.x)*.5f,cursor.y+(imageArea.y-size.y)*.5f));
     const ImVec2 origin=ImGui::GetCursorScreenPos();
@@ -186,13 +183,13 @@ void drawSlicePanel3D(Seis3D_State& s,int plane) {
     const auto& io=ImGui::GetIO();
     const ImVec2 pointer((std::clamp)((io.MousePos.x-origin.x)/size.x,0.0f,1.0f),
         (std::clamp)((io.MousePos.y-origin.y)/size.y,0.0f,1.0f));
-    if(hovered&&io.MouseWheel!=0) zoomSliceAtPointer3D(camera,pointer,io.MouseWheel);
+    if(hovered&&io.MouseWheel!=0) zoomSlice3D(camera,io.MouseWheel);
     if(active&&ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
-        camera.center3D[0]-=io.MouseDelta.x/(size.x*camera.zoom3D);
-        camera.center3D[1]-=io.MouseDelta.y/(size.y*camera.zoom3D);
+        camera.center3D[0]-=io.MouseDelta.x/(fittedSize.x*camera.zoom3D);
+        camera.center3D[1]-=io.MouseDelta.y/(fittedSize.y*camera.zoom3D);
         constrainSliceCamera3D(camera);
     }
-    const auto bounds=sliceBounds3D(s,plane,camera);
+    const auto bounds=sliceBounds3D(s,plane,camera,ImVec2(size.x/(fittedSize.x*camera.zoom3D),size.y/(fittedSize.y*camera.zoom3D)));
     ImGui::GetWindowDrawList()->AddImage(ImTextureID(s.gl3D.displayTextures3D[plane]),origin,
         ImVec2(origin.x+size.x,origin.y+size.y),bounds.minimum3D,bounds.maximum3D);
     drawSliceOverlay3D(s,plane,bounds,origin,size);
@@ -218,7 +215,7 @@ void drawSlicePanel3D(Seis3D_State& s,int plane) {
             s.slice3D[0]=point.x3D;s.slice3D[1]=point.y3D;s.slice3D[2]=point.z3D;s.dirty3D=true;
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)&&!ImGui::IsAnyMouseDown())
-            AppUi::Widgets::SetTooltip("Wheel: zoom at cursor (100-3200%%)\nMiddle drag: pan | Left click: link slices\nReset view: fit this slice | R: reset all views");
+            AppUi::Widgets::SetTooltip("Wheel: zoom entire section (100-3200%%)\nMiddle drag: pan | Left click: link slices\nReset view: fit this slice | R: reset all views");
     }
     ImGui::EndChild();ImGui::PopID();
 }

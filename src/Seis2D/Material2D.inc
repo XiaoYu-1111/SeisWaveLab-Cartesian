@@ -39,12 +39,14 @@ inline void recalculateCachedModelMetrics() {
     cachedMaxRho2D = max_r;
     cachedMinRho2D = min_r;
 
-    size_t estimated_bytes = simulationContext2D.total_grid * sizeof(float) * 20;
+    size_t estimated_bytes = size_t(simulationContext2D.NX+2*domainPad2D())*(simulationContext2D.NZ+2*domainPad2D())*sizeof(float)*28;
     cachedVramMb2D = static_cast<float>(estimated_bytes) / (1024.0f * 1024.0f);
 }
 
 // Rebuilds the visualization texture from the current model and graphics context.
 inline void updateModelTexture() {
+    auto expanded=extendedContext2D(::Seis2D::Legacy2D::simulationContext2D);
+    auto& simulationContext2D=expanded;
     if (modelTex2D == 0) {
         glGenTextures(1, &modelTex2D);
     }
@@ -60,10 +62,10 @@ inline void updateModelTexture() {
             vs = sqrtf(simulationContext2D.mu[i] / rho);
         }
 
-        temp_data[i * 4 + 0] = vp / 6000.0f;  
-        temp_data[i * 4 + 1] = vs / 3500.0f;  
-        temp_data[i * 4 + 2] = rho / 3000.0f; 
-        temp_data[i * 4 + 3] = 1.0f;          
+        temp_data[i * 4 + 0] = vp / 6000.0f;
+        temp_data[i * 4 + 1] = vs / 3500.0f;
+        temp_data[i * 4 + 2] = rho / 3000.0f;
+        temp_data[i * 4 + 3] = 1.0f;
     }
 
     glBindTexture(GL_TEXTURE_2D, modelTex2D);
@@ -77,14 +79,16 @@ inline void updateModelTexture() {
 
 // Uploads current material fields to the simulation's device buffers.
 inline void uploadMaterialToGpu() {
+    auto expanded=extendedContext2D(::Seis2D::Legacy2D::simulationContext2D);
+    auto& simulationContext2D=expanded;
     if (simulationContext2D.total_grid <= 0) return;
 
     size_t bytes = simulationContext2D.total_grid * sizeof(float);
 
-    CUDA_CHECK(cudaMemcpy(gpuData2D.d_rho, simulationContext2D.rho.data(), bytes, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(gpuData2D.d_mu, simulationContext2D.mu.data(), bytes, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(gpuData2D.d_lambda, simulationContext2D.lambda.data(), bytes, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(gpuData2D.d_lambda2mu, simulationContext2D.lambda2mu.data(), bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_rho, simulationContext2D.rho.data(), bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_mu, simulationContext2D.mu.data(), bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_lambda, simulationContext2D.lambda.data(), bytes, cudaMemcpyHostToDevice));
+    CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_lambda2mu, simulationContext2D.lambda2mu.data(), bytes, cudaMemcpyHostToDevice));
 
     if (gpuData2D.flag_type == 2) {
         std::vector<float> mu_x(simulationContext2D.total_grid, 0.0f), lambda_x(simulationContext2D.total_grid, 0.0f), l2m_x(simulationContext2D.total_grid, 0.0f);
@@ -103,12 +107,12 @@ inline void uploadMaterialToGpu() {
                 rho_xz[k] = 0.25f * (simulationContext2D.rho[k] + simulationContext2D.rho[k_next_x] + simulationContext2D.rho[k_next_z] + simulationContext2D.rho[k_dr]);
             }
         }
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_mu_x_flat, mu_x.data(), bytes, cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_lambda_x_flat, lambda_x.data(), bytes, cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_lambda2mu_x_flat, l2m_x.data(), bytes, cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_mu_z_flat, mu_z.data(), bytes, cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_rho_x_z_flat, rho_xz.data(), bytes, cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_rho_orig_flat, rho_orig.data(), bytes, cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_mu_x_flat, mu_x.data(), bytes, cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_lambda_x_flat, lambda_x.data(), bytes, cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_lambda2mu_x_flat, l2m_x.data(), bytes, cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_mu_z_flat, mu_z.data(), bytes, cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_rho_x_z_flat, rho_xz.data(), bytes, cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_rho_orig_flat, rho_orig.data(), bytes, cudaMemcpyHostToDevice));
     }
 
     if (gpuData2D.flag_type == 3) {
@@ -122,11 +126,10 @@ inline void uploadMaterialToGpu() {
                 simulationContext2D.dp_flat[j] = (l2m * l2m - lam * lam) / l2m;
             }
         }
-        CUDA_CHECK(cudaMemcpy(gpuData2D.d_dp_flat, simulationContext2D.dp_flat.data(), simulationContext2D.NX * sizeof(float), cudaMemcpyHostToDevice));
+        CUDA_CHECK(solverCopy2D(gpuData2D,gpuData2D.d_dp_flat, simulationContext2D.dp_flat.data(), simulationContext2D.NX * sizeof(float), cudaMemcpyHostToDevice));
     }
 
     recalculateCachedModelMetrics();
 
     updateModelTexture();
 }
-

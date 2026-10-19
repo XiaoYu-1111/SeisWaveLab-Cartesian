@@ -1,7 +1,7 @@
 // Draw rulers and physical markers clipped to the actual docked image region.
 inline void drawCanvasAnnotations2D(SimState& state,int winW,int winH) {
     const float barHeight=0;
-    renderGridRulerOnBackbuffer(simulationContext2D, state, winW, winH, barHeight, viewOffset2D, viewZoom2D);
+
 
     ViewportInfo vp;
     vp.x = canvasOrigin2D.x;
@@ -18,7 +18,7 @@ inline void drawCanvasAnnotations2D(SimState& state,int winW,int winH) {
         ImDrawList* fg = canvasDrawList2D;
 
         float  winAspect = (float)winW / (float)winH;
-        float  simAspect = (float)simulationContext2D.NX / (float)simulationContext2D.NZ;
+        float  simAspect = float(viewWidth2D())/viewHeight2D();
         ImVec2 aspectCorr = { 1.0f, 1.0f };
         if (winAspect > simAspect) {
             aspectCorr.x = winAspect / simAspect;
@@ -28,8 +28,8 @@ inline void drawCanvasAnnotations2D(SimState& state,int winW,int winH) {
         }
 
         for (size_t i = 0; i < acquisition2D.receivers.size(); ++i) {
-            float aPos_x = ((float)acquisition2D.receivers[i].x / (float)simulationContext2D.NX) * 2.0f - 1.0f;
-            float aPos_y = 1.0f - ((float)acquisition2D.receivers[i].y / (float)simulationContext2D.NZ) * 2.0f;
+            float aPos_x = ((float(acquisition2D.receivers[i].x)-viewOrigin2D()) / viewWidth2D()) * 2.0f - 1.0f;
+            float aPos_y = 1.0f - ((float(acquisition2D.receivers[i].y)-viewOriginZ2D()) / viewHeight2D()) * 2.0f;
 
             float Pndc_x = (aPos_x - viewOffset2D.x) * viewZoom2D / aspectCorr.x;
             float screenX = (Pndc_x * 0.5f + 0.5f) * winW;
@@ -38,12 +38,11 @@ inline void drawCanvasAnnotations2D(SimState& state,int winW,int winH) {
             float screenY = (0.5f - Pndc_y * 0.5f) * winH;
 
             if (screenX >= 0.0f && screenX <= winW && screenY >= barHeight && screenY <= winH) {
-                
+
                 ImVec2 p1(canvasOrigin2D.x+screenX, canvasOrigin2D.y+screenY - 5.0f);
                 ImVec2 p2(canvasOrigin2D.x+screenX - 4.0f, canvasOrigin2D.y+screenY + 3.0f);
                 ImVec2 p3(canvasOrigin2D.x+screenX + 4.0f, canvasOrigin2D.y+screenY + 3.0f);
-                fg->AddTriangleFilled(p1, p2, p3, IM_COL32(255, 230, 51, 230)); 
-                fg->AddTriangle(p1, p2, p3, IM_COL32(0, 0, 0, 255), 1.0f);      
+                fg->AddCircleFilled(ImVec2(canvasOrigin2D.x+screenX,canvasOrigin2D.y+screenY),2.5f,IM_COL32(65,180,172,240));
             }
         }
     }
@@ -74,16 +73,22 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
         {
             ImGui::SetCursorPosY(std::max(0.0f,(barHeight-ImGui::GetTextLineHeight())*.5f));
             if(ImGui::BeginTable("Seis2D.StatusColumns",3,ImGuiTableFlags_SizingStretchProp)) {
-                ImGui::TableSetupColumn("Device",ImGuiTableColumnFlags_WidthStretch,.37f);
-                ImGui::TableSetupColumn("Progress",ImGuiTableColumnFlags_WidthStretch,.27f);
-                ImGui::TableSetupColumn("Actions",ImGuiTableColumnFlags_WidthStretch,.36f);
-                ImGui::TableNextColumn();AppUi::Widgets::TextColored(uiAccent2D,"Seis2D | %s",info.name);
-                ImGui::TableNextColumn();AppUi::Widgets::Text("STEP %d | t %.4f s | %.0f FPS",currentIt2D,currentIt2D*simulationContext2D.dt,io.Framerate);
+                const auto& style=ImGui::GetStyle();
+                const float actionWidth=AppUi::Widgets::CalcTextSize(AppUi::text("Home")).x
+                    +AppUi::Widgets::CalcTextSize(AppUi::text("Record viewer")).x
+                    +AppUi::Widgets::CalcTextSize(AppUi::text("Workspace")).x
+                    +AppUi::Widgets::CalcTextSize(AppUi::text("OSD_PANEL")).x
+                    +6*style.FramePadding.x+ImGui::GetFrameHeight()+5*style.ItemSpacing.x;
+                ImGui::TableSetupColumn("Actions",ImGuiTableColumnFlags_WidthFixed,actionWidth);
+                ImGui::TableSetupColumn("Device",ImGuiTableColumnFlags_WidthStretch,.55f);
+                ImGui::TableSetupColumn("Progress",ImGuiTableColumnFlags_WidthStretch,.45f);
                 ImGui::TableNextColumn();
                 if(AppUi::Widgets::SmallButton("Home")) state.currentScreen=AppScreen::Intro0;
                 ImGui::SameLine();if(AppUi::Widgets::SmallButton("Record viewer")) openCapturedRecord2D();
                 ImGui::SameLine();drawWorkspaceMenu2D();
                 ImGui::SameLine();AppUi::Widgets::Checkbox("OSD_PANEL",&showHUD2D);
+                ImGui::TableNextColumn();AppUi::Widgets::TextColored(uiAccent2D,"Seis2D | %s",gpuData2D.cpu?"CPU / OpenMP":info.name);
+                ImGui::TableNextColumn();AppUi::Widgets::Text("STEP %d | t %.4f s | %.0f FPS",currentIt2D,currentIt2D*simulationContext2D.dt,io.Framerate);
                 ImGui::EndTable();
             }
         }
@@ -102,7 +107,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
     if (showHUD2D) {
         const float controlWidth=std::clamp(winW*.32f,480.0f,620.0f);
-        ImGui::SetNextWindowPos({ std::max(0.0f,winW-controlWidth-30*scale),80*scale }, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos({ 20*scale,80*scale }, ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize({ controlWidth,float(winH)-barHeight-100*scale }, ImGuiCond_FirstUseEver);
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, AppUi::palette().panel);
@@ -126,13 +131,16 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
             AppUi::Widgets::TextColored(uiAccent2D, "FPS: %.1f", displayFPS);
             ImGui::Separator();
 
+            drawParameterGroupTools2D();
+            drawPerformanceControls2D(state);
             if (ImGui::BeginTabBar("ControlTabs")) {
 
                 if (AppUi::Widgets::BeginTabItem("Simulation")) {
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Simulation);
                     ImGui::BeginDisabled(acquisition2D.isRecording);
                     ImGui::Spacing();
-                    AppUi::Widgets::TextColored(uiAccent2D, "Simulation Protocol");
+                    if(parameterGroup2D("Simulation Protocol")) {
+
                     const char* sim_types[] = { "Type 1: Whole-domain PML", "Type 2: Interior FDM + Boundary PML", "Type 3: Free Surface + PML" };
                     int temp_type = simulationContext2D.flag_type - 1;
                     if (AppUi::Widgets::Combo("Formulation", &temp_type, sim_types, IM_ARRAYSIZE(sim_types))) {
@@ -147,7 +155,9 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     }
                     ImGui::Spacing();
 
-                    AppUi::Widgets::TextColored(uiAccent2D, "Time Step, Grid Spacing & Iteration Control");
+                    }
+                    if(parameterGroup2D("Time Step, Grid Spacing & Iteration Control")) {
+
                     // Material edits refresh this cache; avoid a full grid scan every UI frame.
                     const float max_vp = cachedMaxVp2D;
 
@@ -186,60 +196,15 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
                     ImGui::Spacing();
                     if (AppUi::Widgets::Button("APPLY TIME & SPACING CONTROLS", { -1, 30 * scale })) {
-                        
-                        float max_vp = 0.0f;
-                        for (int k = 0; k < simulationContext2D.total_grid; ++k) {
-                            float vp = sqrtf(simulationContext2D.lambda2mu[k] / simulationContext2D.rho[k]);
-                            if (vp > max_vp) max_vp = vp;
-                        }
-                        if (max_vp <= 350.0f) max_vp = 2000.0f;
 
-                        float dt_theory_limit = kCourantLimit2d * tempDx2D / max_vp;
-
-                        if (tempDt2D > dt_theory_limit) {
-                            tempDt2D = kSafeCourant2d * tempDx2D / max_vp;
-                            popupMessage2D = "Warning: Input dt exceeded CFL stability limit.\nAutomatically clamped to safe value.";
-                            showErrorPopup2D = true;
-                        }
-
-                        simulationContext2D.dt = tempDt2D;
-                        gpuData2D.inv_dt = 1.0f / simulationContext2D.dt;
-                        simulationContext2D.nt = tempNt2D;
-                        simulationContext2D.h = tempDx2D;
-
-                        parameters2D.model.dx = tempDx2D;
-                        parameters2D.model.dz = tempDx2D;
-                        simulationContext2D.npml = tempPml2D;
-                        parameters2D.FDM.npml = (float)tempPml2D;
-
-                        simulationContext2D.c1_h = static_cast<float>(kStaggeredDerivativeWeights[0]) / tempDx2D;
-                        simulationContext2D.c2_h = static_cast<float>(kStaggeredDerivativeWeights[1]) / tempDx2D;
-                        simulationContext2D.c3_h = static_cast<float>(kStaggeredDerivativeWeights[2]) / tempDx2D;
-                        simulationContext2D.c4_h = static_cast<float>(kStaggeredDerivativeWeights[3]) / tempDx2D;
-
-                        updatePmlDampingArrays();
-
-                        simulationContext2D.dp_flat.assign(simulationContext2D.NX, 0.0f);
-                        int fs_idx = simulationContext2D.npml;
-                        for (int j = 0; j < simulationContext2D.NX; ++j) {
-                            int k = fs_idx * simulationContext2D.NX + j;
-                            if (k < simulationContext2D.total_grid && simulationContext2D.lambda2mu[k] > 0.0f) {
-                                float l2m = simulationContext2D.lambda2mu[k];
-                                float lam = simulationContext2D.lambda[k];
-                                simulationContext2D.dp_flat[j] = (l2m * l2m - lam * lam) / l2m;
-                            }
-                        }
-
-                        simulationContext2D.record_vx.assign(static_cast<size_t>(simulationContext2D.num_rcv) * simulationContext2D.nt, 0.0f);
-                        simulationContext2D.record_vz.assign(static_cast<size_t>(simulationContext2D.num_rcv) * simulationContext2D.nt, 0.0f);
-                        generateRickerWavelet(simulationContext2D.wavelet, simulationContext2D.nt, simulationContext2D.dt, parameters2D.FDM.f0, parameters2D.FDM.t0);
-
-                        resetSimRequested2D = true;
+                        applyPendingParameters2D(state,false);
                     }
                     ImGui::Spacing();
 
                     ImGui::Separator();
-                    AppUi::Widgets::TextColored(uiAccent2D, "GRID DIMENSIONS (NX, NZ)");
+                    }
+                    if(parameterGroup2D("GRID DIMENSIONS (NX, NZ)")) {
+
                     ImGui::PushItemWidth(100 * scale);
                     AppUi::Widgets::InputInt("##WidthVal", &gridWidth2D, 0, 0); ImGui::SameLine();
                     ImGui::PopItemWidth();
@@ -270,19 +235,21 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         setupTestContext(simulationContext2D, parameters2D);
                         releaseGpuSimulation(gpuData2D);
 
-                        cudaGraphicsUnregisterResource(gl.cudaSeisRes);
+                        if(gl.cudaSeisRes) cudaGraphicsUnregisterResource(gl.cudaSeisRes);gl.cudaSeisRes=nullptr;
                         glBindTexture(GL_TEXTURE_2D, gl.seisTex);
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, simulationContext2D.NX, simulationContext2D.NZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-                        CUDA_CHECK(cudaGraphicsGLRegisterImage(&gl.cudaSeisRes, gl.seisTex, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard));
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, simulationContext2D.NX+2*domainPad2D(), simulationContext2D.NZ+2*domainPad2D(), 0, GL_RGBA, GL_FLOAT, nullptr);
 
-                        initializeGpuSimulation(gpuData2D, simulationContext2D);
+
+                        initializeExternalSimulation2D(gpuData2D, simulationContext2D);
                         firstAlignNeeded2D = true;
                     }
                     ImGui::PopStyleColor(2);
                     ImGui::Spacing();
                     ImGui::Separator();
 
-                    ImGui::EndDisabled();
+                    }
+                                        ImGui::EndDisabled();
+if(parameterGroup2D("Execution and interaction")) {
                     AppUi::Widgets::Checkbox("V-Sync Control", &state.vsyncEnabled);
                     if (ImGui::IsItemDeactivatedAfterEdit()) glfwSwapInterval(state.vsyncEnabled ? 1 : 0);
                     ImGui::Spacing();
@@ -331,21 +298,23 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(uiAccent2D.x * 0.12f, uiAccent2D.y * 0.32f, uiAccent2D.z * 0.42f, 0.8f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(uiAccent2D.x * 0.18f, uiAccent2D.y * 0.52f, uiAccent2D.z * 0.62f, 1.0f));
                     if (AppUi::Widgets::Button("OPEN DATA ANALYZER", { -1, 28 * scale })) {
-                        recordViewer2D.isOpen = true; snapshotCaptureForViewer2D(); 
+                        recordViewer2D.isOpen = true; snapshotCaptureForViewer2D();
                     }
                     ImGui::PopStyleColor(2);
-                    ImGui::EndTabItem();
+                    }
+                                        ImGui::EndTabItem();
                 }
 
                 if (AppUi::Widgets::BeginTabItem("Source")) {
                     ImGui::BeginDisabled(acquisition2D.isRecording);
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Source);
                     ImGui::Spacing();
-                    AppUi::Widgets::TextColored(uiAccent2D, "Source Position, Type & Amplitude");
+                    if(parameterGroup2D("Source Position, Type & Amplitude")) {
 
-                    int min_valid_grid = simulationContext2D.npml + 5;
-                    int max_valid_x = simulationContext2D.NX - simulationContext2D.npml - 5;
-                    int max_valid_z = simulationContext2D.NZ - simulationContext2D.npml - 5;
+
+                    int min_valid_grid = 1;
+                    int max_valid_x = simulationContext2D.NX - 2;
+                    int max_valid_z = simulationContext2D.NZ - 2;
 
                     AppUi::Widgets::SliderInt("Source X (Grid)", &editSrcX2D, min_valid_grid, max_valid_x);
                     AppUi::Widgets::SliderInt("Source Z (Grid)", &editSrcZ2D, min_valid_grid, max_valid_z);
@@ -373,7 +342,9 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     }
 
                     ImGui::Separator();
-                    AppUi::Widgets::TextColored(uiAccent2D, "Ricker Wavelet Properties");
+                    }
+                    if(parameterGroup2D("Ricker Wavelet Properties")) {
+
                     AppUi::Widgets::SliderFloat("Peak Freq (f0)", &sourceFrequency2D, 5.0f, 300.0f, "%.1f Hz");
                     AppUi::Widgets::SliderFloat("Time Delay (t0)", &sourceDelay2D, 0.001f, 0.2f, "%.3f s");
 
@@ -385,7 +356,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         float t = i * preview_dt - sourceDelay2D;
                         float pi2_f0 = M_PI * M_PI * sourceFrequency2D * sourceFrequency2D;
                         preview_x[i] = i * preview_dt;
-                        preview_y[i] = (1.0f - 2.0f * pi2_f0 * t * t) * expf(-pi2_f0 * t * t) * editAmp2D; 
+                        preview_y[i] = (1.0f - 2.0f * pi2_f0 * t * t) * expf(-pi2_f0 * t * t) * editAmp2D;
                     }
 
                     ImPlot::PushStyleColor(ImPlotCol_FrameBg, IM_COL32(125, 125, 125, 255));
@@ -406,8 +377,8 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         simulationContext2D.src_z_idx = editSrcZ2D;
                         simulationContext2D.src_idx = editSrcZ2D * simulationContext2D.NX + editSrcX2D;
                         simulationContext2D.src_angle = editAngle2D;
-                        simulationContext2D.src_type = editSourceType2D; 
-                        simulationContext2D.src_amp = editAmp2D;         
+                        simulationContext2D.src_type = editSourceType2D;
+                        simulationContext2D.src_amp = editAmp2D;
 
                         parameters2D.FDM.f0 = sourceFrequency2D;
                         parameters2D.FDM.t0 = sourceDelay2D;
@@ -419,19 +390,20 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         elapsedRunWallTime2D = 0.0f;
 
                         releaseGpuSimulation(gpuData2D);
-                        initializeGpuSimulation(gpuData2D, simulationContext2D);
+                        initializeExternalSimulation2D(gpuData2D, simulationContext2D);
                     }
                     ImGui::Spacing();
                     if (AppUi::Widgets::Button("TRIGGER SINGLE SOURCE SHOT (C)", { -1, 30 * scale })) {
                         multiSourceMode2D = false;
                         simulationContext2D.src_z_idx = editSrcZ2D;
                         simulationContext2D.src_idx = editSrcZ2D * simulationContext2D.NX + editSrcX2D;
-                        simulationContext2D.src_type = editSourceType2D; 
-                        simulationContext2D.src_amp = editAmp2D;         
+                        simulationContext2D.src_type = editSourceType2D;
+                        simulationContext2D.src_amp = editAmp2D;
                         resetSimRequested2D = true;
                     }
                     ImGui::Spacing();
-                    ImGui::EndDisabled();
+                    }
+                                        ImGui::EndDisabled();
                     ImGui::EndTabItem();
                 }
 
@@ -439,7 +411,8 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     ImGui::BeginDisabled(acquisition2D.isRecording);
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Model);
                     ImGui::Spacing();
-                    AppUi::Widgets::TextColored(uiAccent2D, "Rock Physics Coupling");
+                    if(parameterGroup2D("Rock Physics Coupling")) {
+
 
                     AppUi::Widgets::SliderFloat("P-Wave Velocity (Vp)", &editVp2D, 500.0f, 6000.0f, "%.1f m/s");
                     AppUi::Widgets::SliderFloat("S-Wave Velocity (Vs)", &editVs2D, 200.0f, 3500.0f, "%.1f m/s");
@@ -463,7 +436,9 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     }
                     ImGui::Spacing();
                     ImGui::Separator();
-                    AppUi::Widgets::TextColored(uiAccent2D, "GEOPHYSICAL SCENARIO PRESETS");
+                    }
+                    if(parameterGroup2D("GEOPHYSICAL SCENARIO PRESETS")) {
+
 
                     const char* scene_names[] = {
                         "Uniform Medium",
@@ -493,17 +468,20 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         gridWidth2D = simulationContext2D.NX;
                         gridHeight2D = simulationContext2D.NZ;
 
-                        cudaGraphicsUnregisterResource(gl.cudaSeisRes);
+                        if(gl.cudaSeisRes) cudaGraphicsUnregisterResource(gl.cudaSeisRes);gl.cudaSeisRes=nullptr;
                         glBindTexture(GL_TEXTURE_2D, gl.seisTex);
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, simulationContext2D.NX, simulationContext2D.NZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-                        CUDA_CHECK(cudaGraphicsGLRegisterImage(&gl.cudaSeisRes, gl.seisTex, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard));
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, simulationContext2D.NX+2*domainPad2D(), simulationContext2D.NZ+2*domainPad2D(), 0, GL_RGBA, GL_FLOAT, nullptr);
+
 
                         firstAlignNeeded2D = true;
                         resetSimRequested2D = true;
                     }
                     ImGui::Spacing();
 
-                    AppUi::Widgets::SeparatorText("Mouse Interaction Tool");
+                    ImGui::PopStyleColor(2);
+                    }
+                    if(parameterGroup2D("Mouse Interaction Tool")) {
+
 
                     const char* brush_names[] = {
                         "1. Default (Trigger Source�� ",
@@ -513,11 +491,11 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         "5. Eraser "
                     };
 
-                    int current_tool = state.brushType; 
-                    ImGui::PushItemWidth(-1); 
+                    int current_tool = state.brushType;
+                    ImGui::PushItemWidth(-1);
 
                     if (AppUi::Widgets::Combo("##LeftClickToolCombo", &current_tool, brush_names, IM_ARRAYSIZE(brush_names))) {
-                        state.brushType = current_tool; 
+                        state.brushType = current_tool;
                     }
                     ImGui::PopItemWidth();
 
@@ -527,15 +505,15 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
                     if (state.brushType != TOOL_NONE) {
                         ImGui::Spacing();
-                        
+
                         AppUi::Widgets::SliderFloat("Brush Radius (px)", &state.brushRadius, 1.0f, 50.0f, "Radius: %.0f px");
                         if (ImGui::IsItemHovered()) {
                             AppUi::Widgets::SetTooltip("Adjust the physical size of your paintbrush circle.");
                         }
                     }
                     ImGui::Spacing();
-                    ImGui::PopStyleColor(2);
-                    ImGui::EndDisabled();
+                    }
+                                        ImGui::EndDisabled();
                     ImGui::EndTabItem();
                 }
 
@@ -544,47 +522,8 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Model);
 
                     ImGui::Separator();
-                    AppUi::Widgets::TextColored(uiAccent2D, "EXTERNAL MODEL IMPORT (TXT)");
+                    if(parameterGroup2D("EXTERNAL MODEL IMPORT (SEG-Y GROUP)")) {
 
-                    static char txt_file_path[512] = "";
-
-                    AppUi::Widgets::InputText("TXT File", txt_file_path, IM_ARRAYSIZE(txt_file_path));
-                    ImGui::SameLine();
-                    if (AppUi::Widgets::Button("Browse##Txt", ImVec2(65 * scale, 0))) {
-                        char filePath[512] = { 0 };
-                        if (openSystemFileDialog(filePath, sizeof(filePath))) {
-                            strcpy_s(txt_file_path, filePath);
-                        }
-                    }
-
-                    static bool flipImportY = false;
-                    AppUi::Widgets::Checkbox("Flip Vertically on Import", &flipImportY);
-                    if (ImGui::IsItemHovered()) {
-                        AppUi::Widgets::SetTooltip("Check this if your external model appears upside down.\nCommon for Python/Matlab exported data.");
-                    }
-
-                    ImGui::Spacing();
-                    if (AppUi::Widgets::Button("LOAD CUSTOM MODEL FILE", { -1, 35 * scale })) {
-                        if (strlen(txt_file_path) > 0) {
-                            if (loadModelFromText(txt_file_path, flipImportY, gl, state)) {
-                                popupMessage2D = "External model loaded successfully!";
-                                showSuccessPopup2D = true;
-                                resetSimRequested2D = true;
-                            }
-                            else {
-                                popupMessage2D = "Failed to load model file.\nPlease check file formatting or dimensions.";
-                                showErrorPopup2D = true;
-                            }
-                        }
-                        else {
-                            popupMessage2D = "Error: Please select a TXT model file first!";
-                            showErrorPopup2D = true;
-                        }
-                    }
-                    ImGui::Spacing();
-
-                    ImGui::Separator();
-                    AppUi::Widgets::TextColored(uiAccent2D, "EXTERNAL MODEL IMPORT (SEG-Y GROUP)");
 
                     static char vp_file_path[512] = "";
                     static char vs_file_path[512] = "";
@@ -646,9 +585,11 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                             showErrorPopup2D = true;
                         }
                     }
-                   
+
                     ImGui::Separator();
-                    AppUi::Widgets::TextColored(uiAccent2D, "EXPORT CURRENT MODEL TO SEG-Y GROUP");
+                    }
+                    if(parameterGroup2D("EXPORT CURRENT MODEL TO SEG-Y GROUP")) {
+
 
                     static bool export_density_gcm3 = true;
                     static bool export_flip_x = false;
@@ -694,10 +635,10 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     ImGui::SameLine();
 
                     if (AppUi::Widgets::Button("STRIP PML BOUNDARY", ImVec2(sub_btn_w, 0))) {
-                        crop_x_min = simulationContext2D.npml;
-                        crop_z_min = simulationContext2D.npml;
-                        crop_x_max = simulationContext2D.NX - simulationContext2D.npml - 1;
-                        crop_z_max = simulationContext2D.NZ - simulationContext2D.npml - 1;
+                        crop_x_min = 0;
+                        crop_z_min = 0;
+                        crop_x_max = simulationContext2D.NX - 1;
+                        crop_z_max = simulationContext2D.NZ - 1;
                     }
 
                     ImGui::Spacing();
@@ -706,7 +647,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     if (AppUi::Widgets::Button("EXPORT SEG-Y GROUP", { -1, 35 * scale })) {
                         char savePath[512] = { 0 };
                         if (saveSystemFileDialog(savePath, sizeof(savePath))) {
-                            
+
                             if (exportModelToSegy(savePath, export_density_gcm3, export_flip_x, crop_x_min, crop_z_min, crop_x_max, crop_z_max, exportTargetDx2D)) {
                                 popupMessage2D = "Cropped & Resampled SEGY Model Group exported successfully!\nCheck out your saved _vp, _vs, _rho files.";
                                 showSuccessPopup2D = true;
@@ -719,7 +660,8 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     }
                     ImGui::Spacing();
                     ImGui::PopStyleColor(2);
-                    ImGui::EndDisabled();
+                    }
+                                        ImGui::EndDisabled();
                     ImGui::EndTabItem();
                 }
 
@@ -730,16 +672,32 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     ImGui::Spacing();
 
                     drawExportDestination2D();
-                    AppUi::Widgets::SeparatorText("Acquisition Settings");
+                    if(parameterGroup2D("Acquisition Settings")) {
+
+                    double intervalMs=1000.0/acquisition2D.samplingRateHz;
+                    bool intervalChanged=AppUi::Widgets::InputDouble("Sampling interval (ms)",&intervalMs,0.1,1.0,"%.3f");
+                    if(AppUi::Widgets::Button("0.5 ms##sample2D")) {intervalMs=0.5;intervalChanged=true;}
+                    ImGui::SameLine();
+                    if(AppUi::Widgets::Button("1 ms##sample2D")) {intervalMs=1.0;intervalChanged=true;}
+                    if(intervalChanged&&std::isfinite(intervalMs)) {
+                        intervalMs=(std::clamp)(intervalMs,0.1,100.0);
+                        acquisition2D.samplingRateHz=float(1000.0/intervalMs);
+                    }
                     AppUi::Widgets::SliderFloat("Sampling Rate (Hz)", &acquisition2D.samplingRateHz, 10.0f, 10000.0f, "%.0f Hz");
+                    const int previewStride=getReceiverSamplingStride(simulationContext2D.dt,acquisition2D.samplingRateHz);
+                    const double previewInterval=double(simulationContext2D.dt)*previewStride;
+                    AppUi::Widgets::Text("Actual sample interval: %.3f ms",previewInterval*1000.0);
+                    AppUi::Widgets::TextWrapped("Sampling interval is rounded to whole simulation steps; it cannot be shorter than one step.");
                     AppUi::Widgets::DragFloat("Record Duration (s)", &acquisition2D.totalDurationSec, 1.0f, 0.1f, 7200.0f, "%.2f s");
 
-                    const double expectedPoints=std::ceil(double(acquisition2D.samplingRateHz)*acquisition2D.totalDurationSec);
+                    const double expectedPoints=std::ceil(acquisition2D.totalDurationSec/previewInterval);
                     AppUi::Widgets::TextColored(AppUi::functionColor(AppUi::FunctionRole::Acquisition),
                         "Requested samples: %.0f / trace",std::isfinite(expectedPoints)?expectedPoints:0);
                     ImGui::Spacing();
 
-                    AppUi::Widgets::SeparatorText("Receiver Geometry");
+                    }
+                    if(parameterGroup2D("Receiver Geometry")) {
+
                     AppUi::Widgets::SliderInt("Channels", &acquisition2D.numChannels, 1, 200, "%d");
 
                     ImGui::DragIntRange2("X Range", &acquisition2D.startX, &acquisition2D.endX, 1.0f, 0, simulationContext2D.NX - 1, "Start: %d", "End: %d");
@@ -755,14 +713,16 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         for (int i = 0; i < acquisition2D.numChannels; ++i) {
                             acquisition2D.receivers.push_back({ (int)(acquisition2D.startX + i * spacing), acquisition2D.receiverDepth });
                         }
-                        
+
                         syncReceiversToGpu();
                     }
                     AppUi::Widgets::Checkbox("Show/Hide LINEAR ARRAY", &acquisition2D.isShowarray);
                     ImGui::Spacing();
-                    ImGui::EndDisabled();
+                    }
+                                        ImGui::EndDisabled();
 
-                    AppUi::Widgets::SeparatorText("Recording Control");
+                    if(parameterGroup2D("Recording Control")) {
+
 
                     if (acquisition2D.isRecording) {
                         float progress = acquisition2D.totalTimer / acquisition2D.totalDurationSec;
@@ -826,26 +786,28 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         acquisitionAction2D([]{exportCapturePackage2D();});
                     ImGui::EndDisabled();
 
-                    AppUi::Widgets::SeparatorText("Automated Multi-Shot Gather");
+                    }
+                    if(parameterGroup2D("Automated Multi-Shot Gather")) {
+
 
                     AppUi::Widgets::SliderInt("Total Shots", &autoAcquisition2D.totalShots, 1, 100);
 
-                    if (AppUi::Widgets::SliderInt("Start Shot X (Grid)", &autoAcquisition2D.startX, simulationContext2D.npml + 5, simulationContext2D.NX - simulationContext2D.npml - 5)) {
+                    if (AppUi::Widgets::SliderInt("Start Shot X (Grid)", &autoAcquisition2D.startX, 1, simulationContext2D.NX - 2)) {
                         if (autoAcquisition2D.state == AUTO_ACQ_IDLE) {
-                            editSrcX2D = autoAcquisition2D.startX; 
+                            editSrcX2D = autoAcquisition2D.startX;
                         }
                     }
 
-                    if (AppUi::Widgets::SliderInt("Shot Depth Z (Grid)", &autoAcquisition2D.shotDepthZ, simulationContext2D.npml + 5, simulationContext2D.NZ - simulationContext2D.npml - 5)) {
+                    if (AppUi::Widgets::SliderInt("Shot Depth Z (Grid)", &autoAcquisition2D.shotDepthZ, 1, simulationContext2D.NZ - 2)) {
                         if (autoAcquisition2D.state == AUTO_ACQ_IDLE) {
-                            editSrcZ2D = autoAcquisition2D.shotDepthZ; 
+                            editSrcZ2D = autoAcquisition2D.shotDepthZ;
                         }
                     }
 
                     AppUi::Widgets::SliderInt("Shot Spacing (Grid)", &autoAcquisition2D.shotIntervalX, 5, 200);
 
                     int end_shot_x = autoAcquisition2D.startX + (autoAcquisition2D.totalShots - 1) * autoAcquisition2D.shotIntervalX;
-                    if (end_shot_x >= simulationContext2D.NX - simulationContext2D.npml - 5) {
+                    if (end_shot_x >= simulationContext2D.NX - 2) {
                         AppUi::Widgets::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Warning: End Shot X (%d) exceeds right boundary!", end_shot_x);
                     }
                     else {
@@ -868,7 +830,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     }
 
                     if (autoAcquisition2D.state == AUTO_ACQ_RUNNING) {
-                        
+
                         float progress = (float)autoAcquisition2D.currentShotIdx / autoAcquisition2D.totalShots;
                         char  acqBuf[64];
                         sprintf_s(acqBuf, "Acquiring: Shot %d / %d", autoAcquisition2D.currentShotIdx + 1, autoAcquisition2D.totalShots);
@@ -903,14 +865,16 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                             ImGui::EndDisabled();
                         }
                     }
-                    ImGui::EndTabItem();
+                    }
+                                        ImGui::EndTabItem();
                 }
 
                 if (AppUi::Widgets::BeginTabItem("Replay")) {
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Display);
                     ImGui::Spacing();
 
-                    AppUi::Widgets::SeparatorText("Recording");
+                    if(parameterGroup2D("Recording")) {
+
 
                     ImGui::Columns(2, "rec_layout", false);
                     ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.65f);
@@ -974,7 +938,9 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     ImGui::Columns(1);
                     ImGui::Spacing();
 
-                    AppUi::Widgets::SeparatorText("Playback Control");
+                    }
+                    if(parameterGroup2D("Playback Control")) {
+
 
                     bool hasFrames = !replay2D.frames.empty();
                     if (!hasFrames) ImGui::BeginDisabled();
@@ -1018,7 +984,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                             if (dot_pos != std::string::npos) {
                                 path_str = path_str.substr(0, dot_pos);
                             }
-                            
+
                             std::string final_path = path_str + "_" + std::to_string(simulationContext2D.NX) + "x" + std::to_string(simulationContext2D.NZ) + "_vz.bin";
 
                             if (replay2D.exportToBinary(final_path, 1)) {
@@ -1053,26 +1019,28 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
                     ImGui::Spacing();
 
-                    AppUi::Widgets::SeparatorText("Import Wavefield Movie");
+                    }
+                    if(parameterGroup2D("Import Wavefield Movie")) {
 
-                    static char movie_load_path[512] = ""; 
-                    static int  movie_load_w = 0;  
-                    static int  movie_load_z = 0;  
+
+                    static char movie_load_path[512] = "";
+                    static int  movie_load_w = 0;
+                    static int  movie_load_z = 0;
 
                     AppUi::Widgets::InputText("Movie Path", movie_load_path, IM_ARRAYSIZE(movie_load_path));
                     ImGui::SameLine();
                     if (AppUi::Widgets::Button("Browse##Mv", ImVec2(65 * scale, 0))) {
                         char openPath[512] = { 0 };
-                        if (openSystemFileDialog(openPath, sizeof(openPath))) {
+                        if (openSystemFileDialog(openPath, sizeof(openPath),false)) {
                             strcpy_s(movie_load_path, openPath);
 
                             int parsed_w = 0, parsed_z = 0;
                             if (parseDimensionsFromPath(std::string(movie_load_path), parsed_w, parsed_z)) {
-                                movie_load_w = parsed_w; 
-                                movie_load_z = parsed_z; 
+                                movie_load_w = parsed_w;
+                                movie_load_z = parsed_z;
                             }
                             else {
-                                
+
                                 movie_load_w = simulationContext2D.NX;
                                 movie_load_z = simulationContext2D.NZ;
                             }
@@ -1092,7 +1060,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         if (replay2D.importFromBinary(movie_load_path, movie_load_w, movie_load_z)) {
                             popupMessage2D = "Wavefield movie imported and locked successfully!\nClick [PLAY] to watch.";
                             showSuccessPopup2D = true;
-                            state.running = false; 
+                            state.running = false;
 
                             if (movie_load_w != simulationContext2D.NX || movie_load_z != simulationContext2D.NZ) {
                                 std::cout << "[Replay IO] Triggering Auto-Reallocation for imported movie: "
@@ -1106,12 +1074,12 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                                 setupTestContext(simulationContext2D, parameters2D);
                                 releaseGpuSimulation(gpuData2D);
 
-                                cudaGraphicsUnregisterResource(gl.cudaSeisRes);
+                                if(gl.cudaSeisRes) cudaGraphicsUnregisterResource(gl.cudaSeisRes);gl.cudaSeisRes=nullptr;
                                 glBindTexture(GL_TEXTURE_2D, gl.seisTex);
-                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, simulationContext2D.NX, simulationContext2D.NZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-                                CUDA_CHECK(cudaGraphicsGLRegisterImage(&gl.cudaSeisRes, gl.seisTex, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard));
+                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, simulationContext2D.NX+2*domainPad2D(), simulationContext2D.NZ+2*domainPad2D(), 0, GL_RGBA, GL_FLOAT, nullptr);
 
-                                initializeGpuSimulation(gpuData2D, simulationContext2D);
+
+                                initializeExternalSimulation2D(gpuData2D, simulationContext2D);
                                 firstAlignNeeded2D = true;
                             }
                         }
@@ -1122,13 +1090,16 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     }
                     if (!can_load_movie) ImGui::EndDisabled();
 
-                    ImGui::EndTabItem();
+                    }
+                                        ImGui::EndTabItem();
                 }
 
                 if (AppUi::Widgets::BeginTabItem("Visual")) {
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Display);
                     ImGui::Spacing();
-                    AppUi::Widgets::SliderFloat("Color Gain", &colorScale2D, 0.01f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+if(parameterGroup2D("Wavefield appearance")) {
+                    AppUi::Widgets::Checkbox("Automatic wave amplitude",&automaticWaveScale2D);
+                    AppUi::Widgets::SliderFloat("Color Gain", &colorScale2D, 0.0f, 1000.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 
                     const char* components[] = {
                         "Velocity Mag",
@@ -1145,24 +1116,26 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     ImGui::Spacing();
 
                     const char* style_types[] = {
-                        "0_Seismic Bipolar",      
-                        "1_Coolwarm",             
-                        "2_PuOr",                 
-                        "3_Grayscale",            
-                        "4_Inferno",              
-                        "5_Plasma",               
-                        "6_Viridis",              
-                        "7_Turbo",                
-                        "8_Magma Glow",           
-                        "9_Jet Rainbow",          
-                        "10_Hot",                 
-                        "11_Cold",                
-                        "12_Terrain Map"          
+                        "0_Seismic Bipolar",
+                        "1_Coolwarm",
+                        "2_PuOr",
+                        "3_Grayscale",
+                        "4_Inferno",
+                        "5_Plasma",
+                        "6_Viridis",
+                        "7_Turbo",
+                        "8_Magma Glow",
+                        "9_Jet Rainbow",
+                        "10_Hot",
+                        "11_Cold",
+                        "12_Terrain Map"
                     };
-                    AppUi::Widgets::Combo("Visual Style", &waveStyle2D, style_types, IM_ARRAYSIZE(style_types));
+                    AppUi::Widgets::Combo("Visual Style", &waveStyle2D, Seismic::wavePaletteNames);
                     if(ImGui::IsItemHovered()) AppUi::Widgets::SetTooltip("Q: next wave palette | Shift+Q: previous.");
                     ImGui::Spacing();
 
+                    }
+                    if(parameterGroup2D("Material appearance")) {
                     const char* model_styles[] = {
                         "Dark Titanium",
                         "Geological Map",
@@ -1174,15 +1147,24 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                     if(ImGui::IsItemHovered()) AppUi::Widgets::SetTooltip("E: next model palette | Shift+E: previous.");
                     ImGui::Spacing();
 
-                    AppUi::Widgets::Checkbox("Show Background Grid & Dots", &showGrid2D);
+                    }
+                    if(parameterGroup2D("Grid and boundary display")) {
+                    AppUi::Widgets::Checkbox("Show model mesh",&showModelMesh2D);
+                    AppUi::Widgets::SliderFloat("Model mesh opacity",&meshOpacity2D,0,.5f,"%.2f");
+                    AppUi::Widgets::Checkbox("Show wavefield",&showWave2D);
+                    AppUi::Widgets::Checkbox("Show material background",&showMaterial2D);
+                    AppUi::Widgets::SliderFloat("Wave opacity",&waveOpacity2D,0,1,"%.2f");
+                    if(AppUi::Widgets::Checkbox("Show external absorbing boundary (B)",&showBoundary2D)) resetViewportRequested2D=true;
+                    AppUi::Widgets::Checkbox("Show Background Grid", &showGrid2D);
                     if (ImGui::IsItemHovered()) {
-                        AppUi::Widgets::SetTooltip("Toggle the visibility of the grid lines and glowing intersection dots.");
+                        AppUi::Widgets::SetTooltip("Show major and minor grid lines inside the physical domain. Boundary lines remain visible.");
                     }
 
                     AppUi::Widgets::SliderFloat("Grid Spacing (m)", &uiGridSpacing2D, 10.0f, 200.0f);
                     AppUi::Widgets::SliderFloat("Grid Opacity", &uiGridOpacity2D, 0.0f, 1.0f);
 
-                    ImGui::EndTabItem();
+                    }
+                                        ImGui::EndTabItem();
                 }
 
                 ImGui::EndTabBar();
@@ -1202,7 +1184,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
             ImGui::SameLine();
             if (AppUi::Widgets::Button("Reset##Theme", ImVec2(reset_btn_w, 0))) {
-                uiAccent2D = ImVec4(0.5f, 1.0f, 0.5f, 1.0f); 
+                uiAccent2D = ImVec4(0.5f, 1.0f, 0.5f, 1.0f);
             }
             if (ImGui::IsItemHovered()) {
                 AppUi::Widgets::SetTooltip("Reset UI Accent Color to Default Cyan");
@@ -1218,8 +1200,8 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
         ImGui::SetNextWindowPos(ImVec2(30 * scale, 80 * scale), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(420 * scale, 520 * scale), ImGuiCond_FirstUseEver);
 
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.08f, 0.1f, 0.85f));   
-        ImGui::PushStyleColor(ImGuiCol_Border, uiAccent2D);                             
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.08f, 0.1f, 0.85f));
+        ImGui::PushStyleColor(ImGuiCol_Border, uiAccent2D);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
 
@@ -1234,10 +1216,10 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
             ImGui::Spacing();
             if (AppUi::Widgets::CollapsingHeader("ACTIVE PARAMETERS MONITOR", ImGuiTreeNodeFlags_DefaultOpen)) {
-                
+
                 float time = (float)ImGui::GetTime();
                 float alpha = 0.35f + 0.65f * (sinf(time * 6.0f) * 0.5f + 0.5f);
-                ImVec4 warningCol = ImVec4(1.0f, 0.82f, 0.0f, alpha); 
+                ImVec4 warningCol = ImVec4(1.0f, 0.82f, 0.0f, alpha);
 
                 AppUi::Widgets::TextDisabled("Grid Dimensions:"); ImGui::SameLine();
                 AppUi::Widgets::Text("%d x %d (Total: %d)", simulationContext2D.NX, simulationContext2D.NZ, simulationContext2D.total_grid);
@@ -1266,7 +1248,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                 if (ImGui::IsItemHovered()) {
                     AppUi::Widgets::SetTooltip("Estimated memory allocated strictly for this finite-difference simulation grid.");
                 }
-                
+
                 deviceMonitor2D.load();
 
                 unsigned int gpu_util = 0;
@@ -1280,10 +1262,10 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                         gpu_util = util.gpu;
                     }
                     if (deviceMonitor2D.getTemp(deviceMonitor2D.devHandle, NVML_TEMPERATURE_GPU, &gpu_temp) == NVML_SUCCESS) {
-                        
+
                     }
                     if (deviceMonitor2D.getPower(deviceMonitor2D.devHandle, &gpu_power_mw) == NVML_SUCCESS) {
-                        
+
                     }
                     nvml_ok = true;
                 }
@@ -1301,7 +1283,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
                 AppUi::Widgets::TextDisabled("GPU Temperature:"); ImGui::SameLine();
                 if (nvml_ok) {
-                    
+
                     ImVec4 tempColor = (gpu_temp >= 82) ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f) : uiAccent2D;
                     AppUi::Widgets::TextColored(tempColor, "%u oC", gpu_temp);
                 }
@@ -1376,10 +1358,9 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
             ImGui::Spacing();
             AppUi::Widgets::TextDisabled("PML Damping Profile (dx) Real-Time Monitor:");
 
-            std::vector<float> pml_x_axis(simulationContext2D.NX);
-            for (int j = 0; j < simulationContext2D.NX; ++j) {
-                pml_x_axis[j] = (float)j;
-            }
+            std::vector<float> pml_x_axis(gpuData2D.NX),pml_damping(gpuData2D.NX);
+            for(int j=0;j<gpuData2D.NX;++j) pml_x_axis[j]=float(j-gpuData2D.originX);
+            CUDA_CHECK(solverCopy2D(gpuData2D,pml_damping.data(),gpuData2D.d_dx,pml_damping.size()*sizeof(float),cudaMemcpyDeviceToHost));
 
             ImPlot::PushStyleColor(ImPlotCol_FrameBg, IM_COL32(10, 12, 15, 255));
             ImPlot::PushStyleColor(ImPlotCol_PlotBg, IM_COL32(0, 0, 0, 255));
@@ -1390,15 +1371,15 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
                 ImPlot::SetupAxes(AppUi::text("Grid Node Index"), AppUi::text("Damping (Hz)"), ImPlotAxisFlags_NoTickLabels, 0);
 
                 float max_d = 1.0f;
-                for (float val : simulationContext2D.dx) {
+                for (float val : pml_damping) {
                     if (val > max_d) max_d = val;
                 }
-                ImPlot::SetupAxesLimits(0.0f, simulationContext2D.NX, -max_d * 0.05f, max_d * 1.1f);
+                ImPlot::SetupAxesLimits(-float(domainPad2D()),float(simulationContext2D.NX-1+domainPad2D()), -max_d * 0.05f, max_d * 1.1f);
 
-                ImPlot::PlotLine("Damping dx", pml_x_axis.data(), simulationContext2D.dx.data(), simulationContext2D.NX);
+                ImPlot::PlotLine("Damping dx", pml_x_axis.data(),pml_damping.data(),gpuData2D.NX);
 
-                double pml_left_boundary = simulationContext2D.npml;
-                double pml_right_boundary = simulationContext2D.NX - simulationContext2D.npml;
+                double pml_left_boundary = 0;
+                double pml_right_boundary = simulationContext2D.NX-1;
 
                 ImVec2 left_p1 = ImPlot::PlotToPixels(ImPlotPoint(pml_left_boundary, -max_d * 0.05f));
                 ImVec2 left_p2 = ImPlot::PlotToPixels(ImPlotPoint(pml_left_boundary, max_d * 1.1f));
@@ -1466,7 +1447,7 @@ inline void renderSeisHud(SimState& state, int winW, int winH, float barHeight, 
 
 /** Runs one frame of the 2D seismic workspace: initialize, interact, compute, render, and present HUD. */
 inline void renderSeisSimScreenGpu(SimState& state, int winW, int winH, GLHandles& gl, const GpuInfo& info) {
-    
+
     const float scale = (float)winW / 1920.0f;
     const float barHeight = 38.0f * scale;
 
@@ -1474,13 +1455,24 @@ inline void renderSeisSimScreenGpu(SimState& state, int winW, int winH, GLHandle
 
     prepareDockspace2D(winW,winH,barHeight);
     auto windowClass=dockWindowClass2D();ImGui::SetNextWindowClass(&windowClass);
+    renderCurrentParameters2D(state);
     const bool canvasVisible=AppUi::Widgets::Begin(canvasName2D,nullptr,ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse);
     canvasHovered2D=false;
     if(canvasVisible) {
         if(AppUi::Widgets::SmallButton(state.running?"Pause":"Run")) state.running=!state.running;
         ImGui::SameLine();if(AppUi::Widgets::SmallButton("Reset View")) resetViewportRequested2D=true;
-        ImGui::SameLine();AppUi::Widgets::TextDisabled("Wheel: zoom | Middle drag: pan");
+        ImGui::SameLine();if(AppUi::Widgets::SmallButton("Boundary (B)")) {showBoundary2D=!showBoundary2D;resetViewportRequested2D=true;}
+        ImGui::SameLine();ImGui::BeginDisabled(acquisition2D.isRecording);
+        AppUi::Widgets::Checkbox("Continuous fire",&multiSourceMode2D);ImGui::EndDisabled();
+        AppUi::Widgets::TextDisabled(multiSourceMode2D?"Left: fire / hold to repeat | Middle or right drag: pan | Wheel: zoom":"Left: fire once | Middle or right drag: pan | Wheel: zoom");
+        AppUi::Widgets::Text("Physical model: %d x %d | %.2f x %.2f m | f0 %.1f Hz",simulationContext2D.NX,simulationContext2D.NZ,
+            (simulationContext2D.NX-1)*simulationContext2D.h,(simulationContext2D.NZ-1)*simulationContext2D.h,appliedSourceFrequency2D);
         canvasOrigin2D=ImGui::GetCursorScreenPos();canvasSize2D=ImGui::GetContentRegionAvail();
+        const float rulerGutter=AppUi::Widgets::CalcTextSize("-9999m").x+14;
+        const float axisGutter=ImGui::GetTextLineHeight()+14;
+        canvasOrigin2D.x+=rulerGutter;
+        canvasSize2D.x-=rulerGutter;
+        canvasSize2D.y-=2*(ImGui::GetTextLineHeight()+ImGui::GetStyle().ItemSpacing.y+10)+axisGutter;
         canvasSize2D.x=std::max(16.0f,canvasSize2D.x);canvasSize2D.y=std::max(16.0f,canvasSize2D.y);
         const auto mouse=ImGui::GetMousePos();
         canvasHovered2D=ImGui::IsWindowHovered()&&mouse.x>=canvasOrigin2D.x&&mouse.y>=canvasOrigin2D.y&&
@@ -1491,28 +1483,28 @@ inline void renderSeisSimScreenGpu(SimState& state, int winW, int winH, GLHandle
     handleSeismicInteractions(state,canvasWidth,canvasHeight,0);
 
     if (replay2D.state != REPLAY_PLAYING && replay2D.state != REPLAY_PAUSED) {
-        
+
         updateWavefieldSimulation(state);
 
         updateAutoAcquisitionWorkflow(state, gl);
     }
     else {
-        
+
         ImGuiIO& io = ImGui::GetIO();
 
         if (replay2D.state == REPLAY_PLAYING && !replay2D.frames.empty()) {
-            
+
             replay2D.currentFrameFloat += replay2D.playbackSpeed * (io.DeltaTime * 60.0f);
             replay2D.currentFrameIndex = static_cast<int>(replay2D.currentFrameFloat);
 
             if (replay2D.currentFrameIndex >= static_cast<int>(replay2D.frames.size())) {
-                replay2D.currentFrameIndex = 0; 
+                replay2D.currentFrameIndex = 0;
                 replay2D.currentFrameFloat = 0.0f;
             }
             replay2D.uploadFrameToGpu(replay2D.currentFrameIndex, gpuData2D);
         }
         else if (replay2D.state == REPLAY_PAUSED && !replay2D.frames.empty()) {
-            
+
             replay2D.uploadFrameToGpu(replay2D.currentFrameIndex, gpuData2D);
         }
     }
@@ -1535,11 +1527,15 @@ inline void renderSeisSimScreenGpu(SimState& state, int winW, int winH, GLHandle
             glClearColor(background.x,background.y,background.z,1);glClear(GL_COLOR_BUFFER_BIT);
             renderFullBackbufferWavefield(canvasGl2D.width,canvasGl2D.height,0,gl);
         }
+        ImGui::SetCursorScreenPos(canvasOrigin2D);
         ImGui::Image(ImTextureID(canvasGl2D.texture),canvasSize2D,ImVec2(0,1),ImVec2(1,0));
         canvasDrawList2D=ImGui::GetWindowDrawList();
+        renderGridRulerOnBackbuffer(simulationContext2D,state,canvasWidth,canvasHeight,0,viewOffset2D,viewZoom2D);
         canvasDrawList2D->PushClipRect(canvasOrigin2D,ImVec2(canvasOrigin2D.x+canvasSize2D.x,canvasOrigin2D.y+canvasSize2D.y),true);
         drawCanvasAnnotations2D(state,canvasWidth,canvasHeight);
         canvasDrawList2D->PopClipRect();canvasDrawList2D=nullptr;
+        ImGui::SetCursorScreenPos(ImVec2(canvasOrigin2D.x,canvasOrigin2D.y+canvasSize2D.y+ImGui::GetTextLineHeight()+14));
+        drawColorLegends2D();
     }
     ImGui::End();
 

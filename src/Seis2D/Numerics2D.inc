@@ -34,6 +34,10 @@ inline void autoAlignTimeStep() {
 
 /** Rebuilds staggered-grid PML damping profiles from the current model and boundary settings. */
 inline void updatePmlDampingArrays() {
+    if(simulationContext2D.externalPml) {
+        simulationContext2D.dx.assign(simulationContext2D.NX,0);simulationContext2D.dx_half=simulationContext2D.dx;
+        simulationContext2D.dz.assign(simulationContext2D.NZ,0);simulationContext2D.dz_half=simulationContext2D.dz;return;
+    }
     validateBoundaryGeometry(simulationContext2D.NX, simulationContext2D.NZ, simulationContext2D.npml, simulationContext2D.flag_type == 3 && simulationContext2D.upFlag);
     float max_vp = 0.0f;
     for (int k = 0; k < simulationContext2D.total_grid; ++k) {
@@ -84,6 +88,7 @@ inline void updatePmlDampingArrays() {
 
 // Construct material, field, source and damping arrays after validating grid allocation limits.
 void setupTestContext(SimulationContext& simulationContext2D, const Parameters& parameters2D) {
+    simulationContext2D.externalPml=true;
     simulationContext2D.NX = parameters2D.model.xnum;
     simulationContext2D.NZ = parameters2D.model.znum;
     simulationContext2D.total_grid = static_cast<int>(checkedGridElementCount(simulationContext2D.NX, simulationContext2D.NZ));
@@ -98,7 +103,7 @@ void setupTestContext(SimulationContext& simulationContext2D, const Parameters& 
     simulationContext2D.upFlag = (parameters2D.FDM.upFlag > 0.5f);
 
     float h = parameters2D.model.dx;
-    if (h <= 0.0f) h = 1.0f; 
+    if (h <= 0.0f) h = 1.0f;
     simulationContext2D.h = h;
 
     tempDx2D = h;
@@ -135,11 +140,11 @@ void setupTestContext(SimulationContext& simulationContext2D, const Parameters& 
         }
     }
 
-    simulationContext2D.src_z_idx = simulationContext2D.NZ / 4;                                      
-    simulationContext2D.src_idx = simulationContext2D.src_z_idx * simulationContext2D.NX + (simulationContext2D.NX / 2);             
+    simulationContext2D.src_z_idx = simulationContext2D.NZ / 4;
+    simulationContext2D.src_idx = simulationContext2D.src_z_idx * simulationContext2D.NX + (simulationContext2D.NX / 2);
     simulationContext2D.src_angle = parameters2D.FDM.angle;
-    simulationContext2D.src_type = editSourceType2D; 
-    simulationContext2D.src_amp = editAmp2D;         
+    simulationContext2D.src_type = editSourceType2D;
+    simulationContext2D.src_amp = editAmp2D;
     generateRickerWavelet(simulationContext2D.wavelet, simulationContext2D.nt, simulationContext2D.dt, parameters2D.FDM.f0, parameters2D.FDM.t0);
 
     simulationContext2D.num_rcv = std::min(100, simulationContext2D.NX - 2 * kStencilRadius);

@@ -64,7 +64,9 @@ void saveFrame(const std::string& name) {
     std::vector<unsigned char> pixels(1280*900*3);
     glBindFramebuffer(GL_READ_FRAMEBUFFER,0);glPixelStorei(GL_PACK_ALIGNMENT,1);
     glReadPixels(0,0,1280,900,GL_RGB,GL_UNSIGNED_BYTE,pixels.data());
-    std::ofstream image(name+".ppm",std::ios::binary);image<<"P6\n1280 900\n255\n";
+    const auto folder=getExecutableDirectory().parent_path().parent_path()/"screenshots"/"regression";
+    std::filesystem::create_directories(folder);
+    std::ofstream image(folder/(name+".ppm"),std::ios::binary);image<<"P6\n1280 900\n255\n";
     for(int row=899;row>=0;--row) image.write(reinterpret_cast<const char*>(pixels.data()+row*1280*3),1280*3);
 }
 
@@ -211,6 +213,60 @@ void checkDisplayPersistence3D() {
 }
 
 // Verify frequency applies to both the live source and CPML while retaining unrelated edits and frozen shots.
+void checkSamplingInterval3D() {
+    using namespace Seis3D;using namespace Seis3D::Detail3D;
+    Seis3D_State s;s.editContext3D.nx3D=s.editContext3D.ny3D=s.editContext3D.nz3D=32;
+    s.editContext3D.pml3D=8;s.editContext3D.freeSurface3D=false;
+    s.survey3D.receiverCountX3D=2;s.survey3D.receiverCountY3D=1;
+    s.sampleIntervalInMs3D=true;s.targetSamples3D=4;s.stepsPerFrame3D=1;
+    for(float dtMs:{0.1f,0.07f}) {
+        s.editContext3D.manualTimeStep3D=true;s.editContext3D.requestedDtMs3D=dtMs;
+        initializeSession3D(s,false);
+        for(double requested:{0.5,1.0,0.073,0.01}) {
+            s.requestedSampleIntervalMs3D=requested;
+            startGather3D(s,1);
+            require3D(s.gather3D.sampleIntervalUs3D==int(std::llround(requested*1000)),"Uniform interval not reflected in export metadata");
+            const double dt=s.context3D.dt3D;
+            const double interval=s.gather3D.sampleIntervalUs3D*1e-6;
+            std::vector<float> previous(6,0);
+            double previousTime=-.5*dt;
+            int checked=0;
+            while(s.recording3D) {
+                advanceSimulation3D(s);
+                const double now=(double(s.step3D)-.5)*dt;
+                const int expected=(std::min)(4,int(std::floor((now+1e-12)/interval))+1);
+                require3D(s.gather3D.sampleCount3D==expected,"GPU capture ignored uniform output times");
+                const float* current=sampleReceivers3D(s.gpu3D,s.context3D);
+                for(;checked<expected;++checked) {
+                    const double alpha=(checked*interval-previousTime)/(now-previousTime);
+                    for(int channel=0;channel<6;++channel) {
+                        const float value=float(previous[channel]*(1-alpha)+current[channel]*alpha);
+                        require3D(std::abs(s.gather3D.samples3D[checked*6+channel]-value)<1e-12f,"Interpolated receiver value differs from accepted solver states");
+                    }
+                }
+                previous.assign(current,current+6);previousTime=now;
+            }
+            require3D(s.gather3D.firstSampleTime3D==0,"Uniform output time origin must be zero");
+            const auto folder=getExecutableDirectory()/"checks"/("uniform-sampling-"+sessionSuffix3D());
+            exportGather3D(s,folder);
+            bool checkedHeader=false;
+            for(const auto& entry:std::filesystem::directory_iterator(folder)) {
+                if(entry.path().extension()!=".sgy") continue;
+                std::ifstream file(entry.path(),std::ios::binary);
+                unsigned char binary[2]{},trace[2]{};
+                file.seekg(3216);file.read(reinterpret_cast<char*>(binary),2);
+                file.seekg(3716);file.read(reinterpret_cast<char*>(trace),2);
+                require3D(int(binary[0])*256+binary[1]==s.gather3D.sampleIntervalUs3D
+                    &&int(trace[0])*256+trace[1]==s.gather3D.sampleIntervalUs3D,"SEG-Y binary/trace headers lost the requested interval");
+                checkedHeader=true;
+            }
+            require3D(checkedHeader,"Uniform sampling SEG-Y files were not exported");
+        }
+    }
+    releaseSandbox3D(s);
+    std::puts("PASS: 0.5/1/0.073/0.01 ms uniform GPU sampling, interpolation and metadata across time-step rebuilds.");
+}
+
 void checkFrequencyApplication3D() {
     using namespace Seis3D;using namespace Seis3D::Detail3D;
     Seis3D_State s;s.editContext3D.nx3D=s.editContext3D.ny3D=s.editContext3D.nz3D=32;
@@ -420,20 +476,21 @@ int main(int argc,char**) {
     cudaSetDevice(devices[0]);
     ImGui::CreateContext();ImPlot::CreateContext();
     ImGui::GetIO().IniFilename=nullptr;ImGui::GetIO().ConfigFlags|=ImGuiConfigFlags_DockingEnable;
-    ImFontConfig fontConfig;fontConfig.SizePixels=21;
+    ImFontConfig fontConfig;fontConfig.SizePixels=24;
     const auto baseFont=resolveResourcePath("font/consola.ttf");
-    if(std::filesystem::exists(baseFont)) ImGui::GetIO().Fonts->AddFontFromFileTTF(pathToUtf8(baseFont).c_str(),21,&fontConfig);
+    if(std::filesystem::exists(baseFont)) ImGui::GetIO().Fonts->AddFontFromFileTTF(pathToUtf8(baseFont).c_str(),24,&fontConfig);
     else ImGui::GetIO().Fonts->AddFontDefault(&fontConfig);
     const auto chineseFont=resolveResourcePath("font/msyh.ttc");
     if(std::filesystem::exists(chineseFont)) {
         ImFontConfig merge;merge.MergeMode=true;merge.PixelSnapH=true;
-        ImGui::GetIO().Fonts->AddFontFromFileTTF(pathToUtf8(chineseFont).c_str(),21,&merge,ImGui::GetIO().Fonts->GetGlyphRangesChineseSimplifiedCommon());
+        ImGui::GetIO().Fonts->AddFontFromFileTTF(pathToUtf8(chineseFont).c_str(),24,&merge,ImGui::GetIO().Fonts->GetGlyphRangesChineseSimplifiedCommon());
     }
     ImGui_ImplGlfw_InitForOpenGL(window,true);ImGui_ImplOpenGL3_Init("#version 430");
     int result=0;
     try {
         {
             Seis3D::Seis3D_State initial;
+            require3D(initial.layoutPreset3D==1&&initial.traceDisplay3D==1&&initial.traceShowAll3D,"Default volume-first layout / all-channel section incorrect");
             require3D(initial.component3D==0&&initial.visualPreset3D==4&&initial.waveStyle3D==1
                 &&initial.modelStyle3D==4&&!initial.holdPeakScale3D,"Initial Vz / Paper scientific / Coolwarm settings are incorrect");
             const auto& q=initial.survey3D;
@@ -481,7 +538,7 @@ int main(int argc,char**) {
             }
             AppUi::setLanguage(AppUi::Language::English,false);
         }
-        checkTraceAgc3D();checkReceiverRows3D();checkDisplayPersistence3D();checkFrequencyApplication3D();checkComponentScale3D();checkShotImport3D();
+        checkTraceAgc3D();checkReceiverRows3D();checkDisplayPersistence3D();checkFrequencyApplication3D();checkSamplingInterval3D();checkComponentScale3D();checkShotImport3D();
         GpuInfo deviceInfo{};cudaDeviceProp deviceProperties{};cudaGetDeviceProperties(&deviceProperties,devices[0]);
         std::snprintf(deviceInfo.name,sizeof(deviceInfo.name),"%s",deviceProperties.name);
         deviceInfo.success=true;deviceInfo.totalMem=deviceProperties.totalGlobalMem;
@@ -496,7 +553,8 @@ int main(int argc,char**) {
             for(int role=0;role<8;++role) {
                 {AppUi::FunctionStyleScope functionColors{AppUi::FunctionRole(role)};
                     const auto expected=AppUi::functionColor(AppUi::FunctionRole(role));
-                    require3D(ImGui::GetStyleColorVec4(ImGuiCol_CheckMark).x==expected.x,"Function colors were not applied");}
+                    const auto base=AppUi::palette().panel;
+                    require3D(std::abs(ImGui::GetStyleColorVec4(ImGuiCol_Button).x-(base.x+(expected.x-base.x)*.19f))<1e-6f,"Series function-button colors were not applied");}
                 require3D(GImGui->ColorStack.Size==colorDepth&&ImGui::GetStyleColorVec4(ImGuiCol_CheckMark).x==original.x,"Function color scope leaked into another panel");
             }
             if(p.light) {
@@ -663,7 +721,9 @@ int main(int argc,char**) {
         for(int command:{1,2,1}) for(int frame=0;frame<2;++frame) {
             ImGui_ImplOpenGL3_NewFrame();ImGui_ImplGlfw_NewFrame();ImGui::NewFrame();
             ImGui::SetNextWindowSize(ImVec2(470,850));ImGui::Begin("Fold regression");
-            ImGui::GetStateStorage()->SetInt(ImGui::GetID("Seis3D.SectionOverride"),command);
+            const auto foldCommand=ImGui::GetID("Seis3D.SectionOverride");
+            ImGui::GetStateStorage()->SetInt(foldCommand,command);
+            ImGui::GetStateStorage()->SetInt(foldCommand+1,ImGui::GetStateStorage()->GetInt(foldCommand+1)+1);
             const float start=ImGui::GetCursorPosY();
             Seis3D::Detail3D::drawSimulationControls3D(s);
             const float height=ImGui::GetCursorPosY()-start;
@@ -721,15 +781,15 @@ int main(int argc,char**) {
         for(int i=0;i<3;++i) drawFrame();
         auto rect=visibleSliceRect3D(s.gl3D.displayTextures3D[0]);
         ImGui::GetIO().AddMousePosEvent(rect.x+(rect.z-rect.x)*.4f,rect.y+(rect.w-rect.y)*.45f);drawFrame();
-        const auto beforePoint=s.hoverPoint3D;
+        const auto beforeCenter=s.sliceCameras3D[0];
         ImGui::GetIO().AddMouseWheelEvent(0,3);drawFrame();
         require3D(s.sliceCameras3D[0].zoom3D>1.5f&&s.sliceCameras3D[1].zoom3D==1,"Wheel zoom did not remain local to its plane");
-        require3D(s.hoverPoint3D.x3D==beforePoint.x3D&&s.hoverPoint3D.z3D==beforePoint.z3D,"Pointer-anchored zoom changed the picked cell");
-        const float oldCenter=s.sliceCameras3D[0].center3D[0];
+        require3D(s.sliceCameras3D[0].center3D[0]==beforeCenter.center3D[0]&&s.sliceCameras3D[0].center3D[1]==beforeCenter.center3D[1],"Whole-section zoom changed the camera center");
+        const auto oldCamera=s.sliceCameras3D[0];
         ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Middle,true);drawFrame();
-        ImGui::GetIO().AddMousePosEvent(rect.x+(rect.z-rect.x)*.5f,rect.y+(rect.w-rect.y)*.45f);drawFrame();
+        ImGui::GetIO().AddMousePosEvent(rect.x+(rect.z-rect.x)*.5f,rect.y+(rect.w-rect.y)*.55f);drawFrame();
         ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Middle,false);drawFrame();
-        require3D(s.sliceCameras3D[0].center3D[0]<oldCenter,"Middle-button panning did not move the view");
+        require3D(s.sliceCameras3D[0].center3D[0]<oldCamera.center3D[0]||s.sliceCameras3D[0].center3D[1]<oldCamera.center3D[1],"Middle-button panning did not move the view");
         ImGui::GetIO().AddKeyEvent(ImGuiKey_R,true);drawFrame();ImGui::GetIO().AddKeyEvent(ImGuiKey_R,false);drawFrame();
         require3D(s.sliceCameras3D[0].zoom3D==1&&s.sliceCameras3D[0].center3D[0]==.5f,"R did not reset the slice camera");
         ImGui::GetIO().AddMousePosEvent(-100,-100);

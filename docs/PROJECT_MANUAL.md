@@ -563,15 +563,15 @@ Model I/O 为 S3DM 与 VTI 分别保存路径；当前波场快照还有独立�
    └─ docs-work、archive              排版／渲染中间件与历史输出
 ```
 
-外层 VS Release 配置为 RelWithDebInfo，程序为 `out/bin/RelWithDebInfo/SeisWaveLab.exe`。独立打开内层仓库时使用单独的 `out/build/standalone/<配置>` 缓存，不能与外层入口共用缓存。构建步骤见 [BUILDING](build/BUILDING.md)，文件分类见 [仓库组织](development/REPOSITORY_LAYOUT.md)。
+外层 VS Release 配置为 RelWithDebInfo，程序为 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`。独立打开内层仓库时使用单独的 `out/build/standalone/<配置>` 缓存，不能与外层入口共用缓存。构建步骤见 [BUILDING](build/BUILDING.md)，文件分类见 [仓库组织](development/REPOSITORY_LAYOUT.md)。
 
 ### 5.3 重新截图与生成 Hexo
 
 在外层工作区运行：
 
 ```powershell
-& ./out/bin/RelWithDebInfo/SeisWaveLab.exe --capture-seis3d-workflow
-& ./out/bin/RelWithDebInfo/SeisWaveLab.exe --capture-seis2d-workflow
+& ./out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe --capture-seis3d-workflow
+& ./out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe --capture-seis2d-workflow
 ```
 
 随后从内层 Git 仓库运行：

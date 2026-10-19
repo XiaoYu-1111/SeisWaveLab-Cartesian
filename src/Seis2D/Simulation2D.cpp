@@ -15,6 +15,9 @@
 #include "Seis_Sim.h"
 #include "SeismicViewer2D.h"
 #include "Cuda_Check.cuh"
+#include "CpuSolver2D.h"
+#include "ExternalDomain2D.h"
+#include "WavePalettes.h"
 #include "SeismicIO.h"
 #include "ResourcePaths.h"
 #include "AppWidgets.h"
@@ -42,6 +45,7 @@ void setupTestContext(SimulationContext& context,const Parameters& parameters);
 void generateRickerWavelet(std::vector<float>& wavelet,int nt,float dt,float f0,float t0);
 #include "State2D.inc"
 #include "DockWorkspace2D.inc"
+#include "ParameterGroups2D.inc"
 
 // Export and inspect only samples that have actually been acquired, excluding unfilled buffer tails.
 std::vector<std::vector<float>> capturedTraceCopy2D(const std::vector<std::vector<float>>& traces,int samples) {
@@ -76,6 +80,8 @@ void snapshotCaptureForViewer2D() {
 #include "ExportPanel2D.inc"
 #include "Acquisition2D.inc"
 #include "Workflow2D.inc"
+#include "ParameterPanel2D.inc"
+#include "Performance2D.inc"
 #include "Workspace2D.inc"
 }
 
@@ -83,14 +89,14 @@ namespace Seis2D {
 // Keep application routing independent from the 2D solver's private mutable state.
 void renderSimulation2D(SimState& state,int width,int height,GLHandles& gl,const GpuInfo& info) {
     AppUi::ThemePanelScope theme;
-    Legacy2D::exportDevice2D=info.name;
+    Legacy2D::exportDevice2D=Legacy2D::gpuData2D.cpu?"CPU / OpenMP":info.name;
     Legacy2D::renderSeisSimScreenGpu(state,width,height,gl,info);
 }
 // A cold switch releases the 2D stream and interop images before the shared GL context disappears.
 void releaseSimulation2D(GLHandles& gl) noexcept {
     using namespace Legacy2D;
     acquisition2D.isRecording=false;autoAcquisition2D.state=AUTO_ACQ_IDLE;replay2D.clear();replay2D.state=REPLAY_IDLE;
-    releaseGpuSimulation(gpuData2D);initialized2D=false;
+    benchmark2D.clear();releaseGpuSimulation(gpuData2D);initialized2D=false;
     if(gl.cudaSeisRes) cudaGraphicsUnregisterResource(gl.cudaSeisRes);
     gl.cudaSeisRes=nullptr;gl.cudaSeisArray=nullptr;
     cudaFree(gl.deviceWavefieldRgba);gl.deviceWavefieldRgba=nullptr;gl.wavefieldRgbaCapacity=0;
@@ -131,6 +137,18 @@ void selectDocumentationView2D(int stage) {
     viewer.agc.windowMs=20;viewer.agc.maxBoost=30;viewer.agc.noiseFloorPercent=.002f;
     viewer.showAllTraces=false;viewer.selectedTrace=50;viewer.visibleTraces=60;viewer.firstTrace=20;viewer.gain=stage==2?1.0f:1.5f;viewer.fitRequest=true;
 }
+void checkExternalBoundaryView2D(bool visible) {
+    using namespace Legacy2D;
+    const int pad=domainPad2D();
+    if(showBoundary2D!=visible||gpuData2D.NX!=simulationContext2D.NX+2*pad||gpuData2D.NZ!=simulationContext2D.NZ+2*pad)
+        throw std::runtime_error("B-key external-domain visibility or GPU extent is incorrect.");
+    if(simulationContext2D.NX!=gridWidth2D||simulationContext2D.NZ!=gridHeight2D)
+        throw std::runtime_error("Absorber consumed user model cells.");
+    static const float* fields=nullptr;
+    if(visible) fields=gpuData2D.d_vz_1;
+    else if(fields&&fields!=gpuData2D.d_vz_1) throw std::runtime_error("B-key rebuilt physical fields.");
+    if(visible) std::puts("PASS: B key exposes real external absorbing cells without resizing the physical model.");
+}
 // Validate local sample indexing when acquisition starts after hundreds of solver time steps.
 void checkRecordingTimeline2D(SimState& state,GLHandles& gl) {
     using namespace Legacy2D;
@@ -139,10 +157,10 @@ void checkRecordingTimeline2D(SimState& state,GLHandles& gl) {
     // Exercise picking and zoom with the same canvas-local mapping used by docked UI events.
     auto& io=ImGui::GetIO();const auto mouse=io.MousePos;const float wheel=io.MouseWheel;
     acquisition2D.isRecording=false;canvasHovered2D=true;viewOffset2D=ImVec2(0,0);viewZoom2D=1;
-    const float aspect=canvasSize2D.x/canvasSize2D.y,modelAspect=float(simulationContext2D.NX)/simulationContext2D.NZ;
+    const float aspect=canvasSize2D.x/canvasSize2D.y,modelAspect=float(viewWidth2D())/viewHeight2D();
     const float ax=std::max(1.0f,aspect/modelAspect),ay=std::max(1.0f,modelAspect/aspect);
-    io.MousePos=ImVec2(canvasOrigin2D.x+((2*96.25f/simulationContext2D.NX-1)/ax*.5f+.5f)*canvasSize2D.x,
-        canvasOrigin2D.y+(.5f-(1-2*48.25f/simulationContext2D.NZ)/ay*.5f)*canvasSize2D.y);
+    io.MousePos=ImVec2(canvasOrigin2D.x+((2*96.25f/viewWidth2D()-1)/ax*.5f+.5f)*canvasSize2D.x,
+        canvasOrigin2D.y+(.5f-(1-2*48.25f/viewHeight2D())/ay*.5f)*canvasSize2D.y);
     io.MouseWheel=0;handleSeismicInteractions(state,int(canvasSize2D.x),int(canvasSize2D.y),0);
     if(!hoverValid2D||hoverMx2D!=96||hoverMy2D!=48) throw std::runtime_error("Docked canvas picking differs from the displayed grid.");
     const auto brush=state.brushType;const auto radius=state.brushRadius;const bool mouseDown=io.MouseDown[0];
@@ -161,6 +179,40 @@ void checkRecordingTimeline2D(SimState& state,GLHandles& gl) {
     resetViewportRequested2D=true;io.MouseWheel=0;handleSeismicInteractions(state,int(canvasSize2D.x),int(canvasSize2D.y),0);
     if(viewZoom2D!=1) throw std::runtime_error("Docked canvas view reset failed.");
     io.MousePos=mouse;io.MouseWheel=wheel;canvasHovered2D=false;
+    // Check coordinate picking with both physical-only and expanded-boundary views.
+    acquisition2D.isRecording=false;
+    for(bool boundary:{false,true}) {
+        showBoundary2D=boundary;viewZoom2D=1;viewOffset2D=ImVec2(0,0);canvasHovered2D=true;
+        const float ratio=float(viewWidth2D())/viewHeight2D();
+        const float aspect=canvasSize2D.x/canvasSize2D.y;
+        const float ax=std::max(1.0f,aspect/ratio),ay=std::max(1.0f,ratio/aspect);
+        io.MousePos=ImVec2(canvasOrigin2D.x+(((96.25f-viewOrigin2D())/viewWidth2D()*2-1)/ax*.5f+.5f)*canvasSize2D.x,
+            canvasOrigin2D.y+(.5f-(1-2*(48.25f-viewOriginZ2D())/viewHeight2D())/ay*.5f)*canvasSize2D.y);
+        handleSeismicInteractions(state,int(canvasSize2D.x),int(canvasSize2D.y),0);
+        if(!hoverValid2D||hoverMx2D!=96||hoverMy2D!=48) throw std::runtime_error("Expanded-boundary picking shifted physical coordinates.");
+    }
+    // A held source button never resets time; a pan button suppresses source events.
+    const auto savedSources=activeSources2D;const bool savedMulti=multiSourceMode2D,savedRunning=state.running;
+    const int savedX=editSrcX2D,savedZ=editSrcZ2D,sourceStep=currentIt2D;
+    const auto savedBrush=state.brushType;const bool left=io.MouseDown[0],right=io.MouseDown[1];
+    multiSourceMode2D=true;state.brushType=TOOL_NONE;canvasHovered2D=true;
+    io.MouseDown[0]=true;io.MouseDown[1]=true;lastInjectTime2D=-1;
+    handleSeismicInteractions(state,int(canvasSize2D.x),int(canvasSize2D.y),0);
+    if(activeSources2D.size()!=savedSources.size()||currentIt2D!=sourceStep) throw std::runtime_error("Panning triggered a source or reset the field.");
+    io.MouseDown[1]=false;lastInjectTime2D=-1;
+    handleSeismicInteractions(state,int(canvasSize2D.x),int(canvasSize2D.y),0);
+    if(activeSources2D.size()!=savedSources.size()+1||currentIt2D!=sourceStep) throw std::runtime_error("Held-left source injection failed or reset time.");
+    const auto oldDelta=io.MouseDelta;const float oldDrag=io.MouseDragMaxDistanceSqr[1];
+    io.MouseDown[1]=true;io.MouseDelta=ImVec2(12,-8);io.MouseDragMaxDistanceSqr[1]=100;
+    panActive2D=true;canvasHovered2D=false;const auto oldOffset=viewOffset2D;
+    handleSeismicInteractions(state,int(canvasSize2D.x),int(canvasSize2D.y),0);
+    if(!(viewOffset2D.x<oldOffset.x&&viewOffset2D.y<oldOffset.y)) throw std::runtime_error("Right-button drag did not continue outside the canvas.");
+    io.MouseDelta=oldDelta;io.MouseDragMaxDistanceSqr[1]=oldDrag;panActive2D=false;
+    activeSources2D=savedSources;multiSourceMode2D=savedMulti;state.running=savedRunning;state.brushType=savedBrush;
+    editSrcX2D=savedX;editSrcZ2D=savedZ;io.MouseDown[0]=left;io.MouseDown[1]=right;
+    std::puts("PASS: physical/boundary picking, non-resetting held-left firing and pan/source exclusion.");
+    showBoundary2D=false;viewOffset2D=ImVec2(0,0);viewZoom2D=1;io.MousePos=mouse;
+    canvasHovered2D=false;
     const auto originalLanguage=AppUi::currentLanguage();
     AppUi::setLanguage(AppUi::Language::English,false);const auto englishId=ImHashStr(AppUi::windowLabel(canvasName2D));
     AppUi::setLanguage(AppUi::Language::Chinese,false);const auto chineseId=ImHashStr(AppUi::windowLabel(canvasName2D));
@@ -188,6 +240,27 @@ void checkRecordingTimeline2D(SimState& state,GLHandles& gl) {
     std::puts("PASS: 2D continuation capture starts at sample zero; frozen viewer samples and prior shot geometry retained.");
 }
 // Use deterministic real-data workspaces for the extended documentation sequence.
+void configureDocumentationGroups2D(int stage) {
+    using namespace Legacy2D;
+    static float collapsedHeight=0;
+    if(stage==0||stage==2) {
+        for(const char* name:{controlsName2D,"Current Parameters###Seis2D.Parameters"}) {
+            auto* window=ImGui::FindWindowByID(ImHashStr(AppUi::windowLabel(name)));
+            if(!window) throw std::runtime_error("Parameter panel missing during fold validation");
+            const auto key=ImHashStr("Seis2D.ParameterCommand",0,window->ID);
+            window->StateStorage.SetInt(key,stage==2?2:1);
+            window->StateStorage.SetInt(key+1,window->StateStorage.GetInt(key+1)+1);
+        }
+        focusControls2D=true;
+    } else {
+        const auto* window=ImGui::FindWindowByID(ImHashStr(AppUi::windowLabel(controlsName2D)));
+        if(stage==1) collapsedHeight=window->ContentSize.y;
+        if(stage==3) {
+            if(window->ContentSize.y<=collapsedHeight+300) throw std::runtime_error("2D grouped fold/expand did not change parameter content");
+            std::puts("PASS: 2D grouped parameters collapse/expand across docked panel tabs.");
+        }
+    }
+}
 void configureDocumentationWorkspace2D(int stage) {
     using namespace Legacy2D;
     acquisition2D.isRecording=false;recordViewer2D.documentationCapture=false;

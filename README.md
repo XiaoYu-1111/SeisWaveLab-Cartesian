@@ -2,7 +2,7 @@
 
 [English overview](README.en.md) · [贡献说明](CONTRIBUTING.md) · [现有 MIT 许可证](LICENSE)
 
-基于 CUDA、OpenGL 4.3、Dear ImGui Docking 和 ImPlot 的二维与三维弹性波模拟工作区。首页分别进入二维波场沙盒与 Seis3D 三维沙盒，切换模式时释放原模式的 GPU 和图形资源。
+基于 CPU/OpenMP、CUDA、OpenGL 4.3、Dear ImGui Docking 和 ImPlot 的二维与三维弹性波模拟工作区。首页分别进入二维波场沙盒与 Seis3D 三维沙盒，切换模式时释放原模式的计算和图形资源。
 
 软件名称为 **SeisWave Lab**，当前版本 **v2.0.0**，窗口标题为 **SeisWave Lab — Cartesian Elastic Wave Simulation | v2.0.0**。三维模块与命名空间继续使用 **Seis3D**。主页、操作手册的“关于 SeisWave Lab”和 Windows 文件属性显示相同的版本信息；后续版本号统一在本仓库 `CMakeLists.txt` 的 `project(... VERSION ...)` 中修改。
 
@@ -21,6 +21,9 @@
 - [三维实操视频教程](docs/user/Seis3D_Video_Tutorial.md)：模型、震源、100 道采集、AGC 显示与 SEG-Y 导出。
 - [三维项目展示文章](docs/showcase/CUDA_Seis3D_GitHub_Pages.md)：适合个人博客展示的完整介绍，包含计算原理与实际运行截图。
 - [文档导航](docs/README.md)：操作、构建、实现与历史审查资料。
+- [代码架构](docs/development/CODE_ARCHITECTURE.md)与[后端验证](docs/development/BACKEND_VALIDATION.md)：Seis2D / Seis3D / SeisCommon 分类、CPU/OpenMP 与 CUDA、参数草稿及分组折叠。
+- [系列主题](docs/development/THEME_SERIES.md)与[二维外置吸收边界](docs/development/EXTERNAL_DOMAIN_2D.md)：主题、物理域及画布交互约定。
+- [32 线程 CPU/CUDA 性能报告](docs/performance/CPU_CUDA_REPORT.md)：六档模型、5 轮中位数、波场误差、图表和原始数据；[复现步骤](benchmarks/README.md)。
 - [构建与输出位置](docs/build/BUILDING.md)：VS 与命令行统一使用外层 `out`。
 - [三维实现说明](docs/development/SEIS3D_IMPLEMENTATION.md)：求解、显存、I/O 与当前验证边界。
 - [原二维 README](docs/history/Seis2D_Original_README.md)：保留旧版本介绍、界面与当时的性能描述。
@@ -33,7 +36,7 @@
 
 二维实现已整理到 `src/Seis2D`，`Seis_Sim.h` 保留公共入口。新的地震记录查看器可打开当前 Vz/Vx 采集快照，也可独立导入单炮 SEG-Y；提供单道/多道、滑动 RMS AGC、独立增益和显式显示重置。切换分量、导入和刷新保留显示设置，正式导出保持原始振幅。首页操作手册新增“二维模拟与地震记录”章节。
 
-发布程序位于父目录下的 `out/bin/RelWithDebInfo/SeisWaveLab.exe`，Debug 位于 `out/bin/Debug/SeisWaveLab.exe`。CMake 项目为 `SeisWaveLab_Cartesian`，主程序目标为 `SeisWaveLab`。运行时保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`。
+发布程序位于父目录下的 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`，Debug 位于 `out/bin/Debug/SeisWaveLab_Cartesian.exe`。CMake 项目为 `SeisWaveLab_Cartesian`，主程序目标为 `SeisWaveLab`。运行时保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`。
 
 2026-10-18 完成项目重命名：外层工作区为 `SeisWaveLab_Cartesian_Workspace`，本 Git 仓库目录为 `SeisWaveLab_Cartesian`。在 VS 重新打开新目录；旧路径的 CMake/IDE 缓存不能直接复用。迁移说明见 [项目命名](docs/development/PROJECT_NAMING.md)。软件版本仍为 v2.0.0，Seis2D/Seis3D 模块名和 Git 历史保持。
 
@@ -60,3 +63,9 @@ Vx/Vy/Vz/速度幅值切换共用速度参考，并记忆独立的压力尺度�
 `docs/user` 保存操作说明，`docs/assets` 保存实际截图，`docs/tools` 保存导出工具；构建说明、实现说明和历史资料也按类别存放于 `docs`。
 
 本仓库包含独立构建所需的 CMake 辅助文件；外层工作区入口继续兼容。直接在 VS 中打开本仓库时，编译缓存位于外层 `out/build/standalone/<配置>`；从外层入口构建时使用 `out/build/x64-Debug` 或 `out/build/x64-Release`。程序统一输出到外层 `out/bin/<配置>`。外部 SDK 可通过 CMake 缓存路径配置，见构建说明；发布前仍须核查 [第三方资源授权](THIRD_PARTY_NOTICES.md)。
+
+## 当前程序入口
+
+2026-10-19 整理后，推荐启动外层 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`。正式图标位于 `resources/icons`，资源分类与维护约定见 `docs/development/REPOSITORY_LAYOUT.md`。
+
+当前代码按 `Seis2D`、`Seis3D`、`SeisCommon` 组织，二维/三维支持 CPU/OpenMP 与 CUDA 自动回退、参数对照及性能对比。[代码架构与维护入口](docs/development/CODE_ARCHITECTURE.md)。

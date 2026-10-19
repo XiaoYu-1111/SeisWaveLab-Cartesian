@@ -10,7 +10,8 @@ The repository's MIT license covers project-authored material under the existing
 | GLFW | External Windows SDK, local 3.4 | Preserve its upstream license and notices in any distributed binary package; SDK is not committed here. |
 | GLEW | External Windows SDK, local 2.1.0 | Multiple upstream notices apply; copy the SDK's actual license notices when packaging. |
 | GLM | External headers | Record the actual version and license notices; do not infer a commit from the directory name `glm-master`. |
-| NVIDIA CUDA / driver runtime | External toolkit, locally 12.8 | Proprietary SDK/runtime terms apply. Determine which redistributable runtime files are needed before packaging. |
+| NVIDIA CUDA Runtime | Toolkit 12.8; cudart64_12.dll deployed beside the EXE | NVIDIA proprietary redistributable runtime terms apply; the application loads the driver through this runtime when available. |
+| Microsoft VC++ / OpenMP Runtime | Compiler redistributable runtime (vcomp140 and VC++ DLLs) | Microsoft Visual Studio redistributable runtime terms apply. Files are copied from the compiler redistributable set. |
 | Windows SDK / OpenGL system libraries | Platform dependencies | System/runtime distribution rules apply; do not copy development SDK libraries as application assets. |
 | Fonts in `resource_CUDA_V1/font` | Runtime resources | Audit every file and origin. In particular, a locally installed font such as Consolas is not automatically licensed for application redistribution. Replace with an appropriately licensed alternative or obtain permission. |
 | Icons and other resource images | Runtime resources | Confirm origin, authorship and redistribution rights; retain original attribution where required. |

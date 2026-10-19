@@ -23,14 +23,16 @@ inline void prepareDockspace2D(int width,int height,float barHeight) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);
     ImGui::Begin("Seis2D.DockHost",nullptr,ImGuiWindowFlags_NoDecoration|ImGuiWindowFlags_NoMove|
         ImGuiWindowFlags_NoDocking|ImGuiWindowFlags_NoBringToFrontOnFocus|ImGuiWindowFlags_NoNavFocus);
-    const ImGuiID id=ImGui::GetID("Seis2D.Dockspace.v2");const auto size=ImGui::GetContentRegionAvail();
+    const ImGuiID id=ImGui::GetID("Seis2D.Dockspace.v4");const auto size=ImGui::GetContentRegionAvail();
     if(resetDockLayout2D||!ImGui::DockBuilderGetNode(id)) {
         ImGui::DockBuilderRemoveNode(ImGui::GetID("Seis2D.Dockspace.v1"));
+        ImGui::DockBuilderRemoveNode(ImGui::GetID("Seis2D.Dockspace.v2"));
         ImGui::DockBuilderRemoveNode(id);ImGui::DockBuilderAddNode(id,ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(id,size);ImGui::DockBuilderSetNodePos(id,ImGui::GetCursorScreenPos());
         ImGuiID center=id;const float ratio=std::clamp(500.0f/size.x,.25f,.45f);
-        const auto controls=ImGui::DockBuilderSplitNode(center,ImGuiDir_Right,ratio,nullptr,&center);
+        const auto controls=ImGui::DockBuilderSplitNode(center,ImGuiDir_Left,ratio,nullptr,&center);
         ImGui::DockBuilderDockWindow(AppUi::windowLabel(controlsName2D),controls);
+        ImGui::DockBuilderDockWindow(AppUi::windowLabel("Current Parameters###Seis2D.Parameters"),controls);
         if(dockPreset2D==1) {
             const auto traces=ImGui::DockBuilderSplitNode(center,ImGuiDir_Down,.48f,nullptr,&center);
             ImGui::DockBuilderDockWindow(AppUi::windowLabel(recordsName2D),traces);
@@ -61,7 +63,7 @@ inline void ensureCanvasTarget2D(int width,int height) {
     if(canvasGl2D.width==width&&canvasGl2D.height==height&&canvasGl2D.framebuffer) return;
     if(!canvasGl2D.framebuffer) glGenFramebuffers(1,&canvasGl2D.framebuffer);
     if(!canvasGl2D.texture) glGenTextures(1,&canvasGl2D.texture);
-    glBindTexture(GL_TEXTURE_2D,canvasGl2D.texture);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
+    glBindTexture(GL_TEXTURE_2D,canvasGl2D.texture);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,width,height,0,GL_RGBA,GL_FLOAT,nullptr);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
     glBindFramebuffer(GL_FRAMEBUFFER,canvasGl2D.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,canvasGl2D.texture,0);

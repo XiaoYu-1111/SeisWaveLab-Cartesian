@@ -10,7 +10,7 @@
 
 ## 双语实现
 
-`Main_header/AppLanguage.h` 与 `Main_cpp/AppLanguage.cpp` 管理应用语言偏好；`Main_cpp/AppTranslations.inc` 为集中词条，`AppWidgets.h` 将界面调用接入翻译。首页、三维工作区、二维主要控件和设备信息接入同一语言状态。未知文本保留原文；标准色带名、文件字段和技术符号保持原标识，部分历史说明及底层诊断暂未翻译。
+`include/SeisCommon/AppLanguage.h` 与 `src/SeisCommon/AppLanguage.cpp` 管理应用语言偏好；`src/SeisCommon/AppTranslations.inc` 为集中词条，`AppWidgets.h` 将界面调用接入翻译。首页、三维工作区、二维主要控件和设备信息接入同一语言状态。未知文本保留原文；标准色带名、文件字段和技术符号保持原标识，部分历史说明及底层诊断暂未翻译。
 
 语言即时切换，正常启动读取程序目录中的 `ui_language.ini`。语言不存放在物理模型或三维状态中。中文沿用现有微软雅黑合并字体，无需切换时重建字体。
 

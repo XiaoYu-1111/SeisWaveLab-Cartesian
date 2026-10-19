@@ -163,7 +163,7 @@ std::filesystem::path exportShotPackage2D(const ShotExportRequest2D& r,const Fro
             <<"  \"coordinates\": \"X horizontal; Z down from model grid origin; legacy SEG-Y Y stores Z\",\n"
             <<"  \"model_layout\": "<<jsonText("S2DMOD1\\0 + uint32le nx,nz + float32le h; lambda,mu,rho planes; index=z*nx+x")<<",\n"
             <<"  \"model_included\": "<<(r.includeModel?"true":"false")
-            <<",\n  \"grid\": {\"nx\": "<<m.nx<<", \"nz\": "<<m.nz<<", \"spacing_m\": "<<m.spacing<<", \"npml\": "<<m.npml
+            <<",\n  \"grid\": {\"nx\": "<<m.nx<<", \"nz\": "<<m.nz<<", \"spacing_m\": "<<m.spacing<<", \"npml\": "<<m.npml<<", \"external_pml\": "<<(m.externalPml?"true":"false")
             <<", \"formulation\": "<<m.formulation<<", \"free_surface\": "<<(m.freeSurface?"true":"false")<<"},\n"
             <<"  \"solver\": {\"dt_s\": "<<m.solverDt<<", \"sampling_stride\": "<<m.samplingStride
             <<", \"capture_start_step\": "<<m.captureStartStep<<", \"nt\": "<<m.wavelet.size()<<", \"spatial_order\": 8, \"fast_math_build\": true},\n"

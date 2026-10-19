@@ -52,7 +52,7 @@ void validateVtiPlane3D(const std::vector<float>& plane3D) {
 
 // Export original physical materials as three contiguous VTK point arrays using bounded XY buffers.
 void exportVtiModel3D(Seis3D_State& s) {
-    if(!s.ready3D||!s.gpu3D.stream3D) throw std::runtime_error("Initialize the 3D model before exporting VTI.");
+    if(!s.ready3D||(!s.gpu3D.stream3D&&!s.gpu3D.cpu3D)) throw std::runtime_error("Initialize the 3D model before exporting VTI.");
     if(s.recording3D||s.sequence3D) throw std::runtime_error("Stop acquisition before exporting VTI.");
     const auto path3D=uiPath3D(s.vtiModelExportPath3D);
     auto extension3D=path3D.extension().string();
@@ -141,7 +141,7 @@ void exportVtiModel3D(Seis3D_State& s) {
 
 // Export one native-resolution scalar snapshot without applying display gain, palette or volume sampling.
 void exportVtiWavefield3D(Seis3D_State& s) {
-    if(!s.ready3D||!s.gpu3D.stream3D) throw std::runtime_error("Initialize the 3D model before exporting a wavefield snapshot.");
+    if(!s.ready3D||(!s.gpu3D.stream3D&&!s.gpu3D.cpu3D)) throw std::runtime_error("Initialize the 3D model before exporting a wavefield snapshot.");
     if(s.recording3D||s.sequence3D) throw std::runtime_error("Stop acquisition before exporting a wavefield snapshot.");
     if(s.component3D<0||s.component3D>4) throw std::runtime_error("Select a physical wavefield component before export.");
     const auto path3D=uiPath3D(s.vtiWavefieldExportPath3D);
