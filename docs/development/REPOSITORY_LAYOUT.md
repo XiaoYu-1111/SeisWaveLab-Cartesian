@@ -56,7 +56,7 @@ python -B docs/tools/prepare_seis2d_screenshots.py
 python -B docs/tools/package_documentation.py
 ```
 
-打包仅包含白名单文档、当前 41 张完整图片、示例及来源说明，不把 EXE、PDB、模型体、SEG-Y、旧裁切图或渲染缓存加入博客 ZIP。检查结果记录于发布包 `package-validation.json`。本机输出不加入 Git，不自动提交或推送。
+打包包含白名单文档、当前 44 张完整流程图、正式性能报告及其原始数据、示例和来源说明，不把 EXE、PDB、模型体、SEG-Y、旧裁切图或渲染缓存加入博客 ZIP。检查结果记录于发布包 `package-validation.json`。本机输出不加入 Git，不自动提交或推送。
 
 ## 当前资源与输出
 

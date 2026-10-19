@@ -14,7 +14,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
 OUT = ROOT.parent / "out"
-DATE = "2026-10-18"
+DATE = "2026-10-19"
 SLUG = "CUDA_Seis3D"
 TITLE = "SeisWave Lab：笛卡尔网格二维与三维弹性波模拟的理论、实现与工作流程"
 ORIGIN = "https://github.com/XiaoYu-1111/CMakePro_CUDA_SeisSim_V2/blob/master/"
@@ -25,7 +25,10 @@ SELECTED = ["PROJECT_MANUAL.md", "README.md", "user/Seis3D_User_Guide.md",
     "user/S3DM_Model_Format.md", "user/VTK_Model_Export.md", "build/BUILDING.md",
     "build/HEXO_MATH.md", "development/REPOSITORY_LAYOUT.md", "development/PROJECT_NAMING.md",
     "development/SEIS3D_IMPLEMENTATION.md", "development/SEIS2D_REFACTOR_AND_VIEWER.md",
-    "publication/PUBLICATION_ROADMAP.md", "reviews/DOCUMENTATION_REFRESH_2026_10_18.md"]
+    "publication/PUBLICATION_ROADMAP.md", "reviews/DOCUMENTATION_REFRESH_2026_10_18.md",
+    "development/CODE_ARCHITECTURE.md", "development/BACKEND_VALIDATION.md",
+    "development/EXTERNAL_DOMAIN_2D.md", "development/THEME_SERIES.md",
+    "reviews/DOCUMENTATION_REFRESH_2026_10_19.md", "performance/CPU_CUDA_REPORT.md"]
 FRONT = f'''---
 title: "{TITLE}"
 date: 2026-05-30 13:01:56
@@ -110,9 +113,17 @@ def package_documentation() -> None:
         names[p.resolve()] = p.name
     for name in ["LICENSE", "THIRD_PARTY_NOTICES.md"]:
         names[(ROOT / name).resolve()] = name
+    auxiliary = [DOCS / "development/SOURCE_MIGRATION_2026-10-19.json",
+        DOCS / "reviews/DOCUMENTATION_REFRESH_2026_10_19.json"]
+    for p in sorted((DOCS / "performance").rglob("*")):
+        if p.is_file() and p.name != "CPU_CUDA_REPORT.md":
+            auxiliary.append(p)
+            names[p.resolve()] = "performance-" + p.name
+    for p in auxiliary:
+        names.setdefault(p.resolve(), p.name)
     images: dict[Path, str] = {}
     rows = []
-    for dimension, subdir, expected in [("seis3d", "seis3d/full", 33), ("seis2d", "seis2d", 8)]:
+    for dimension, subdir, expected in [("seis3d", "seis3d/full", 33), ("seis2d", "seis2d", 11)]:
         source = DOCS / "assets" / subdir
         records = json.loads((source / "capture-manifest.json").read_text(encoding="utf-8"))
         if len(records) != expected:
@@ -137,18 +148,18 @@ def package_documentation() -> None:
         text = convert_links(p.read_text(encoding="utf-8"), p, names, images)
         (offline / names[p]).write_text(text, encoding="utf-8")
         files.add(names[p])
-    for p in example_files + [ROOT / "LICENSE", ROOT / "THIRD_PARTY_NOTICES.md"]:
+    for p in example_files + auxiliary + [ROOT / "LICENSE", ROOT / "THIRD_PARTY_NOTICES.md"]:
         shutil.copy2(p, offline / names[p.resolve()])
         files.add(names[p.resolve()])
     manifest = dict(product="SeisWave Lab", version="2.0.0", date=DATE,
-        grid="Cartesian", current_screenshots=41, native_dimensions=[2560,1494],
+        grid="Cartesian", current_screenshots=len(rows), native_dimensions=[2560,1494],
         image_processing="Byte-identical copy; no crop, resample or recolor", captures=rows)
     (offline / "capture-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     files.add("capture-manifest.json")
     (offline / "README.md").write_text("# SeisWave Lab 图文说明\n\n"
         "[完整理论与流程](PROJECT_MANUAL.md) · [三维用户指南](Seis3D_User_Guide.md) · "
         "[二维用户指南](Seis2D_User_Guide.md) · [完整截图集](Seis3D_Screenshot_Gallery.md)\n\n"
-        "2026-10-18，笛卡尔网格项目，41 张 2560×1494 原生完整窗口图。"
+        f"{DATE}，笛卡尔网格项目，{len(rows)} 张 2560×1494 原生完整窗口图。"
         "Markdown 阅读器需要支持数学公式。历史审查与旧图链接保留到源码仓库。"
         "不含模型体、地震道集或可执行文件；运行数据在外层 out/screenshots。\n", encoding="utf-8")
     files.add("README.md")
@@ -171,8 +182,8 @@ def package_documentation() -> None:
         "将 hexo/source 合并到博客 source。文章 CUDA_Seis3D.md 与同名资源目录必须一起复制，"
         "站点启用 post_asset_folder，并将资源目录加入 skip_render，避免附件 Markdown 被识别为新文章。"
         "数学渲染与 NexT 合并配置见资源目录 HEXO_MATH.md。\n\n"
-        "文章源自仓库 docs/PROJECT_MANUAL.md，保留 2026-05-30 发布日期，更新日期为 2026-10-18。"
-        "本包有当前 41 张完整原图及配套 Markdown，所有图片与仓库字节相同。"
+        f"文章源自仓库 docs/PROJECT_MANUAL.md，保留 2026-05-30 发布日期，更新日期为 {DATE}。"
+        f"本包有当前 {len(rows)} 张完整原图及配套 Markdown，所有图片与仓库字节相同。"
         "不包含程序、模拟体或记录数据，不修改网站、不自动部署。"
         "历史审查链接保留到源码仓库。\n", encoding="utf-8")
     hexo_files.add("README.md")
@@ -192,7 +203,7 @@ markdown:
     - name: markdown-it-mathjax3
 ''',encoding="utf-8")
     hexo_files.add("hexo/_config.seiswave.example.yml")
-    checks = dict(date=DATE, screenshots=41, local_links_checked=links,
+    checks = dict(date=DATE, screenshots=len(rows), local_links_checked=links,
         display_equations=len(re.findall(r"^\\tag\{\d+\}",source_body,re.M)),
         native_resolution=[2560,1494], screenshot_hashes_verified=True,
         note="Math HTML rendering is recorded separately in math-render-validation.json; no website deployed.")

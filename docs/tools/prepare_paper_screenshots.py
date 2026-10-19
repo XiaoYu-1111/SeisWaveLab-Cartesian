@@ -38,12 +38,17 @@ def prepare_screenshots() -> None:
         shutil.copy2(image_path, output / image_path.name)
         row.update(title=title, captured_date=captured_date,
             sha256=hashlib.sha256(image_path.read_bytes()).hexdigest(), cropped=False, resampled=False,
-            recolored=False, theme="Paper Sand", application_version="2.0.0")
+            recolored=False, theme="Paper Sand", application_version="2.0.0", backend="CUDA",
+            executable_sha256=digest_executable(root))
         gallery.extend([f"## {index:02d} {title}", "", f"![{title}](../assets/seis3d/full/{image_path.name})", "",
             f"图{index}　{title}。完整程序窗口，2560×1494。", ""])
     (output / "capture-manifest.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
     (root / "docs/user/Seis3D_Screenshot_Gallery.md").write_text("\n".join(gallery), encoding="utf-8")
     print(f"Copied {len(rows)} native full-window PNGs without image transforms")
+
+
+def digest_executable(root: Path) -> str:
+    return hashlib.sha256((root.parent / "out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe").read_bytes()).hexdigest()
 
 
 if __name__ == "__main__":

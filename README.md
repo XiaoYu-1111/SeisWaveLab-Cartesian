@@ -1,71 +1,109 @@
-# SeisWave Lab
+# SeisWave Lab · Cartesian
 
-[English overview](README.en.md) · [贡献说明](CONTRIBUTING.md) · [现有 MIT 许可证](LICENSE)
+二维 / 三维直角坐标弹性波模拟工作台。
 
-基于 CPU/OpenMP、CUDA、OpenGL 4.3、Dear ImGui Docking 和 ImPlot 的二维与三维弹性波模拟工作区。首页分别进入二维波场沙盒与 Seis3D 三维沙盒，切换模式时释放原模式的计算和图形资源。
+<img src="resources/icons/SeisWaveLab.png" alt="SeisWave Lab Cartesian 程序图标" width="96" height="96">
 
-软件名称为 **SeisWave Lab**，当前版本 **v2.0.0**，窗口标题为 **SeisWave Lab — Cartesian Elastic Wave Simulation | v2.0.0**。三维模块与命名空间继续使用 **Seis3D**。主页、操作手册的“关于 SeisWave Lab”和 Windows 文件属性显示相同的版本信息；后续版本号统一在本仓库 `CMakeLists.txt` 的 `project(... VERSION ...)` 中修改。
+[English overview](README.en.md) · [贡献说明](CONTRIBUTING.md) · v2.0.0
 
-本目录是 Git 仓库根目录。源码、原始运行资源、Markdown 文档、说明书截图与文档导出工具集中在本仓库，VS 的 Git 更改窗口可以识别这些文件。
+二维和三维笛卡尔规则网格各向同性弹性波模拟与交互式可视化工作台。主页左侧进入二维 X–Z 平面 P–SV 剖面，右侧进入三维直角体网格。两个维度有独立求解器、模型与记录会话，共用设备检测、主题、语言与地震记录显示模块。数值核心采用速度—应力交错网格有限差分，均支持 CPU/OpenMP 与 CUDA Float32；界面使用 Dear ImGui Docking、ImPlot 和 OpenGL 4.3。外观与 Curvilinear 项目采用同系列主题。
 
-## 文档入口
+**完整说明**：[理论与完整流程](docs/PROJECT_MANUAL.md) · [二维操作指南](docs/user/Seis2D_User_Guide.md) · [三维操作指南](docs/user/Seis3D_User_Guide.md) · [代码架构](docs/development/CODE_ARCHITECTURE.md) · [构建说明](docs/build/BUILDING.md) · [文档导航](docs/README.md)
 
-- [完整理论与流程说明](docs/PROJECT_MANUAL.md)：笛卡尔网格方程、19 组编号公式、CUDA 实现、完整操作与复现条件。
-- [仓库分类](docs/development/REPOSITORY_LAYOUT.md)与[Hexo 数学排版](docs/build/HEXO_MATH.md)：当前截图、历史图片及发布目录约定。
-- [二维模拟与地震记录图文指南](docs/user/Seis2D_User_Guide.md)：模型到采集全流程、三种停靠布局、单/多道、AGC、增益保持、单炮数据包，含八张实际 CUDA 截图。
-- [论文准备与期刊建议](docs/publication/PUBLICATION_ROADMAP.md)：定量验证矩阵、性能实验、开源发布与科研软件投稿路线。
-- [二维代码整理与后续优化](docs/development/SEIS2D_REFACTOR_AND_VIEWER.md)：文件职责、生命周期、采集问题修复、回归结果与分阶段建议。
-- [三维模拟图文使用说明](docs/user/Seis3D_User_Guide.md)：Paper Sand 界面、浅色模型、蓝红波场、默认 100×5 接收排列与 500 道上限。
-- [S3DM 模型格式与读取代码](docs/user/S3DM_Model_Format.md)：自定义模型文件的字节布局、单位、版本兼容，以及不依赖 GPU 的 Python/C++ 读取示例。
-- [VTK ImageData 模型与波场导出](docs/user/VTK_Model_Export.md)：导出完整物理网格、Vp/Vs/密度或当前分量波场快照，供外部 VTK/ParaView 使用。
-- [三维实操视频教程](docs/user/Seis3D_Video_Tutorial.md)：模型、震源、100 道采集、AGC 显示与 SEG-Y 导出。
-- [三维项目展示文章](docs/showcase/CUDA_Seis3D_GitHub_Pages.md)：适合个人博客展示的完整介绍，包含计算原理与实际运行截图。
-- [文档导航](docs/README.md)：操作、构建、实现与历史审查资料。
-- [代码架构](docs/development/CODE_ARCHITECTURE.md)与[后端验证](docs/development/BACKEND_VALIDATION.md)：Seis2D / Seis3D / SeisCommon 分类、CPU/OpenMP 与 CUDA、参数草稿及分组折叠。
-- [系列主题](docs/development/THEME_SERIES.md)与[二维外置吸收边界](docs/development/EXTERNAL_DOMAIN_2D.md)：主题、物理域及画布交互约定。
-- [32 线程 CPU/CUDA 性能报告](docs/performance/CPU_CUDA_REPORT.md)：六档模型、5 轮中位数、波场误差、图表和原始数据；[复现步骤](benchmarks/README.md)。
-- [构建与输出位置](docs/build/BUILDING.md)：VS 与命令行统一使用外层 `out`。
-- [三维实现说明](docs/development/SEIS3D_IMPLEMENTATION.md)：求解、显存、I/O 与当前验证边界。
-- [原二维 README](docs/history/Seis2D_Original_README.md)：保留旧版本介绍、界面与当时的性能描述。
+**性能实测**：[二维/三维 CPU 与 CUDA 对比报告、图表及原始数据](docs/performance/CPU_CUDA_REPORT.md)（2026-10-19，CPU 32 线程、六档模型、每种配置 5 轮；[复现步骤](benchmarks/README.md)）。
 
-可编辑 Word 由图文指南和截图导出，保存在外层 `out/docs/Seis3D_User_Guide.docx`。导出方式见文档导航。
+![二维正交剖面与三维直角体网格主页](docs/assets/seis3d/full/01-home.png)
 
-2026-10-18 已重新采集二维 8 张、三维 33 张 2560×1494 完整窗口图。当前项目仅维护笛卡尔网格与平面地表；独立曲网格项目分别维护。运行 `python -B docs/tools/package_documentation.py` 可生成父目录 `out/documentation/SeisWaveLab` 和 `out/blog/SeisWaveLab_Hexo.zip`；主文与截图保存在本仓库，生成文件不加入 Git。
+二维提供模型编辑、单次/连续激发、外置 PML、Vx/Vz 接收测线、SEG-Y 物性模型导入和单炮数据包导出。物理模型 NX×NZ 不包含外加吸收层，按 B 显示/隐藏吸收区域。左侧控制面板与当前参数页签并列显示生效值和待应用值，提供更新、撤销及全部展开/折叠。左键激发，连续模式下按住左键追加源；中键/右键拖动平移，滚轮缩放。详见[二维工作流](docs/user/Seis2D_User_Guide.md)和[外置边界](docs/development/EXTERNAL_DOMAIN_2D.md)。
 
-## 启动与显示
+三维提供平面自由表面、五面/六面 CPML 与滑移反射边界、三正交剖面、体视图和 Vx/Vy/Vz 记录。默认物理网格 300×50×300、接收排列 100×5 共 500 道、每炮 1000 样点；默认体视图优先，控制、显示与当前参数集中在左侧，地震记录默认全部道。采集可按计算步距或等时间毫秒间隔设置。演示截图使用 200³、150 道独立算例，详细条件见[截图集](docs/user/Seis3D_Screenshot_Gallery.md)。
 
-二维实现已整理到 `src/Seis2D`，`Seis_Sim.h` 保留公共入口。新的地震记录查看器可打开当前 Vz/Vx 采集快照，也可独立导入单炮 SEG-Y；提供单道/多道、滑动 RMS AGC、独立增益和显式显示重置。切换分量、导入和刷新保留显示设置，正式导出保持原始振幅。首页操作手册新增“二维模拟与地震记录”章节。
+![二维波场与当前参数面板](docs/assets/seis2d/wavefield-paper.png)
 
-发布程序位于父目录下的 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`，Debug 位于 `out/bin/Debug/SeisWaveLab_Cartesian.exe`。CMake 项目为 `SeisWaveLab_Cartesian`，主程序目标为 `SeisWaveLab`。运行时保留程序旁的 `resource_CUDA_V1` 和 `resource_Seis3D`。
+## 模拟与显示
 
-2026-10-18 完成项目重命名：外层工作区为 `SeisWaveLab_Cartesian_Workspace`，本 Git 仓库目录为 `SeisWaveLab_Cartesian`。在 VS 重新打开新目录；旧路径的 CMake/IDE 缓存不能直接复用。迁移说明见 [项目命名](docs/development/PROJECT_NAMING.md)。软件版本仍为 v2.0.0，Seis2D/Seis3D 模块名和 Git 历史保持。
+- 二维五场、三维九场各向同性弹性波；内部八阶交错空间差分与二阶时间推进，自由表面闭合单独处理。
+- CPU/OpenMP 与 CUDA 可切换，线程数可配置；自动优先 CUDA，设备、驱动或互操作不可用时回退 CPU。切换计算核心需应用/重建会话。
+- 分层介质、异常体和常见合成模型；二维物性导入统一使用 Vp、Vs、密度 SEG-Y 三文件组。三维支持 S3DM 模型读写及 VTI 模型/波场导出。
+- 物理网格、外置吸收域、标尺和源检位置采用统一坐标；二维 B 键只切换显示，不改变吸收计算。三维剖面支持滚轮整体缩放和拖动平移。
+- 独立波场/模型配色与色标，默认 Coolwarm 和 Scientific White；二维颜色增益默认 100、范围 0–1000。主题切换保留科学色带和已调显示参数。
+- 地震记录支持全部道、局部道集、单道、RMS AGC、增益和独立缩放；导入和预览处理保留原始样本，SEG-Y 导出不应用显示增益。
+- 中英文、系列主题、字号调整与停靠布局；参数按组展开/折叠，当前值与待应用值对照；性能面板显示计算耗时并提供 CPU/CUDA 对比。
 
-三维初始为 **Vz / Paper scientific（论文浅色）/ Coolwarm**，使用 Scientific White 浅色材料和 1.8 倍波场显示增益，历史峰值保持关闭。默认网格 **300×50×300**，接收排列 **X 向每排 100 道、Y 向 5 排，共 500 道**，每炮 **1000 样点**，接收总上限 **500 道**；初始为单炮激发，多炮布设默认为 **1×1**。网格预设中的 96³/160³ 已替换为 **500×20×500 / 200³**。主频应用、重发或新采集同步更新子波与 CPML，保留模型和显示增益；参数生效规则见三维指南。界面主题独立选择，可在三维页设置 **Interface theme → Paper Sand**，搭配默认论文浅色预设。
+![三维波场剖面、体视图与记录工作台](docs/assets/seis3d/full/08-wavefield.png)
 
-首页设备摘要旁提供双语言 **Operating manual / 操作手册**。模型文件支持独立输入与输出路径选择；采集支持导出文件夹、中文文件名前缀和可选会话子文件夹，已有目标不会被覆盖。
+当前项目采用规则网格和平面地表。曲面地表与贴体曲网格由独立的 Curvilinear 项目维护；两个项目的数值方法和边界实现各自独立。CPU/CUDA 一致性、有限算例的稳定性和物理精度属于不同验证范围，见[理论说明](docs/PROJECT_MANUAL.md)、[后端验证](docs/development/BACKEND_VALIDATION.md)与[性能测试条件](docs/performance/CPU_CUDA_REPORT.md)。
 
-界面提供十套主题，新增浅色 **Arctic Lab / Warm Ivory**，计算、模型、震源、采集和显示采用统一功能颜色。体视图默认开启模型尺寸透明度补偿，并提供独立 **Volume gain** 和三种 **Volume recipe**；可增强大模型波前显示，不改变求解或采集振幅。操作和实际截图见图文使用说明。
+## 仓库与输出目录
 
-Visual preset 仅改变配色，初始化/重建/导入和重发震源保留显示增益等参数；**Lock current amplitude scale** 可固定跨运行比较的幅值参考。**Receiver focus** 放大道集，支持全部道、固定 Y 的 X 排、固定 X 的 Y 排及原单点三分量图；独立 Trace gain 与选行只影响预览。检查记录见 [显示状态与接收选行](docs/reviews/SEIS3D_DISPLAY_STATE_RECEIVER_REVIEW.md)。
+**当前目录就是需要上传的 Git 仓库**，包含构建入口、源码、文档及其图片、图标、工具和许可。所有编译产物和运行生成文件统一写到本仓库同级的 `../out`：
 
-Receiver traces 提供可调的滑动 RMS 自动增益补偿（AGC）：时间窗、补偿强度、最大放大量和噪声门限均可独立设置。AGC 在显示抽稀前处理预览，正式采样和 SEG-Y 导出保持原始振幅。操作说明见图文指南第 8 节。
+```text
+SeisWaveLab_Cartesian_Workspace/
+├─ SeisWaveLab_Cartesian/       Git 仓库
+│  ├─ CMakeLists.txt           独立构建入口
+│  ├─ CMakeSettings.json       VS 配置
+│  ├─ cmake/                  输出布局与编译依赖
+│  ├─ src/SeisCommon/         共享入口、主页、主题、语言与 SEG-Y
+│  ├─ src/Seis2D/             二维会话、CPU 与 cuda/ 求解
+│  ├─ src/Seis3D/             三维会话、CPU 与 cuda/ 求解
+│  ├─ include/                SeisCommon、Seis2D、Seis3D 公共头文件
+│  ├─ resources/icons/        正式 PNG / ICO 图标
+│  ├─ shaders/ resource_CUDA_V1/  原始运行资源
+│  ├─ docs/                   理论、指南、截图与文档工具
+│  │  ├─ assets/              当前截图与采集摘要
+│  │  └─ performance/         正式性能报告、图表与原始数据
+│  ├─ benchmarks/             实测入口、运行和报告脚本
+│  ├─ tests/                  数值、记录与工作区回归
+│  └─ LICENSE  THIRD_PARTY_NOTICES.md
+└─ out/                       不属于仓库
+   ├─ build/x64-Release/       外层 RelWithDebInfo 缓存
+   ├─ build/x64-Debug/         外层 Debug 缓存
+   ├─ build/standalone/        内部仓库独立构建缓存
+   ├─ bin/RelWithDebInfo/      当前发布程序及运行资源
+   ├─ bin/Debug/
+   ├─ screenshots/            原生截图、日志与采集数据
+   ├─ benchmarks/             本机测试输出
+   ├─ documentation/          生成的离线说明包
+   └─ blog/                   生成的 Hexo 发布包
+```
 
-Vx/Vy/Vz/速度幅值切换共用速度参考，并记忆独立的压力尺度。**Acquisition → IMPORT SHOT RECORD** 可导入已有单炮 SEG-Y，在 **Imported** 数据源中按单道、多道和 X/Y 排查看；导入记录与当前模拟/采集状态独立。操作步骤见图文指南，验证条件见 [分量尺度与单炮导入检查](docs/reviews/SEIS3D_COMPONENT_SCALE_SHOT_IMPORT_REVIEW.md)。
+文档图片、图标、正式性能结果和复现脚本随仓库维护；缓存、EXE/DLL、模拟导出和发布 ZIP 留在外层 `out`。目录职责及迁移清单见[仓库整理](docs/development/REPOSITORY_LAYOUT.md)和[代码架构](docs/development/CODE_ARCHITECTURE.md)。当前工作区为 `SeisWaveLab_Cartesian_Workspace`，Git 仓库为 `SeisWaveLab_Cartesian`，CMake 主程序目标保留 `SeisWaveLab`，唯一主程序文件名为 `SeisWaveLab_Cartesian.exe`。
 
-首页提供 **English / 简体中文** 切换，三维也可从 **Workspace → Language** 进入；语言偏好保存至程序旁的 `ui_language.ini`。三维操作面板采用默认收起的详细参数组，提供 **Expand all / Collapse all**，保留常用运行与采集操作。切换语言或折叠分组保留参数与三维停靠布局。截图与验证见 [双语界面与折叠面板检查](docs/reviews/SEIS3D_BILINGUAL_COMPACT_UI_REVIEW.md)。
+## 构建与运行
 
-三维 Simulation 现在提供九种常见合成模型，并可选择自由表面加五面吸收、六面吸收、六面滑移全反射。模型与边界改动在重建会话后生效。Workspace / Display 中的 **Show boundary layers / walls** 可即时显示实际 CPML 区域；隐藏显示仍保持吸收计算。默认字号约 21 像素，支持工作区字号缩放，已有布局可通过 Workspace 重新应用预设。
+需要 CMake 3.26+、MSVC x64、Ninja、C++20 与 CUDA Toolkit（本机验证为 12.8，CUDA 源码使用 C++17）。GLFW、GLEW、GLM 为外部 SDK，显示需要 OpenGL 4.3。运行时支持 CPU 回退，当前源码构建仍需要 CUDA Toolkit。以下命令从本 Git 仓库根目录、MSVC 开发者终端执行：
 
-物理网格按总量限制为 **300 × 300 × 400（3600 万节点）**，单边不再固定限制为 512，同时保留 4 GiB 预算和硬件限制。体视图使用每轴最多 256 点、匹配视口的输出（最长边 1536 像素）和自适应射线采样。可开启峰值保持，避免自动色阶放大晚期残留；当前默认关闭。显示 CPML 时，吸收层参与共同振幅统计。数值对照条件与结果见 [体绘制与六面吸收检查](docs/reviews/SEIS3D_VOLUME_BOUNDARY_REVIEW.md)。
+```powershell
+cmake -S . -B ../out/build/standalone/RelWithDebInfo -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIB_ROOT=D:/CPP_lib
+cmake --build ../out/build/standalone/RelWithDebInfo --target SeisWaveLab --parallel 4
+..\out\bin\RelWithDebInfo\SeisWaveLab_Cartesian.exe
+```
 
-## 目录约定
+SDK 路径可通过 `SEISWAVE_GLM_ROOT`、`SEISWAVE_GLEW_ROOT`、`SEISWAVE_GLFW_ROOT` 单独配置。外层 VS 的 `x64-Release` 使用 `RelWithDebInfo`，缓存为 `out/build/x64-Release`；内部独立构建使用 `out/build/standalone/<配置>`，两个入口不能混用缓存。具体配置、依赖和回归命令见[构建说明](docs/build/BUILDING.md)。
 
-`docs/user` 保存操作说明，`docs/assets` 保存实际截图，`docs/tools` 保存导出工具；构建说明、实现说明和历史资料也按类别存放于 `docs`。
+## 文档、博客与资源
 
-本仓库包含独立构建所需的 CMake 辅助文件；外层工作区入口继续兼容。直接在 VS 中打开本仓库时，编译缓存位于外层 `out/build/standalone/<配置>`；从外层入口构建时使用 `out/build/x64-Debug` 或 `out/build/x64-Release`。程序统一输出到外层 `out/bin/<配置>`。外部 SDK 可通过 CMake 缓存路径配置，见构建说明；发布前仍须核查 [第三方资源授权](THIRD_PARTY_NOTICES.md)。
+本轮于 **2026-10-19** 从当前程序重新采集 **33 张三维 + 11 张二维**原生 **2560×1494** 完整窗口截图，包含主页、参数、外置边界、波场、记录、AGC、导入导出和分组折叠。图片与采集日期、SHA-256、程序摘要均在 `docs/assets` 内，GitHub 阅读不依赖本机 `out`。截图条件与普通默认值分别记录，波场和记录来自真实 CUDA 计算。
 
-## 当前程序入口
+从外层工作区运行截图命令，再从内部仓库发布文档（Python 工具需要 Pillow）：
 
-2026-10-19 整理后，推荐启动外层 `out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe`。正式图标位于 `resources/icons`，资源分类与维护约定见 `docs/development/REPOSITORY_LAYOUT.md`。
+```powershell
+# 外层工作区
+.\out\bin\RelWithDebInfo\SeisWaveLab_Cartesian.exe --capture-seis3d-workflow
+.\out\bin\RelWithDebInfo\SeisWaveLab_Cartesian.exe --capture-seis2d-workflow
+# 内部 Git 仓库
+python -B docs/tools/prepare_paper_screenshots.py
+python -B docs/tools/prepare_seis2d_screenshots.py
+python -B docs/tools/package_documentation.py
+```
 
-当前代码按 `Seis2D`、`Seis3D`、`SeisCommon` 组织，二维/三维支持 CPU/OpenMP 与 CUDA 自动回退、参数对照及性能对比。[代码架构与维护入口](docs/development/CODE_ARCHITECTURE.md)。
+维护源为 `docs/PROJECT_MANUAL.md`、分类用户指南与架构说明。离线包生成到 `../out/documentation`，Hexo 文章和同名资源目录生成到 `../out/blog`；数学排版设置见[Hexo 说明](docs/build/HEXO_MATH.md)。本轮截图与文档检查见[更新记录](docs/reviews/DOCUMENTATION_REFRESH_2026_10_19.md)。
+
+图标原件为 `resources/icons/SeisWaveLab.png`、`SeisWaveLab.ico`，ICO 编入 Windows EXE。运行/分发时保留 EXE 同级 DLL、`resource_CUDA_V1`、`resource_Seis3D` 及许可文件。正式模型/记录格式见 [S3DM](docs/user/S3DM_Model_Format.md)、[VTK](docs/user/VTK_Model_Export.md)和[二维数据包](docs/user/Seis2D_User_Guide.md)。
+
+## 操作与来源
+
+二维画布滚轮缩放、中键/右键拖动平移、左键激发，连续激发需打开对应开关；B 显示/隐藏外置吸收层。三维剖面滚轮缩放、拖动平移，体视图提供独立旋转/缩放/平移操作，F1 查看快捷键。模式切换和参数重建会结束原会话，采集前先核对生效参数；显示增益与 AGC 不改变导出振幅。
+
+理论、实现及验证范围见[完整说明](docs/PROJECT_MANUAL.md)。作者 XIAO YU；许可见 [LICENSE](LICENSE)，依赖和资源来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

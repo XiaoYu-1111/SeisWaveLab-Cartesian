@@ -16,12 +16,13 @@ const renderer = new MarkdownIt({html:true, breaks:true, linkify:true}).use(math
 const outer = path.resolve(root, '../out');
 const article = path.join(outer,'blog/SeisWaveLab/hexo/source/_posts/CUDA_Seis3D.md');
 const assets = article.slice(0,-3);
-const markdown = fs.readFileSync(article,'utf8').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,'');
+const articleSource = fs.readFileSync(article,'utf8');
+const markdown = articleSource.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,'');
 const html = renderer.render(markdown);
 const work=path.join(outer,'docs-work/SeisWaveLab');
 fs.mkdirSync(work,{recursive:true});
 fs.writeFileSync(path.join(work,'rendered-body.html'),html);
-const counts = {date:'2026-10-18',
+const counts = {date:articleSource.match(/^updated:\s*(\d{4}-\d{2}-\d{2})/m)?.[1],
     article_sha256:createHash('sha256').update(fs.readFileSync(article)).digest('hex'),
     renderer:require('markdown-it/package.json').version,
     mathematics:require('markdown-it-mathjax3/package.json').version,

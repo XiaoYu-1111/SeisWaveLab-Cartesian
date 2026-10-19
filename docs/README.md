@@ -23,18 +23,18 @@
 | 32 线程二维/三维六档模型 CPU/CUDA 实测 | [性能报告](performance/CPU_CUDA_REPORT.md)、[原始对比数据](performance/data/comparison.csv)、[复现步骤](../benchmarks/README.md) |
 | CUDA、CPML、自由表面、预算与 SEG-Y | [三维实现](development/SEIS3D_IMPLEMENTATION.md) |
 | 二维文件职责、生命周期与记录查看器 | [二维整理](development/SEIS2D_REFACTOR_AND_VIEWER.md) |
-| 本轮重新截图及发布检查 | [2026-10-18 更新记录](reviews/DOCUMENTATION_REFRESH_2026_10_18.md) |
+| 本轮重新截图、README 结构与发布检查 | [2026-10-19 更新记录](reviews/DOCUMENTATION_REFRESH_2026_10_19.md) |
 | 科研验证、可复现性与投稿准备 | [论文路线](publication/PUBLICATION_ROADMAP.md) |
 | 模型到采集视频 | [历史实操录像说明](user/Seis3D_Video_Tutorial.md)，保留录制时参数 |
 | 仓库可读博客文章 | [CUDA Seis3D](showcase/CUDA_Seis3D_GitHub_Pages.md)，由完整说明同步 |
 
 ## 本次截图
 
-全部图片于 2026-10-18 重新采集：三维 33 张、二维 8 张，原生 **2560×1494 完整客户区**，无裁切、缩放或重新着色。三维为 200³、10 m、20 Hz、0.5 ms、50×3 接收点；六种色带冻结于第 480 步。正式采集 150 道×1000 样点、1 ms 间隔，首末速度时刻 0.75–999.75 ms。二维为独立 256×160、100 道×500 点算例。
+本轮流程图片于 2026-10-19 重新采集：三维 33 张、二维 11 张，原生 **2560×1494 完整客户区**，无裁切、缩放或重新着色。二维新增外置吸收边界、参数全部展开与折叠。三维为 200³、10 m、20 Hz、0.5 ms、50×3 接收点；六种色带冻结于第 480 步。正式采集 150 道×1000 样点、1 ms 间隔，首末速度时刻 0.75–999.75 ms。二维为独立 256×160、100 道×500 点算例。
 
 普通默认值仍为三维 300×50×300、100×5 共 500 道、单炮、1000 点、自动 CFL 时步、Vz / Paper scientific / Coolwarm、增益 1.8、历史峰值保持关闭。不要把截图演示参数写成默认值。
 
-当前图在 `assets/seis3d/full` 和 `assets/seis2d`，各目录有采集日期与 SHA-256 清单。旧局部图移入 `assets/history/seis3d`，旧审查引用同步保留，不进入当前发布包。历史验证记录保持其原日期，不以新截图代替数值精度证明。
+当前图在 `assets/seis3d/full` 和 `assets/seis2d`，各目录有采集日期、程序摘要与 SHA-256 清单。二维目录另外保留两张 CPU 回退验证截图，其说明与本轮 CUDA 流程分开。旧局部图在 `assets/history/seis3d`，旧审查引用保留。历史验证记录保持其原日期，不以新截图代替数值精度证明。
 
 ## 重新采集与打包
 
@@ -57,7 +57,7 @@ python -B docs/tools/package_documentation.py
 
 | 外层输出 | 用途 |
 | --- | --- |
-| `out/documentation/SeisWaveLab` | 完整离线 Markdown、41 张原图、配套格式与读取代码 |
+| `out/documentation/SeisWaveLab` | 完整离线 Markdown、44 张原图、配套格式与读取代码 |
 | `out/documentation/SeisWaveLab_Documentation.zip` | 离线包 |
 | `out/blog/SeisWaveLab/hexo/source/_posts/CUDA_Seis3D.md` | Hexo 文章 |
 | 同级 `CUDA_Seis3D` 目录 | 同名资源文件夹；必须和文章一起复制 |
