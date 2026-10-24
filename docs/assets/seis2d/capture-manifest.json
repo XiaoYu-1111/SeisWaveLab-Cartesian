@@ -1,6 +1,6 @@
 [
   {
-    "image": "wavefield-paper.png",
+    "image": "model-io.png",
     "width": 2560,
     "height": 1494,
     "cropped": false,
@@ -9,7 +9,7 @@
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "captured_date": "2026-10-19",
-    "sha256": "8611613e291d643d886b00cab542182ce8952a918ae166ba82babd754fcabbee",
+    "sha256": "f9608dd7ee4160dc41094ae4672ae37d322cfb663f1baee8d97e483ba51b0937",
     "backend": "CUDA",
     "physical_grid": [
       256,
@@ -24,7 +24,34 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
+  },
+  {
+    "image": "wavefield-paper.png",
+    "width": 2560,
+    "height": 1494,
+    "cropped": false,
+    "resampled": false,
+    "recolored": false,
+    "theme": "Paper Sand",
+    "application_version": "2.0.0",
+    "captured_date": "2026-10-19",
+    "sha256": "49fc67cb39685f296f84190bdabc7bc2f565804ae03b1b610021eca52bdc2a19",
+    "backend": "CUDA",
+    "physical_grid": [
+      256,
+      160
+    ],
+    "spacing_m": 1.0,
+    "solver_dt_ms": 0.1,
+    "sample_interval_ms": 0.2,
+    "receivers": 100,
+    "source_grid": [
+      128,
+      130
+    ],
+    "source_frequency_hz": 60,
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "record-raw.png",
@@ -51,7 +78,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "record-agc.png",
@@ -78,7 +105,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "single-vz.png",
@@ -105,7 +132,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "section-vx.png",
@@ -132,7 +159,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "docking-analysis.png",
@@ -159,7 +186,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "docking-record-focus.png",
@@ -186,7 +213,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "export-package.png",
@@ -198,7 +225,7 @@
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "captured_date": "2026-10-19",
-    "sha256": "be82bbaba265ef3c8dd077c46f1a59e3e18662e7fbddb1a6a2a5e8ee5faa1c9c",
+    "sha256": "7ee734e3ec2e2cad21e97d28f9ba05b45bb4acd49e185e26bbe5e2761f0e36fb",
     "backend": "CUDA",
     "physical_grid": [
       256,
@@ -213,7 +240,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "external-boundary.png",
@@ -225,7 +252,7 @@
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "captured_date": "2026-10-19",
-    "sha256": "76617f474eead45d6f2d3cd727fa4ff8375ee17f7b63a0d3418d425e44efffd8",
+    "sha256": "33ee957e4d97f1a696acfc018a55564891ff433725fe45f9bb1d05e51da21009",
     "backend": "CUDA",
     "physical_grid": [
       256,
@@ -240,7 +267,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "parameter-groups-folded.png",
@@ -252,7 +279,7 @@
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "captured_date": "2026-10-19",
-    "sha256": "31b4d296dab06b7828a2facddc77f682ad58fecff5eba7f0f55a0d25fb23b31b",
+    "sha256": "27d9811ded431ef56f06e4472dca30e6aee27647b8c7000310347b2820cffa4f",
     "backend": "CUDA",
     "physical_grid": [
       256,
@@ -267,7 +294,7 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "parameter-groups-expanded.png",
@@ -279,7 +306,7 @@
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "captured_date": "2026-10-19",
-    "sha256": "55f0a871ebbf574277f00f7376cf3a1c95621a836a6622ae326cef3a0e313a81",
+    "sha256": "f5d6f68b857a0f33a87d99f68954c486bd49ed6895e98421fa72988c70ddaf47",
     "backend": "CUDA",
     "physical_grid": [
       256,
@@ -294,6 +321,6 @@
       130
     ],
     "source_frequency_hz": 60,
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   }
 ]

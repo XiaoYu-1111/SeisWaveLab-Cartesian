@@ -37,7 +37,7 @@ for (const match of html.matchAll(/<img\b[^>]*src="([^"]+)"/g)) {
     if (!fs.existsSync(path.resolve(assets,target))) throw new Error(`Missing image ${target}`);
     counts.images.push(target);
 }
-if(counts.expected_numbered_formulas!==19 || counts.display_formulas!==19 || counts.errors || counts.images.length!==40)
+if(counts.expected_numbered_formulas!==19 || counts.display_formulas!==19 || counts.errors || counts.images.length!==41)
     throw new Error(JSON.stringify(counts));
 const page=`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><base href="${pathToFileURL(assets+path.sep).href}"><title>SeisWave Lab 文档预览</title><style>
 body{max-width:1100px;margin:40px auto;padding:0 30px;background:#faf9f5;color:#283c40;font:17px/1.9 "Microsoft YaHei",sans-serif}

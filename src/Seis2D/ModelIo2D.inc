@@ -1,4 +1,83 @@
 // Private implementation fragment, included once by Simulation2D.cpp.
+inline std::filesystem::path vtiPath2D(const char* path) {
+    auto result=std::filesystem::path(std::u8string(reinterpret_cast<const char8_t*>(path)));
+    return result.is_absolute()?result:getExecutableDirectory()/result;
+}
+inline void exportVtiModel2D(const std::filesystem::path& path) {
+    if(acquisition2D.isRecording||autoAcquisition2D.state==AUTO_ACQ_RUNNING) throw std::runtime_error("Stop acquisition before saving a model.");
+    const auto& c=simulationContext2D;
+    if(c.total_grid<=0) throw std::runtime_error("Initialize a model first.");
+    SeisCommon::ModelGrid g;g.nx=c.NX;g.ny=1;g.nz=c.NZ;g.spacing={c.h,c.h,c.h};
+    g.metadata={{"Dimension",2},{"SolverScheme",c.flag_type},{"CPMLThickness",c.npml},{"BoundaryMode",c.flag_type==3&&c.upFlag?1:0}};
+    SeisCommon::writeVtiModel(path,g,[&](int z,float* out) {
+        for(int x=0;x<c.NX;++x) {
+            const auto q=z*c.NX+x;out[3*x]=std::sqrt(c.lambda2mu[q]/c.rho[q]);out[3*x+1]=std::sqrt(c.mu[q]/c.rho[q]);out[3*x+2]=c.rho[q];
+        }
+    });
+}
+inline void importVtiModel2D(const std::filesystem::path& path,GLHandles& gl,SimState& state) {
+    if(acquisition2D.isRecording||autoAcquisition2D.state==AUTO_ACQ_RUNNING) throw std::runtime_error("Stop acquisition before loading a model.");
+    SeisCommon::VtiModelReader reader(path);const auto& g=reader.grid();
+    if(g.ny!=1||g.nx<64||g.nz<64||g.nx>8192||g.nz>8192) throw std::runtime_error("2D VTI requires NX x 1 x NZ, with X/Z dimensions in 64..8192.");
+    if(g.origin!=std::array<double,3>{0,0,0}||std::abs(g.spacing[0]-g.spacing[2])>g.spacing[0]*1e-7)
+        throw std::runtime_error("2D VTI requires origin (0,0,0) and equal X/Z spacing.");
+    int scheme=simulationContext2D.flag_type,pml=simulationContext2D.npml;
+    bool free=simulationContext2D.upFlag;
+    if(auto p=g.metadata.find("SolverScheme");p!=g.metadata.end()) scheme=p->second;
+    if(auto p=g.metadata.find("CPMLThickness");p!=g.metadata.end()) pml=p->second;
+    if(auto p=g.metadata.find("BoundaryMode");p!=g.metadata.end()) {if(p->second>1) throw std::runtime_error("Unsupported 2D boundary mode.");free=p->second==1;}
+    if(scheme<1||scheme>3||pml<0||pml>500||(scheme==3&&free&&pml<kStencilRadius)) throw std::runtime_error("Invalid 2D boundary parameters.");
+    const float h=float(g.spacing[0]);if(!std::isfinite(h)||h<=0) throw std::runtime_error("Invalid 2D spacing.");
+    // Complete the bounded read before changing the active model; retain physical top-origin Z order.
+    std::vector<float> values(std::size_t(g.nx)*g.nz*3);
+    for(int z=0;z<g.nz;++z) reader.readPlane(z,values.data()+std::size_t(z)*g.nx*3);
+    state.running=false;currentIt2D=0;elapsedRunWallTime2D=0;activeSources2D.clear();
+    gridWidth2D=g.nx;gridHeight2D=g.nz;parameters2D.model.xnum=g.nx;parameters2D.model.znum=g.nz;
+    parameters2D.model.dx=parameters2D.model.dz=h;parameters2D.FDM.npml=float(pml);parameters2D.FDM.upFlag=free?1.f:0.f;
+    simulationContext2D.flag_type=scheme;setupTestContext(simulationContext2D,parameters2D);
+    for(int z=0;z<g.nz;++z) for(int x=0;x<g.nx;++x) {const auto q=(std::size_t(z)*g.nx+x)*3;setGridMaterial2D(x,z,values[q],values[q+1],values[q+2]);}
+    const float previousDt=simulationContext2D.dt;autoAlignTimeStep();
+    if(previousDt>0&&previousDt<=simulationContext2D.dt) simulationContext2D.dt=previousDt;
+    tempDt2D=simulationContext2D.dt;parameters2D.FDM.dt=tempDt2D;
+    generateRickerWavelet(simulationContext2D.wavelet,simulationContext2D.nt,simulationContext2D.dt,sourceFrequency2D,sourceDelay2D);
+    editSrcX2D=g.nx/2;editSrcZ2D=g.nz/4;simulationContext2D.src_z_idx=editSrcZ2D;
+    simulationContext2D.src_idx=editSrcZ2D*g.nx+editSrcX2D;updatePmlDampingArrays();
+    releaseGpuSimulation(gpuData2D);
+    if(gl.cudaSeisRes) cudaGraphicsUnregisterResource(gl.cudaSeisRes);gl.cudaSeisRes=nullptr;
+    glBindTexture(GL_TEXTURE_2D,gl.seisTex);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,g.nx+2*domainPad2D(),g.nz+2*domainPad2D(),0,GL_RGBA,GL_FLOAT,nullptr);
+    initializeExternalSimulation2D(gpuData2D,simulationContext2D);uploadMaterialToGpu();
+    acquisition2D.receivers.erase(std::remove_if(acquisition2D.receivers.begin(),acquisition2D.receivers.end(),[&](const auto& r){return r.x<0||r.x>=g.nx||r.y<0||r.y>=g.nz;}),acquisition2D.receivers.end());
+    firstAlignNeeded2D=true;resetSimRequested2D=true;
+}
+inline bool browseVtiModel2D(char* field,std::size_t capacity,bool save) {
+#ifdef _WIN32
+    std::filesystem::path selected;
+    if(!SeisCommon::chooseNativeFile(vtiPath2D(field),getExecutableDirectory(),
+            L"VTK ImageData model (*.vti)\0*.vti\0",L"vti",save,selected)) return false;
+    const auto result=pathToUtf8(selected);
+    if(result.size()>=capacity) throw std::runtime_error("Model path too long.");
+    std::memcpy(field,result.c_str(),result.size()+1);return true;
+#else
+    return false;
+#endif
+}
+inline void drawVtiModelControls2D(GLHandles& gl,SimState& state) {
+    if(!parameterGroup2D("VTI MODEL (PRIMARY FORMAT)")) return;
+    static char input[1024]{},output[1024]{};
+    if(!input[0]) {const auto p=pathToUtf8(getExecutableDirectory()/"data_Seis2D/model.vti");std::snprintf(input,sizeof(input),"%s",p.c_str());}
+    if(!output[0]) {const auto p=pathToUtf8(getExecutableDirectory()/"data_Seis2D/model_export.vti");std::snprintf(output,sizeof(output),"%s",p.c_str());}
+    AppUi::Widgets::TextWrapped("One VTI file stores Vp, Vs, Density and physical spacing. SEG-Y groups remain available for external exchange.");
+    auto action=[&](auto fn){try{fn();}catch(const std::exception& e){popupMessage2D=e.what();showErrorPopup2D=true;}};
+    AppUi::Widgets::InputText("VTI input path",input,sizeof(input));
+    if(AppUi::Widgets::Button("Browse VTI model...",ImVec2(-1,0))) action([&]{browseVtiModel2D(input,sizeof(input),false);});
+    if(AppUi::Widgets::Button("LOAD VTI MODEL",ImVec2(-1,0))) action([&]{importVtiModel2D(vtiPath2D(input),gl,state);popupMessage2D="VTI model loaded; wavefield reset.";showSuccessPopup2D=true;});
+    AppUi::Widgets::InputText("VTI output path",output,sizeof(output));
+    if(AppUi::Widgets::Button("Choose VTI model output...",ImVec2(-1,0))) action([&]{browseVtiModel2D(output,sizeof(output),true);});
+    if(AppUi::Widgets::Button("SAVE VTI MODEL",ImVec2(-1,0))) action([&]{exportVtiModel2D(vtiPath2D(output));popupMessage2D="VTI physical model saved.";showSuccessPopup2D=true;});
+    AppUi::Widgets::TextWrapped("VTI uses SI units and physical nodes only. Existing files are preserved. Loading resets the wavefield.");
+}
+
 // Select a legacy 2D model input path without changing simulation state.
 inline bool openSystemFileDialog(char* buffer, int bufferSize,bool model=true) {
     memset(buffer, 0, bufferSize);

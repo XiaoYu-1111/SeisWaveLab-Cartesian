@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-19",
+  "executable": "out/bin/RelWithDebInfo/SeisWaveLab_Cartesian.exe",
+  "executable_sha256": "78ceef9d7e209432e265b69a28188f9d6acfd356e03c9b36a821d53d0d5470da",
+  "ctest_passed": [
+    "NativeFileDialogRegression",
+    "Seis3DWorkspaceRegression"
+  ],
+  "native_dialog_initialization_and_cancel_cases": 14,
+  "native_dialog_tests_passed": true,
+  "working_directory_restoration": "passed",
+  "unicode_directory_and_filename_preparation": "passed",
+  "scope": "Actual Windows dialog open/cancel checks; confirmation by a user is not automated."
+}

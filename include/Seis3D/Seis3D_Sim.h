@@ -3,12 +3,14 @@
 #include <GL/glew.h>
 #include <cuda_gl_interop.h>
 #include <filesystem>
+#include <memory>
 #include <cmath>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace Seis3D {
+struct ModelImportTask3D;
 
 struct GLHandles3D {
     GLuint sliceProgram3D = 0, volumeProgram3D = 0, vao3D = 0;
@@ -110,6 +112,7 @@ struct TracePreviewCache3D {
 };
 
 struct Seis3D_State {
+    std::unique_ptr<ModelImportTask3D> modelImport3D;
     int backend3D=0,workers3D=8; // Auto, CPU/OpenMP, CUDA.
     std::string backendStatus3D,benchmarkResult3D;
     SimulationContext3D context3D, editContext3D;
@@ -177,9 +180,7 @@ struct Seis3D_State {
     bool hoverValid3D = false;
     char modelPath3D[1024]{};
     char modelExportPath3D[1024]{};
-    char vtiModelExportPath3D[1024]{};
     char vtiWavefieldExportPath3D[1024]{};
-    int modelExportFormat3D = 0; // S3DM and VTI retain independent output paths.
     char exportDirectory3D[1024]{};
     char exportPrefix3D[128]="shot";
     bool exportSessionFolder3D=true;

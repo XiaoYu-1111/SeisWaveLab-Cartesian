@@ -8,6 +8,7 @@
 #endif
 #include "Internal3D.h"
 #include "ResourcePaths.h"
+#include "NativeFileDialog.h"
 #include <algorithm>
 #include <cstring>
 
@@ -24,19 +25,8 @@ void copySelectedPath3D(char (&field)[Size],const std::filesystem::path& path) {
 // Use a native file selector while retaining resource lookup relative to the deployed program.
 bool chooseFile3D(const std::filesystem::path& current,const wchar_t* filter,const wchar_t* extension,
                   bool save,std::filesystem::path& selected) {
-    wchar_t file[32768]{};
-    const auto initial=(std::filesystem::is_directory(current.parent_path())?current:current.filename()).wstring();
-    if(initial.size()>=std::size(file)) throw std::runtime_error("Selected path or filename exceeds the field length.");
-    std::copy(initial.begin(),initial.end(),file);
-    OPENFILENAMEW dialog{};dialog.lStructSize=sizeof(dialog);dialog.hwndOwner=GetActiveWindow();
-    dialog.lpstrFile=file;dialog.nMaxFile=DWORD(std::size(file));dialog.lpstrFilter=filter;
-    dialog.lpstrDefExt=extension;
-    const auto initialFolder=getExecutableDirectory().wstring();dialog.lpstrInitialDir=initialFolder.c_str();
-    dialog.Flags=OFN_NOCHANGEDIR|OFN_PATHMUSTEXIST|(save?OFN_NOREADONLYRETURN:OFN_FILEMUSTEXIST);
-    const bool accepted=(save?GetSaveFileNameW(&dialog):GetOpenFileNameW(&dialog))==TRUE;
-    if(accepted) selected=std::filesystem::path(file);
-    else if(CommDlgExtendedError()) throw std::runtime_error("Windows could not open the file selector.");
-    return accepted;
+    return SeisCommon::chooseNativeFile(current,getExecutableDirectory(),filter,extension,save,selected,
+        std::wstring(extension)==L"sgy"?L"survey.sgy":L"model.vti");
 }
 #endif
 }
@@ -46,22 +36,10 @@ void browseModelPath3D(Seis3D_State& s,bool save) {
 #ifdef _WIN32
     std::filesystem::path selected;
     if(chooseFile3D(uiPath3D(save?s.modelExportPath3D:s.modelPath3D),
-        L"Seis3D model\0*.s3dm\0All files\0*.*\0",L"s3dm",save,selected)) {
+        L"VTK ImageData model (*.vti)\0*.vti\0",L"vti",save,selected)) {
         if(save) copySelectedPath3D(s.modelExportPath3D,selected);
         else copySelectedPath3D(s.modelPath3D,selected);
     }
-#else
-    throw std::runtime_error("Edit the path field directly on this platform.");
-#endif
-}
-
-// Keep the VTI save path independent of both S3DM output and model input.
-void browseVtiModelPath3D(Seis3D_State& s) {
-#ifdef _WIN32
-    std::filesystem::path selected3D;
-    if(chooseFile3D(uiPath3D(s.vtiModelExportPath3D),
-        L"VTK ImageData\0*.vti\0All files\0*.*\0",L"vti",true,selected3D))
-        copySelectedPath3D(s.vtiModelExportPath3D,selected3D);
 #else
     throw std::runtime_error("Edit the path field directly on this platform.");
 #endif

@@ -20,11 +20,13 @@
 #include "WavePalettes.h"
 #include "SeismicIO.h"
 #include "ResourcePaths.h"
+#include "NativeFileDialog.h"
 #include "AppWidgets.h"
 #include "AppShortcuts.h"
 #include "AppTheme.h"
 #include "AppInfo.h"
 #include "ShotExport2D.h"
+#include "VtiModelIO.h"
 #include "imgui_internal.h"
 #include "implot.h"
 #include "stb_image.h"
@@ -121,6 +123,19 @@ void prepareDocumentation2D(GLHandles& gl,SimState& state) {
     gridWidth2D=256;gridHeight2D=160;sourceFrequency2D=60;sourceDelay2D=1/sourceFrequency2D;stepsPerFrame2D=20;
     parameters2D.FDM.npml=12;parameters2D.FDM.dt=.0001f;parameters2D.FDM.nt=3000;
     initializeSeismicSimulation(gl);loadScenario(SCENE_TWO_LAYER);updateModelTexture();uploadMaterialToGpu();
+    // Exercise the real save/load path before acquiring documentation samples on either backend.
+    const auto oldRho=simulationContext2D.rho,oldMu=simulationContext2D.mu,oldL2m=simulationContext2D.lambda2mu;
+    const int oldX=editSrcX2D,oldZ=editSrcZ2D;
+    const auto modelFile=getExecutableDirectory().parent_path().parent_path()/"checks/vti-2d"/
+        ("model-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+".vti");
+    exportVtiModel2D(modelFile);importVtiModel2D(modelFile,gl,state);
+    for(std::size_t q=0;q<oldRho.size();++q) {
+        const auto close=[](float a,float b){return std::abs(a-b)<=std::max(1.f,std::abs(a))*3e-6f;};
+        if(!close(oldRho[q],simulationContext2D.rho[q])||!close(oldMu[q],simulationContext2D.mu[q])||!close(oldL2m[q],simulationContext2D.lambda2mu[q]))
+            throw std::runtime_error("2D VTI save/load changed physical material or depth ordering.");
+    }
+    editSrcX2D=oldX;editSrcZ2D=oldZ;resetSimRequested2D=false;
+    std::cout<<"PASS: real "<<(gpuData2D.cpu?"CPU":"CUDA")<<" 2D VTI model save/load preserves physical materials, spacing and Z order.\n";
     acquisition2D.numChannels=100;acquisition2D.startX=16;acquisition2D.endX=239;acquisition2D.receiverDepth=14;
     acquisition2D.receivers.clear();
     for(int i=0;i<100;++i) acquisition2D.receivers.push_back({16+int(std::round(223.0*i/99)),14});
@@ -274,5 +289,6 @@ void configureDocumentationWorkspace2D(int stage) {
         autoAcquisition2D.totalShots=3;autoAcquisition2D.startX=51;autoAcquisition2D.shotIntervalX=60;
         selectExportTab2D=true;focusControls2D=true;
     }
+    if(stage==3) {selectModelIoTab2D=true;focusControls2D=true;}
 }
 }

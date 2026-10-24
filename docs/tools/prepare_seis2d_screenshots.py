@@ -13,6 +13,7 @@ def prepare_screenshots() -> None:
     source = root.parent / "out/screenshots/application/2d"
     output = root / "docs/assets/seis2d"
     captures = {
+        "model-io.png": "seis2d-model-io.png",
         "wavefield-paper.png": "seis2d-wavefield-paper.png",
         "record-raw.png": "seis2d-record-raw.png",
         "record-agc.png": "seis2d-record-agc.png",

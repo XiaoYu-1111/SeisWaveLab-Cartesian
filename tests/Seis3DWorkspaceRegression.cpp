@@ -11,6 +11,9 @@
 #include "HomeScreen.h"
 #include "Cuda_Check.cuh"
 #include "ResourcePaths.h"
+#include "VtiModelIO.h"
+#include <chrono>
+#include <thread>
 #include <array>
 #include <algorithm>
 #include <cmath>
@@ -186,7 +189,7 @@ void checkDisplayPersistence3D() {
     initializeSession3D(s,false);
     require3D(displayParameters3D(s)==expected&&s.scalePeak3D==0,"Model/grid/frequency rebuild replaced display parameters");
     seed();require3D(pixel3D(s,10,10)==original,"Same physical amplitude/gain changed brightness after rebuild");
-    const auto modelPath=getExecutableDirectory()/"checks"/("display-persistence-"+sessionSuffix3D()+".s3dm");
+    const auto modelPath=getExecutableDirectory()/"checks"/("display-persistence-"+sessionSuffix3D()+".vti");
     const auto modelName=pathToUtf8(modelPath);std::snprintf(s.modelPath3D,sizeof(s.modelPath3D),"%s",modelName.c_str());
     std::snprintf(s.modelExportPath3D,sizeof(s.modelExportPath3D),"%s",modelName.c_str());
     exportModel3D(s);initializeSession3D(s,true);
@@ -460,6 +463,89 @@ void checkShotImport3D() {
 }
 
 // Run both synthetic extraction checks and actual source/acquisition/dock interactions.
+// Exercise a real 50 MB import while rendering every phase on the GL owner thread.
+void checkAsyncModelImport3D(GLFWwindow* window) {
+    using namespace Seis3D;using namespace Seis3D::Detail3D;
+    const auto folder=getExecutableDirectory()/"checks/async-vti";std::filesystem::create_directories(folder);
+    const auto model=folder/"model-50mb.vti";
+    if(std::filesystem::exists(model)) std::filesystem::remove(model);
+    SeisCommon::ModelGrid grid;grid.nx=164;grid.ny=160;grid.nz=160;grid.spacing={7.5,7.5,7.5};
+    grid.metadata={{"Dimension",3},{"CPMLThickness",8},{"BoundaryMode",0}};
+    auto fill=[&](int z,float* values) {
+        for(int y=0;y<grid.ny;++y) for(int x=0;x<grid.nx;++x) {
+            const auto q=3*(y*grid.nx+x);values[q]=3000+z*2.f+x*.5f+y*.25f;
+            values[q+1]=1500+x*.1f;values[q+2]=2200+z*.1f+y*.05f;
+        }
+    };
+    SeisCommon::writeVtiModel(model,grid,fill);
+    AppUi::setLanguage(AppUi::Language::Chinese,false);AppUi::setTheme(AppUi::ThemeId::PaperSand,false);
+    std::ofstream report(folder/"validation.txt");
+    report<<"model_bytes="<<std::filesystem::file_size(model)<<'\n';
+    for(int backend:{1,2}) {
+        Seis3D_State state;state.backend3D=backend;state.workers3D=32;state.gain3D=4.25f;
+        state.editContext3D.nx3D=state.editContext3D.ny3D=state.editContext3D.nz3D=32;state.editContext3D.pml3D=8;
+        state.survey3D.receiverCountX3D=4;state.survey3D.receiverCountY3D=1;
+        initializeSession3D(state,false);state.gather3D.samples3D={.1f,.2f,.3f};
+        const auto initialSamples=state.gather3D.samples3D;
+        const auto name=pathToUtf8(model);std::snprintf(state.modelPath3D,sizeof(state.modelPath3D),"%s",name.c_str());
+        auto frame=[&] {
+            glfwPollEvents();ImGui_ImplOpenGL3_NewFrame();ImGui_ImplGlfw_NewFrame();ImGui::NewFrame();
+            renderScreen3D(state,1280,900);ImGui::Render();
+            glViewport(0,0,1280,900);glClear(GL_COLOR_BUFFER_BIT);ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        };
+        beginModelImport3D(state);bool duplicate=false;try {beginModelImport3D(state);}catch(const std::logic_error&){duplicate=true;}
+        require3D(duplicate,"Duplicate asynchronous import was accepted");
+        int frames=0,modalFrames=0;float previous=0;double maximumFrame=0;bool screenshot=false;
+        const auto started=std::chrono::steady_clock::now();
+        while(state.modelImport3D) {
+            require3D(std::chrono::steady_clock::now()-started<std::chrono::seconds(30),"Asynchronous import timed out");
+            const auto startFrame=std::chrono::steady_clock::now();frame();++frames;
+            maximumFrame=(std::max)(maximumFrame,std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-startFrame).count());
+            if(state.modelImport3D) {
+                const auto view=modelImportView3D(state);require3D(view.progress>=previous,"Asynchronous import progress decreased");previous=view.progress;
+                const auto* popup=ImGui::FindWindowByID(ImHashStr("###Seis3D.ImportProgress"));
+                if(popup&&popup->Active&&!popup->Hidden) {
+                    ++modalFrames;
+                    if(!screenshot&&view.stage>=1) {
+                        std::vector<unsigned char> pixels(1280*900*3);glReadPixels(0,0,1280,900,GL_RGB,GL_UNSIGNED_BYTE,pixels.data());
+                        std::ofstream image(folder/(backend==1?"cpu-import-progress.ppm":"cuda-import-progress.ppm"),std::ios::binary);
+                        image<<"P6\n1280 900\n255\n";for(int y=899;y>=0;--y) image.write(reinterpret_cast<const char*>(pixels.data()+y*1280*3),1280*3);
+                        screenshot=true;
+                    }
+                }
+            }
+            std::this_thread::yield();
+        }
+        const auto seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
+        frame(); // Close the completed modal on the following frame.
+        require3D(!state.messageIsError3D,state.message3D.c_str());
+        require3D(state.ready3D&&state.context3D.nx3D==164&&state.context3D.ny3D==160&&state.context3D.nz3D==160
+            &&state.context3D.spacing3D==7.5f&&state.context3D.modelKind3D==ModelKind3D::Imported,"Asynchronous model geometry changed");
+        require3D(state.gpu3D.cpu3D==(backend==1),"Asynchronous import used the wrong backend");
+        require3D(frames>=3&&modalFrames>=2&&screenshot,"Import did not render continuous modal frames");
+        require3D(maximumFrame<1500,"A 50 MB import blocked the UI for more than 1.5 s");
+        require3D(state.gain3D==4.25f&&state.gather3D.samples3D==initialSamples,"Import replaced display gain or frozen records");
+        std::vector<float> expected(std::size_t(grid.nx)*grid.ny*3),actual(expected.size());
+        for(int z:{0,79,159}) {
+            fill(z,expected.data());downloadModelPlane3D(state.gpu3D,state.context3D,z,actual.data());
+            for(std::size_t q=0;q<actual.size();++q) require3D(std::abs(actual[q]-expected[q])<=std::abs(expected[q])*1e-5f,"Imported materials or XYZ order changed");
+        }
+        const auto* old=state.gpu3D.inverseDensity3D;
+        beginModelImport3D(state);cancelModelImport3D(state);
+        while(state.modelImport3D) {frame();require3D(std::chrono::steady_clock::now()-started<std::chrono::seconds(35),"Cancel timed out");}
+        frame();require3D(state.ready3D&&state.gpu3D.inverseDensity3D==old&&!state.messageIsError3D,"Cancelled validation replaced the live model");
+        std::snprintf(state.modelPath3D,sizeof(state.modelPath3D),"%s",pathToUtf8(folder/"missing.vti").c_str());
+        beginModelImport3D(state);
+        while(state.modelImport3D) {frame();require3D(std::chrono::steady_clock::now()-started<std::chrono::seconds(40),"Error recovery timed out");}
+        frame();require3D(state.ready3D&&state.gpu3D.inverseDensity3D==old&&state.messageIsError3D,"Failed validation replaced the live model");
+        report<<(backend==1?"CPU":"CUDA")<<": seconds="<<seconds<<", frames="<<frames<<", modal_frames="<<modalFrames<<", max_frame_ms="<<maximumFrame<<", materials/rollback/cancel=PASS\n";
+        std::printf("PASS: 50 MB %s asynchronous import, %.3f s, %d UI frames, %.2f ms maximum frame, materials/cancel/rollback preserved\n",backend==1?"CPU":"CUDA",seconds,frames,maximumFrame);
+        releaseSandbox3D(state);
+    }
+    // Closing a state while validation runs joins its worker and never touches destroyed GL state.
+    {Seis3D_State closing;std::snprintf(closing.modelPath3D,sizeof(closing.modelPath3D),"%s",pathToUtf8(model).c_str());beginModelImport3D(closing);}
+}
+
 int main(int argc,char**) {
     if(!glfwInit()) {std::puts("SKIP: GLFW unavailable");return 77;}
     glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
@@ -831,6 +917,7 @@ int main(int argc,char**) {
         const auto small=checkVolumeOpacity3D(96),large=checkVolumeOpacity3D(300);
         require3D(small[0]>10&&large[0]<small[0]*.75f,"Large-grid opacity diagnosis was not reproduced");
         require3D(large[1]>large[0]*1.4f&&large[1]>small[1]*.65f&&large[1]<small[1]*1.5f,"Equal-thickness wavefront contrast was not restored");
+        checkAsyncModelImport3D(window);
         std::puts("PASS: bilingual catalog/IDs/docking/state preservation, compact parameter groups, common velocity reference and unit-safe component round trips, SEG-Y CPU import/formats/rollback/export round trip/UI, display persistence, scale lock pixels, receiver row sections/extrema/live ring, large-volume opacity/gain, volume recipes, functional colors, ten themes, visible-CPML scale, peak hold, on-screen slices, zoom/pan/reset, monitor/replay, 100-channel capture, RG interop, four dock layouts, cold release");
     } catch(const std::exception& error) {std::fprintf(stderr,"FAIL: %s\n",error.what());result=1;}
     ImGui_ImplOpenGL3_Shutdown();ImGui_ImplGlfw_Shutdown();ImPlot::DestroyContext();ImGui::DestroyContext();

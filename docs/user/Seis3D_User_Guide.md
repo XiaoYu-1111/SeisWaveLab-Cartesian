@@ -460,13 +460,11 @@ Auxiliary volume raymarch 可关闭体绘制，Cloud opacity 与 Cloud cutoff �
 
 ![模型导入路径与导出路径分别设置](../assets/seis3d/full/05-model-io.png)
 
-**Model I/O** 使用 `.s3dm` 三维模型。文件保存物理 XYZ 网格的 Vp、Vs、密度，X 方向连续；CPML 和差分填充区由程序重建。导入时逐单元检查材料并求最大 Vp，然后计算安全时步与显存预算。导出模型时使用新文件名。
+**Model I/O** 统一使用 `.vti` 三维模型。文件保存Origin / Spacing 和物理维度及 Vp、Vs、Density，X 方向连续；CPML 和 ghost 由程序重建。导入前检查几何与全部材料、最大 Vp、CFL 和预算；当前要求原点为零的正向等距正交网格，曲网格需先重采样。导出为未压缩 raw-appended Float32；导入支持未压缩 raw-appended 或 ASCII Float32/Float64。
 
-`.s3dm` 是本项目自定义格式，不是通用模型标准，也不保存震源、接收排列或波场续算状态。完整字节布局、单位、版本兼容，以及无需 GPU 的 Python/C++ 读取代码见 [S3DM 模型格式与独立读取说明](S3DM_Model_Format.md)。
+**Model path + Browse model file** 选择 `.vti`，点击校验导入。**Model export path + Choose model output** 选择独立的 `.vti` 新文件名，再点击“导出 VTI 模型到新文件”。模型格式不再提供选择器，S3DM 模式已移除，物性模型和波场快照各自使用独立文件。浏览文件本身不重建或导出。 导入使用后台任务，弹窗显示旋转动画、阶段、百分比和已用时间；校验/读取阶段可取消，初始化阶段等待完成，期间相关控制禁用。校验失败保留原模型。
 
-**Model path + Browse model file** 选择待导入 `.s3dm` 模型，再点击校验导入。**Model export format / 模型导出格式** 可选 S3DM 或 **VTK ImageData（.vti）**；两种格式各自保留输出路径。使用 **Model export path + Choose model output** 选择文件夹及对应文件名，再点击导出；更改导出位置不会改变导入路径。浏览、切换格式或选择位置本身不触发模型重建或写文件。
-
-VTI 导出当前已初始化物理模型的 **Vp、Vs、Density** 三个 PointData 数组，使用原网格分辨率、小端 Float32 二进制；坐标单位 m，Z 为向下正深度，材料单位分别为 m/s、m/s、kg/m³。CPML、ghost、显示增益和配色不参与输出。可用于外部 VTK/ParaView 查看；操作、坐标约定、Python 读取示例与验证范围见 [VTI 模型导出说明](VTK_Model_Export.md)。
+模型包含当前已生效物理网格、SI 物性和边界元数据，不保存波场、震源、观测系统或完整续算状态。单位、曲网格兼容范围和独立 Python 读取示例见 [VTI 统一格式](VTI_Model_Format.md)。已有文件不会覆盖；采集期间不能操作模型文件。
 
 同一页面还可将当前选中的 `Vz`、`Vx`、`Vy`、速度大小或压力导出为 `.vti` 三维标量快照，并记录模拟时刻与分量单位。波场快照与显示增益无关；详见上述 VTI 导出说明。
 

@@ -1,6 +1,6 @@
 # Cartesian 项目代码架构
 
-更新日期：2026-10-19。主程序唯一输出名称为 `SeisWaveLab_Cartesian.exe`，CMake 构建目标保留 `SeisWaveLab`。
+说明整理日期：2026-10-24。主程序唯一输出名称为 `SeisWaveLab_Cartesian.exe`，CMake 构建目标保留 `SeisWaveLab`。本轮补充分层、代码入口和数据生命周期，不改动算法或重新测量性能。
 
 ## 目录与职责
 
@@ -24,6 +24,18 @@ SeisWaveLab_Cartesian/
 ```
 
 旧 `Main_cpp`、`Main_header`、`CUDA_Kernels` 与顶层 `cuda` 已迁入上述分类。完整逐文件映射见 [迁移清单](SOURCE_MIGRATION_2026-10-19.json)。第三方库及资源保留原位置和许可。
+
+## 分层与代码定位
+
+| 层次 | 职责与边界 | 主要代码 |
+| --- | --- | --- |
+| 应用与共享服务 | 主页路由、语言/主题、资源定位；两个工作区共用服务代码 | `SeisCommon/SeisWaveLab.cpp`、`AppTheme.cpp`、`AppLanguage.cpp`、`ResourcePaths.cpp` |
+| 工作区交互 | 参数控件、停靠、快捷键、剖面/记录交互；由 UI 线程执行 | `Seis2D/Workspace2D.inc`、`Seis3D/Workspace3D.cpp`、两个维度的记录查看组件 |
+| 模拟会话 | 物性、源检几何、当前参数与草稿、启动/暂停/重建/采集状态 | `Seis2D/Simulation2D.cpp`、`Seis3D/Simulation3D.cpp` 及各自采集组件 |
+| 数值与后端 | 各维度的共享单元公式、OpenMP 调度与 CUDA 内核；管理各自内存归属 | `SolverCells2D.h`、`SolverCells3D.h`、`CpuSolver2D.cpp`、`CpuSolver3D.cpp`、各自 `cuda/` |
+| 显示与数据交换 | OpenGL 图形资源、CPU 上传/CUDA 互操作、VTI 物性与 SEG-Y 记录 | `Seis3D/Renderer3D.cpp`、`Seis2D/Canvas2D.inc`、`SeisCommon/VtiModelIO.cpp`、各自模型/记录 I/O |
+
+表中路径均相对 `src`。共享数值公式按维度分别维护；共享组件不会把二维、三维的计算缓冲或采集状态合并成同一个会话。二维 `.inc` 是私有实现片段，由 `Simulation2D.cpp` 包含一次，不是单独的编译目标。
 
 ## 计算与显示链路
 
@@ -53,9 +65,26 @@ flowchart LR
 
 二维参数面板与控制面板默认同组页签停靠在左侧。面板并列列出当前值和待应用值，差异着色；更新按钮应用尺寸、时间、间距、PML、震源频率及计算核心，撤销按钮恢复草稿。尺寸变化重建物性模型；时间/核心变化清空波场并保留物性；采集中禁止重建。三维当前参数面板也显示当前/草稿对照并保留重建按钮。
 
-二维外部物性导入仅保留 `.sgy` / `.segy` 的 Vp、Vs、密度三文件组，选择器及手输路径均限制扩展名。波场电影加载属于独立回放入口；三维 S3DM/VTI 原有数据交换接口保留。
+二维和三维以 VTI ImageData 为主要物性模型，`ModelIO` 公共库保存原点、间距与 Vp/Vs/Density；实现位于 SeisCommon/VtiModelIO.cpp。二维保留 SEG-Y 物性组用于外部交换。ModelIo2D.inc / ModelIo3D.cpp 对接各自会话与 CPU/CUDA 材料上传；当前波场 VTI 快照独立。S3DM 接口已移除。
+
+三维界面的导入路径使用 `ModelImportTask3D`：`beginModelImport3D` 冻结路径和参数并启动后台校验/读取；主线程 `pollModelImport3D` 非阻塞轮询，校验后释放旧缓冲，再启动后台 CPU/CUDA 分配和上传。任务不访问 ImGui 或 OpenGL；主线程最后安装图形资源并调用共享 `completeSession3D`，互操作失败时异步回退 CPU。进度与取消使用原子状态，读取按块通知进度。析构先取消并等待任务，再销毁计算/图形资源。详见[异步导入验证](../reviews/VTI_ASYNC_IMPORT_2026_10_19.md)。
+
+`include/SeisCommon/NativeFileDialog.h` 共用 Windows Unicode 文件选择器。目录与文件名分别传入，缺失目录回退到有效父目录，取消不更新路径，并显式恢复工作目录。二维 VTI、二维数据包名称和三维模型/快照/记录目标使用同一实现。`SeisNativeFileDialogRegression` 验证路径准备；加 `--native-dialogs` 实际运行自动打开/取消的系统对话框检查。
 
 二维分析器使用与三维记录面板一致的顶部数据来源、分量/全部道或单道选择、首道与显示道数、显示参数、增益/AGC、恢复视图布局。两者共用 `TraceProcessing.h`、`RecordVisuals.h` 等处理与配色模块。分析器持有冻结的主机样本，不持有计算场指针；显示增益及 AGC 不改原始记录和导出。
+
+## 数据与状态生命周期
+
+| 数据 | 所有者与更新方式 | 需要区分的操作 |
+| --- | --- | --- |
+| 待应用参数 | 各工作区编辑状态；控件先修改草稿 | 编辑控件不自动替换生效网格或物性 |
+| 生效模型与动态场 | 各模拟会话及其 CPU/CUDA 后端 | 重建按参数重新分配；清场重置动态量，具体保留范围由操作定义 |
+| 正式接收记录 | 采集缓冲与完成后的冻结记录 | 捕获原始样本及实际几何/时间；显示增益不写回样本 |
+| 显示副本与相机 | 记录查看器和波场显示组件 | AGC、选道、缩放、色带及增益用于预览 |
+| 异步导入材料 | `ModelImportTask3D` 的私有缓冲与计算准备资源 | 校验阶段取消保留旧模型；初始化后旧计算资源已释放，图形安装由主线程完成 |
+| 文件与生成结果 | VTI/SEG-Y/几何输出或文档工具 | 模型文件不是完整续算检查点；运行生成数据放在外层 `out` |
+
+典型调用顺序为：**编辑模型/参数 → 显式应用 → 校验与分配 → 配置源检 → 推进与采样 → 冻结/查看 → 导出**。CPU/CUDA 切换属于会话重建，不能把显示模式切换与计算核心切换混为同一操作。两工作区切换及程序退出时，先结束任务，再按计算/图形资源的所有权释放；主程序不通过全局设备重置回收某个工作区。
 
 ## 性能指标与回归
 

@@ -13,8 +13,6 @@ inline constexpr double gibibyte3D=1024.0*1024.0*1024.0;
 std::filesystem::path uiPath3D(const char* text);
 // Select a model import or independent export filename without changing the working directory.
 void browseModelPath3D(Seis3D_State& s,bool save);
-// Select an independent VTK ImageData export filename with Unicode path support.
-void browseVtiModelPath3D(Seis3D_State& s);
 // Select an independent VTI filename for a current wavefield snapshot.
 void browseVtiWavefieldPath3D(Seis3D_State& s);
 // Select an existing destination folder using the Windows Unicode folder picker.
@@ -78,14 +76,19 @@ void drawShotImportControls3D(Seis3D_State& s);
 void drawTracePreview3D(Seis3D_State& s);
 // Replace the simulation using validated procedural or imported material data.
 void initializeSession3D(Seis3D_State& s,bool imported);
+// Finish a prepared model on the GL owner thread, preserving display preferences.
+void completeSession3D(Seis3D_State& s,const SimulationContext3D& context);
+void beginModelImport3D(Seis3D_State& s);
+void pollModelImport3D(Seis3D_State& s);
+void cancelModelImport3D(Seis3D_State& s);
+struct ModelImportView3D {float progress=0;int stage=0;double seconds=0;bool cancelling=false;std::string filename;};
+ModelImportView3D modelImportView3D(const Seis3D_State& s);
 // Inspect all imported cells before replacing live GPU resources.
 SimulationContext3D inspectModel3D(const std::filesystem::path& path,SimulationContext3D context);
 // Stream a validated model into the newly allocated GPU session.
 void importModel3D(Seis3D_State& s,const std::filesystem::path& path);
 // Stream the current model to a new output file.
 void exportModel3D(Seis3D_State& s);
-// Stream initialized physical materials as VTK ImageData point arrays, excluding CPML and ghosts.
-void exportVtiModel3D(Seis3D_State& s);
 // Stream the currently selected physical wavefield component and simulation time as VTK point data.
 void exportVtiWavefield3D(Seis3D_State& s);
 // Fit receiver and source spreads to the current model dimensions.

@@ -1,4 +1,5 @@
 #include "Internal3D.h"
+#include "ModelImportTask3D.h"
 #include "Seis3D_Sim.h"
 #include "Cuda_Seis3D.cuh"
 #include <cstdlib>
@@ -88,6 +89,12 @@ void initializeSession3D(Seis3D_State& s,bool imported) {
             if(imported) importModel3D(s,path);
             initializeGraphics3D(s);s.backendStatus3D="CUDA/OpenGL interop unavailable: CPU / OpenMP fallback";
         }
+        completeSession3D(s,candidate);
+    } catch(...) { releaseSandbox3D(s); throw; }
+}
+
+// Shared completion for synchronous initialization and the asynchronous import worker.
+void completeSession3D(Seis3D_State& s,const SimulationContext3D& candidate) {
         s.source3D.x3D=candidate.nx3D/2; s.source3D.y3D=candidate.ny3D/2; s.source3D.z3D=(std::max)(2,candidate.nz3D/4);
         s.slice3D[0]=s.source3D.x3D; s.slice3D[1]=s.source3D.y3D; s.slice3D[2]=s.source3D.z3D;
         resetSliceViews3D(s);s.camera3D=VolumeCamera3D{};
@@ -101,7 +108,6 @@ void initializeSession3D(Seis3D_State& s,bool imported) {
             if(dx*dx+dy*dy<nearestDistance) {nearestDistance=dx*dx+dy*dy;s.selectedReceiver3D=i;}
         }
         s.ready3D=true;s.dirty3D=true;s.message3D="Model and receiver mesh ready. Run: live preview. Fire + capture: exportable 3-C gather.";
-    } catch(...) { releaseSandbox3D(s); throw; }
 }
 
 // Validate against the live model, leaving unrelated model edits pending until an explicit rebuild.
@@ -177,12 +183,10 @@ using namespace Detail3D;
 Seis3D_State::Seis3D_State() {
     source3D.x3D=context3D.nx3D/2;source3D.y3D=context3D.ny3D/2;source3D.z3D=context3D.nz3D/4;
     const auto directory=getExecutableDirectory()/"data_Seis3D";
-    const auto model=pathToUtf8(directory/"model.s3dm"); const auto output=pathToUtf8(directory);
+    const auto model=pathToUtf8(directory/"model.vti"); const auto output=pathToUtf8(directory);
     std::snprintf(modelPath3D,sizeof(modelPath3D),"%s",model.c_str());
-    const auto modelOutput=pathToUtf8(directory/"model_export.s3dm");
+    const auto modelOutput=pathToUtf8(directory/"model_export.vti");
     std::snprintf(modelExportPath3D,sizeof(modelExportPath3D),"%s",modelOutput.c_str());
-    const auto vtiOutput3D=pathToUtf8(directory/"model_export.vti");
-    std::snprintf(vtiModelExportPath3D,sizeof(vtiModelExportPath3D),"%s",vtiOutput3D.c_str());
     const auto wavefieldOutput3D=pathToUtf8(directory/"wavefield_snapshot.vti");
     std::snprintf(vtiWavefieldExportPath3D,sizeof(vtiWavefieldExportPath3D),"%s",wavefieldOutput3D.c_str());
     std::snprintf(exportDirectory3D,sizeof(exportDirectory3D),"%s",output.c_str());
@@ -190,7 +194,7 @@ Seis3D_State::Seis3D_State() {
 }
 
 // Release owned resources while the owning application still has its GL context current.
-Seis3D_State::~Seis3D_State() { releaseSandbox3D(*this); }
+Seis3D_State::~Seis3D_State() { modelImport3D.reset(); releaseSandbox3D(*this); }
 
 // Unregister CUDA-GL interop before deleting GL storage, then destroy only the 3-D stream/resources.
 void releaseSandbox3D(Seis3D_State& s) noexcept {

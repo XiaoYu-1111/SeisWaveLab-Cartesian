@@ -517,12 +517,14 @@ if(parameterGroup2D("Execution and interaction")) {
                     ImGui::EndTabItem();
                 }
 
-                if (AppUi::Widgets::BeginTabItem("Model I/O")) {
+                if (AppUi::Widgets::BeginTabItem("Model I/O",nullptr,selectModelIoTab2D?ImGuiTabItemFlags_SetSelected:0)) {
+                    selectModelIoTab2D=false;
                     ImGui::BeginDisabled(acquisition2D.isRecording);
                     AppUi::FunctionStyleScope panelColor(AppUi::FunctionRole::Model);
 
+                    drawVtiModelControls2D(gl,state);
                     ImGui::Separator();
-                    if(parameterGroup2D("EXTERNAL MODEL IMPORT (SEG-Y GROUP)")) {
+                    if(parameterGroup2D("EXTERNAL MODEL IMPORT (SEG-Y GROUP)",false)) {
 
 
                     static char vp_file_path[512] = "";
@@ -588,7 +590,7 @@ if(parameterGroup2D("Execution and interaction")) {
 
                     ImGui::Separator();
                     }
-                    if(parameterGroup2D("EXPORT CURRENT MODEL TO SEG-Y GROUP")) {
+                    if(parameterGroup2D("EXPORT CURRENT MODEL TO SEG-Y GROUP",false)) {
 
 
                     static bool export_density_gcm3 = true;

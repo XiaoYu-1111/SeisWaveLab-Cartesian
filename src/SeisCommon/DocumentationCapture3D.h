@@ -42,7 +42,7 @@ struct WorkflowCapture3D {
         s.resetLayout3D=true;
         std::snprintf(s.exportDirectory3D,sizeof(s.exportDirectory3D),"%s",pathToUtf8(data3D).c_str());
         std::snprintf(s.exportPrefix3D,sizeof(s.exportPrefix3D),"survey");s.exportSessionFolder3D=false;
-        std::snprintf(s.modelExportPath3D,sizeof(s.modelExportPath3D),"%s",pathToUtf8(data3D/"two-layer.s3dm").c_str());
+        std::snprintf(s.modelExportPath3D,sizeof(s.modelExportPath3D),"%s",pathToUtf8(data3D/"two-layer.vti").c_str());
         std::snprintf(s.modelPath3D,sizeof(s.modelPath3D),"%s",s.modelExportPath3D);
     }
 

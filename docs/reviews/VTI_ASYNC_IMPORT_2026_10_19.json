@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-19",
+  "file_bytes": 50382183,
+  "physical_grid": [
+    164,
+    160,
+    160
+  ],
+  "spacing_m": 7.5,
+  "cpu_workers": 32,
+  "measurements": {
+    "CPU": {
+      "seconds": 0.670574,
+      "rendered_frames": 1509,
+      "modal_frames": 1507,
+      "maximum_frame_ms": 129.696,
+      "materials_cancel_and_failed_validation": "passed"
+    },
+    "CUDA": {
+      "seconds": 0.358458,
+      "rendered_frames": 1523,
+      "modal_frames": 1521,
+      "maximum_frame_ms": 9.9728,
+      "materials_cancel_and_failed_validation": "passed"
+    }
+  },
+  "executable_sha256": "84436201a79b8617dc59b8660ef1dae4d9d9b400201d0bfc7755cae18282997f",
+  "screenshot": "docs/assets/seis3d/import-progress.png",
+  "native_resolution": [
+    1280,
+    900
+  ],
+  "screenshot_sha256": "df372a7868e5a23b1bfb0968d19fd02204077e40107a6264a1e168500240a43f",
+  "scope": "One local uncompressed Float32 VTI fixture, hidden real OpenGL window without vsync; frame count is not normal display FPS. Driver cache, disk, model encoding and hardware change timings."
+}

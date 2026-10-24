@@ -216,13 +216,20 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 source_group("Source Files\\CUDA" FILES ${CUDA_USER_SOURCES} ${CUDA_USER_HEADERS})
 source_group("Source Files\\ImGui" FILES ${IMGUIDocking_SRCS})
 
+add_library(ModelIO STATIC "src/SeisCommon/VtiModelIO.cpp" "src/SeisCommon/VtkXmlModel.h" "include/SeisCommon/VtiModelIO.h")
+target_include_directories(ModelIO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/SeisCommon")
+set_target_properties(ModelIO PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+if(MSVC)
+    target_compile_options(ModelIO PRIVATE /utf-8)
+endif()
+
 # 三维求解与渲染拥有独立编译目标，不复用二维上下文或快速数学编译选项。
 add_library(Seis3D STATIC
     "src/Seis3D/CpuSolver3D.cpp"
     "include/Seis3D/Common3D.h" "include/Seis3D/Seis3D_Sim.h"
     "include/Seis3D/Cuda_Seis3D.cuh" "src/Seis3D/cuda/Cuda_Seis3D.cu" "src/Seis3D/Simulation3D.cpp"
     "src/Seis3D/Renderer3D.cpp" "src/Seis3D/Workspace3D.cpp" "src/Seis3D/SliceView3D.cpp" "src/Seis3D/TraceView3D.cpp"
-    "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/VtiExport3D.cpp" "src/Seis3D/Acquisition3D.cpp" "src/Seis3D/ModelPresets3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp"
+    "src/Seis3D/ModelIo3D.cpp" "src/Seis3D/ModelImportTask3D.h" "src/Seis3D/VtsModelIo3D.cpp" "src/Seis3D/VtsModelIo3D.h" "src/Seis3D/VtiExport3D.cpp" "src/Seis3D/Acquisition3D.cpp" "src/Seis3D/ModelPresets3D.cpp" "src/Seis3D/ShotRecordIo3D.cpp" "src/Seis3D/FileDialogs3D.cpp"
     "src/Seis3D/Internal3D.h" "src/Seis3D/Visual3D.h")
 get_target_property(SEIS3D_SHARED_INCLUDE_DIRS ${TARGET_NAME} INCLUDE_DIRECTORIES)
 get_target_property(SEIS3D_SHARED_LINK_DIRS ${TARGET_NAME} LINK_DIRECTORIES)
@@ -245,11 +252,11 @@ if(MSVC)
     target_compile_options(Seis3D PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>
         $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>)
 endif()
-target_link_libraries(Seis3D PRIVATE OpenMP::OpenMP_CXX AppUi CUDA::cudart glew32s.lib opengl32.lib)
+target_link_libraries(Seis3D PRIVATE ModelIO OpenMP::OpenMP_CXX AppUi CUDA::cudart glew32s.lib opengl32.lib)
 if(WIN32)
     target_link_libraries(Seis3D PRIVATE comdlg32.lib ole32.lib uuid.lib shell32.lib)
 endif()
-target_link_libraries(${TARGET_NAME} PRIVATE AppUi Seis3D)
+target_link_libraries(${TARGET_NAME} PRIVATE ModelIO AppUi Seis3D)
 source_group("Seis3D\\Workspace" FILES "src/Seis3D/Workspace3D.cpp" "src/Seis3D/SliceView3D.cpp" "src/Seis3D/TraceView3D.cpp" "src/Seis3D/Visual3D.h")
 source_group("Seis3D\\Rendering" FILES "src/Seis3D/Renderer3D.cpp")
 source_group("Seis3D\\Models" FILES "src/Seis3D/ModelPresets3D.cpp")
@@ -293,6 +300,35 @@ endif()
 
 # 无图形窗口的二维数值回归程序，直接调用生产 CUDA 求解器。
 if(SEISSIM_BUILD_SOLVER_TESTS)
+    add_executable(SeisVtiModelRegression "tests/VtiModelRegression.cpp")
+    if(WIN32)
+        add_executable(SeisNativeFileDialogRegression "tests/NativeFileDialogRegression.cpp" "include/SeisCommon/NativeFileDialog.h")
+        target_include_directories(SeisNativeFileDialogRegression PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/SeisCommon")
+        target_link_libraries(SeisNativeFileDialogRegression PRIVATE comdlg32.lib user32.lib)
+        if(MSVC)
+            target_compile_options(SeisNativeFileDialogRegression PRIVATE /utf-8)
+        endif()
+        set_target_properties(SeisNativeFileDialogRegression PROPERTIES CXX_STANDARD 20 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+        add_test(NAME NativeFileDialogRegression COMMAND SeisNativeFileDialogRegression)
+        set_tests_properties(NativeFileDialogRegression PROPERTIES TIMEOUT 30)
+    endif()
+    target_link_libraries(SeisVtiModelRegression PRIVATE ModelIO)
+    set_target_properties(SeisVtiModelRegression PROPERTIES CXX_STANDARD 20 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+    if(MSVC)
+        target_compile_options(SeisVtiModelRegression PRIVATE /utf-8)
+    endif()
+    add_test(NAME VtiModelRegression COMMAND SeisVtiModelRegression)
+    set_tests_properties(VtiModelRegression PROPERTIES TIMEOUT 120)
+    add_executable(SeisVtsModelRegression "tests/VtsModelRegression.cpp")
+    target_include_directories(SeisVtsModelRegression PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS})
+    target_link_directories(SeisVtsModelRegression PRIVATE ${SEIS3D_SHARED_LINK_DIRS})
+    target_link_libraries(SeisVtsModelRegression PRIVATE Seis3D CUDA::cudart)
+    set_target_properties(SeisVtsModelRegression PROPERTIES CXX_STANDARD 20 MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+    if(MSVC)
+        target_compile_options(SeisVtsModelRegression PRIVATE /utf-8)
+    endif()
+    add_test(NAME VtsModelRegression COMMAND SeisVtsModelRegression)
+    set_tests_properties(VtsModelRegression PROPERTIES TIMEOUT 180)
     add_executable(SeisBackend3DRegression "tests/Backend3DRegression.cpp")
     target_include_directories(SeisBackend3DRegression PRIVATE ${SEIS3D_SHARED_INCLUDE_DIRS})
     target_link_directories(SeisBackend3DRegression PRIVATE ${SEIS3D_SHARED_LINK_DIRS})

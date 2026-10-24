@@ -401,7 +401,9 @@ static int runApplication(bool displayCheck3D=false,bool paperCapture3D=false,bo
             if(documentationFrames2D==88) saveApplicationScreenshot(window,"seis2d-docking-record-focus.png");
             if(documentationFrames2D==90) Seis2D::configureDocumentationWorkspace2D(2);
             if(documentationFrames2D==96) saveApplicationScreenshot(window,"seis2d-export-package.png");
-            if(documentationFrames2D>=100) {
+            if(documentationFrames2D==98) Seis2D::configureDocumentationWorkspace2D(3);
+            if(documentationFrames2D==104) saveApplicationScreenshot(window,"seis2d-model-io.png");
+            if(documentationFrames2D>=108) {
                 if(checkCapture2D) Seis2D::checkRecordingTimeline2D(state,gl);
                 glfwSetWindowShouldClose(window,GLFW_TRUE);
             }

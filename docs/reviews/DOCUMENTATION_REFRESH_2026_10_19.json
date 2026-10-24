@@ -2,7 +2,7 @@
   "date": "2026-10-19",
   "product": "SeisWaveLab_Cartesian",
   "version": "2.0.0",
-  "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c",
+  "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8",
   "readme_sections_match_curvilinear": true,
   "readme_sections": [
     "模拟与显示",
@@ -11,21 +11,22 @@
     "文档、博客与资源",
     "操作与来源"
   ],
-  "readme_sha256": "2d018abec7b094053ffb06a75b01d0144b72d0916b8fa0a7fd1f5d534926497e",
+  "readme_sha256": "13d1ad2c555ee8b56eee07d89f9057b610d569902892ff3fbaedfc1416a6f64a",
   "native_dimensions": [
     2560,
     1494
   ],
-  "captures_verified": 44,
+  "captures_verified": 45,
   "capture_counts": {
-    "2d": 11,
+    "2d": 12,
     "3d": 33
   },
   "capture_date_verified": true,
   "capture_hashes_verified": true,
-  "local_links_checked": 382,
+  "local_links_checked": 373,
   "broken_links": [],
   "screenshots": [
+    "docs\\assets\\seis2d\\model-io.png",
     "docs\\assets\\seis2d\\wavefield-paper.png",
     "docs\\assets\\seis2d\\record-raw.png",
     "docs\\assets\\seis2d\\record-agc.png",
@@ -74,23 +75,256 @@
   "scope": "Documentation capture and resource validation; no new numerical accuracy claim.",
   "ignored_documentation_files": [],
   "diff_check": "passed",
+  "document_sha256": {
+    "README.md": "13d1ad2c555ee8b56eee07d89f9057b610d569902892ff3fbaedfc1416a6f64a",
+    "README.en.md": "c3f514c42dc165d6fb24451fcd24ce9c2346df43f87afe17e2d02029f3dfa4d4",
+    "docs/README.md": "7da33fbecdcecad37c3f366d6757c552386269041d2d087885a6a80af6e41473",
+    "docs/PROJECT_MANUAL.md": "77c88f4d984bce2aa675e86eda63c62d8f63994a575fe57990c488d7fee9b77f",
+    "docs/user/Seis2D_User_Guide.md": "afa71e75ffbf03288878ca85615527408e26ac2f5109b1592f54aa9ff6f0732a",
+    "docs/user/Seis3D_User_Guide.md": "36994f12023c98ef548e5b351426fe31813c4dabba77a54ad75701ac7e1b9af3"
+  },
+  "model_format": "VTI ImageData primary for 2D/3D; 2D SEG-Y property exchange retained; SEG-Y receiver records",
+  "screenshot_run_logs": "out/screenshots/vti-2026-10-19",
+  "model_validation": {
+    "format": "VTK ImageData raw-appended Float32 VTI",
+    "ctest_passed": [
+      "VtiModelRegression",
+      "VtsModelRegression",
+      "Seis3DWorkspaceRegression",
+      "Backend3DRegression",
+      "Seis2DRecordRegression",
+      "SolverRegression"
+    ],
+    "actual_2d_material_roundtrip": [
+      "CPU",
+      "CUDA"
+    ],
+    "actual_3d_session_import_export": "CUDA",
+    "independent_interchange": {
+      "variants": [
+        {
+          "byte_order": "LittleEndian",
+          "header": "UInt32",
+          "scalar": "Float32",
+          "passed": true
+        },
+        {
+          "byte_order": "LittleEndian",
+          "header": "UInt32",
+          "scalar": "Float64",
+          "passed": true
+        },
+        {
+          "byte_order": "LittleEndian",
+          "header": "UInt64",
+          "scalar": "Float32",
+          "passed": true
+        },
+        {
+          "byte_order": "LittleEndian",
+          "header": "UInt64",
+          "scalar": "Float64",
+          "passed": true
+        },
+        {
+          "byte_order": "BigEndian",
+          "header": "UInt32",
+          "scalar": "Float32",
+          "passed": true
+        },
+        {
+          "byte_order": "BigEndian",
+          "header": "UInt32",
+          "scalar": "Float64",
+          "passed": true
+        },
+        {
+          "byte_order": "BigEndian",
+          "header": "UInt64",
+          "scalar": "Float32",
+          "passed": true
+        },
+        {
+          "byte_order": "BigEndian",
+          "header": "UInt64",
+          "scalar": "Float64",
+          "passed": true
+        }
+      ],
+      "independent_readback": [
+        {
+          "dimensions": [
+            17,
+            1,
+            19
+          ],
+          "origin": "0 0 0",
+          "spacing": "3.25 3.25 3.25",
+          "fields": {
+            "Vp": {
+              "count": 323,
+              "minimum": 2800.0,
+              "maximum": 2996.0,
+              "first": 2800.0,
+              "last": 2996.0
+            },
+            "Vs": {
+              "count": 323,
+              "minimum": 1400.0,
+              "maximum": 1450.0,
+              "first": 1400.0,
+              "last": 1450.0
+            },
+            "Density": {
+              "count": 323,
+              "minimum": 2100.0,
+              "maximum": 2134.0,
+              "first": 2100.0,
+              "last": 2134.0
+            }
+          },
+          "file_bytes": 5247,
+          "path": "out\\bin\\RelWithDebInfo\\checks\\vti-model\\model-2d.vti"
+        },
+        {
+          "dimensions": [
+            17,
+            18,
+            19
+          ],
+          "origin": "0 0 0",
+          "spacing": "3.25 3.25 3.25",
+          "fields": {
+            "Vp": {
+              "count": 5814,
+              "minimum": 2800.0,
+              "maximum": 3047.0,
+              "first": 2800.0,
+              "last": 3047.0
+            },
+            "Vs": {
+              "count": 5814,
+              "minimum": 1400.0,
+              "maximum": 1467.0,
+              "first": 1400.0,
+              "last": 1467.0
+            },
+            "Density": {
+              "count": 5814,
+              "minimum": 2100.0,
+              "maximum": 2168.0,
+              "first": 2100.0,
+              "last": 2168.0
+            }
+          },
+          "file_bytes": 71143,
+          "path": "out\\bin\\RelWithDebInfo\\checks\\vti-model\\model-3d.vti"
+        },
+        {
+          "dimensions": [
+            200,
+            200,
+            200
+          ],
+          "origin": "0 0 0",
+          "spacing": "10 10 10",
+          "fields": {
+            "Vp": {
+              "count": 8000000,
+              "minimum": 3000.0,
+              "maximum": 4200.0,
+              "first": 3000.0,
+              "last": 4200.0
+            },
+            "Vs": {
+              "count": 8000000,
+              "minimum": 1700.0,
+              "maximum": 2400.0,
+              "first": 1700.0,
+              "last": 2400.0
+            },
+            "Density": {
+              "count": 8000000,
+              "minimum": 2200.0,
+              "maximum": 2500.0,
+              "first": 2200.0,
+              "last": 2500.0
+            }
+          },
+          "file_bytes": 96001381,
+          "path": "out\\screenshots\\seis3d-full\\data\\session-17924110625416340\\two-layer.vti"
+        }
+      ]
+    },
+    "capture_process_exit_codes": {
+      "2d": 0,
+      "3d": 0,
+      "2d_cpu": 0
+    },
+    "scope": "Model interchange and application integration; no restart-checkpoint or new numerical-accuracy claim."
+  },
   "math_rendering": {
-    "display_formulas": 19,
+    "date": "2026-10-19",
+    "article_sha256": "cbb12f6cab3af890c70fca2ab28d186494aa3f2ee7369bcad3bc183fd7706966",
+    "renderer": "13.0.2",
+    "mathematics": "5.2.0",
     "math_containers": 68,
-    "errors": 0
+    "display_formulas": 19,
+    "expected_numbered_formulas": 19,
+    "errors": 0,
+    "images": [
+      "seis3d-01-home.png",
+      "seis3d-03-stability.png",
+      "seis3d-04-source.png",
+      "seis3d-31-boundary-settings.png",
+      "seis3d-32-all-absorbing.png",
+      "seis3d-33-all-reflecting.png",
+      "seis3d-08-wavefield.png",
+      "seis3d-02-model.png",
+      "seis3d-28-model-fault.png",
+      "seis3d-09-style-coolwarm.png",
+      "seis3d-10-style-bipolar.png",
+      "seis3d-11-style-viridis.png",
+      "seis3d-12-style-turbo.png",
+      "seis3d-13-style-inferno.png",
+      "seis3d-14-style-cuda.png",
+      "seis3d-15-component-magnitude.png",
+      "seis3d-16-volume-settings.png",
+      "seis3d-17-boundary-visible.png",
+      "seis3d-06-receivers.png",
+      "seis3d-07-acquisition-settings.png",
+      "seis3d-18-capture-progress.png",
+      "seis3d-19-record-all.png",
+      "seis3d-20-record-row.png",
+      "seis3d-21-record-agc.png",
+      "seis3d-22-record-density.png",
+      "seis3d-23-single-trace.png",
+      "seis3d-26-agc-options.png",
+      "seis3d-24-export.png",
+      "seis3d-25-import.png",
+      "seis3d-05-model-io.png",
+      "seis2d-wavefield-paper.png",
+      "seis2d-record-raw.png",
+      "seis2d-record-agc.png",
+      "seis2d-single-vz.png",
+      "seis2d-section-vx.png",
+      "seis2d-docking-analysis.png",
+      "seis2d-docking-record-focus.png",
+      "seis2d-export-package.png",
+      "seis3d-27-shortcuts.png",
+      "seis3d-30-operating-manual.png"
+    ],
+    "local_preview_only": true
   },
   "hexo_generate": {
+    "hexo": "8.1.1",
     "posts": 1,
-    "article_images": 40,
+    "article": "2026/05/30/CUDA_Seis3D/",
+    "article_sha256": "cbb12f6cab3af890c70fca2ab28d186494aa3f2ee7369bcad3bc183fd7706966",
+    "images": 40,
     "local_attachments_checked": 17,
-    "math_errors": 0
-  },
-  "document_sha256": {
-    "README.md": "2d018abec7b094053ffb06a75b01d0144b72d0916b8fa0a7fd1f5d534926497e",
-    "README.en.md": "b58c300ecb889cb41f1540e720ac7bcc95bfc318d8a08e30d6311c4143c855d5",
-    "docs/README.md": "8d4be6e22056deb25b05ff626d38b694b2ce906a6d4069d049ae8da6bd08f87b",
-    "docs/PROJECT_MANUAL.md": "f79dc59e753526415e0d4662df59968256a5752ad96951cf8159182cbe0e54d4",
-    "docs/user/Seis2D_User_Guide.md": "36886b2582a1616c1fec01d5783902cb265139f9dfb29d2274fdafb3d72ed490",
-    "docs/user/Seis3D_User_Guide.md": "b842852d8c4126874e081407684683b8256cd033a4b6ade43188908ca8a61f1d"
+    "math_errors": 0,
+    "subpath": "/seiswave-preview/",
+    "generated": true
   }
 }

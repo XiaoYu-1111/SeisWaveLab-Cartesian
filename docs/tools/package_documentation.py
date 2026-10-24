@@ -14,21 +14,23 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
 OUT = ROOT.parent / "out"
-DATE = "2026-10-19"
+DATE = "2026-10-24"
+CAPTURE_DATE = "2026-10-19"
 SLUG = "CUDA_Seis3D"
 TITLE = "SeisWave Lab：笛卡尔网格二维与三维弹性波模拟的理论、实现与工作流程"
 ORIGIN = "https://github.com/XiaoYu-1111/CMakePro_CUDA_SeisSim_V2/blob/master/"
 LINK = re.compile(r'(!?)\[([^\]]*)\]\(([^)\n]+)\)')
 FENCE = re.compile(r'(^```[^\n]*\n.*?^```[^\n]*$)', re.M | re.S)
-SELECTED = ["PROJECT_MANUAL.md", "README.md", "user/Seis3D_User_Guide.md",
+SELECTED = ["PROJECT_MANUAL.md", "README.md", "REFERENCES.md", "user/Seis3D_User_Guide.md",
     "user/Seis2D_User_Guide.md", "user/Seis3D_Screenshot_Gallery.md",
-    "user/S3DM_Model_Format.md", "user/VTK_Model_Export.md", "build/BUILDING.md",
+    "user/VTI_Model_Format.md", "user/VTK_Model_Export.md", "build/BUILDING.md",
     "build/HEXO_MATH.md", "development/REPOSITORY_LAYOUT.md", "development/PROJECT_NAMING.md",
     "development/SEIS3D_IMPLEMENTATION.md", "development/SEIS2D_REFACTOR_AND_VIEWER.md",
     "publication/PUBLICATION_ROADMAP.md", "reviews/DOCUMENTATION_REFRESH_2026_10_18.md",
     "development/CODE_ARCHITECTURE.md", "development/BACKEND_VALIDATION.md",
     "development/EXTERNAL_DOMAIN_2D.md", "development/THEME_SERIES.md",
-    "reviews/DOCUMENTATION_REFRESH_2026_10_19.md", "performance/CPU_CUDA_REPORT.md"]
+    "reviews/DOCUMENTATION_REFRESH_2026_10_19.md", "performance/CPU_CUDA_REPORT.md",
+    "reviews/VTI_ASYNC_IMPORT_2026_10_19.md", "reviews/FILE_DIALOG_FIX_2026_10_19.md"]
 FRONT = f'''---
 title: "{TITLE}"
 date: 2026-05-30 13:01:56
@@ -108,13 +110,15 @@ def package_documentation() -> None:
     names = {(DOCS / name).resolve(): ("DOCUMENTATION_INDEX.md" if name == "README.md" else Path(name).name)
         for name in SELECTED}
     names[(DOCS / "showcase/CUDA_Seis3D_GitHub_Pages.md").resolve()] = "PROJECT_MANUAL.md"
-    example_files = [ROOT / "docs/examples/read_s3dm.py", ROOT / "docs/examples/S3dmReader3D.h"]
+    example_files = [ROOT / "docs/examples/read_vti_model.py"]
     for p in example_files:
         names[p.resolve()] = p.name
     for name in ["LICENSE", "THIRD_PARTY_NOTICES.md"]:
         names[(ROOT / name).resolve()] = name
     auxiliary = [DOCS / "development/SOURCE_MIGRATION_2026-10-19.json",
-        DOCS / "reviews/DOCUMENTATION_REFRESH_2026_10_19.json"]
+        DOCS / "reviews/DOCUMENTATION_REFRESH_2026_10_19.json",
+        DOCS / "reviews/VTI_ASYNC_IMPORT_2026_10_19.json",
+        DOCS / "reviews/FILE_DIALOG_FIX_2026_10_19.json"]
     for p in sorted((DOCS / "performance").rglob("*")):
         if p.is_file() and p.name != "CPU_CUDA_REPORT.md":
             auxiliary.append(p)
@@ -123,7 +127,7 @@ def package_documentation() -> None:
         names.setdefault(p.resolve(), p.name)
     images: dict[Path, str] = {}
     rows = []
-    for dimension, subdir, expected in [("seis3d", "seis3d/full", 33), ("seis2d", "seis2d", 11)]:
+    for dimension, subdir, expected in [("seis3d", "seis3d/full", 33), ("seis2d", "seis2d", 12)]:
         source = DOCS / "assets" / subdir
         records = json.loads((source / "capture-manifest.json").read_text(encoding="utf-8"))
         if len(records) != expected:
@@ -135,10 +139,22 @@ def package_documentation() -> None:
                     raise ValueError(f"Unexpected native dimensions: {p}: {native.size}")
             if digest(p) != row["sha256"]:
                 raise ValueError(f"Changed capture: {p}")
-            if row.get("captured_date") != DATE:
+            if row.get("captured_date") != CAPTURE_DATE:
                 raise ValueError(f"Run the current capture workflow first: {p}")
             images[p] = dimension + "-" + p.name
             rows.append(dict(row, packaged_image=images[p], dimension=dimension))
+    # Preserve the original workflow manifest; the later import regression has its own native size/hash.
+    import_report = json.loads((DOCS / "reviews/VTI_ASYNC_IMPORT_2026_10_19.json").read_text(encoding="utf-8"))
+    import_image = (DOCS / "assets/seis3d/import-progress.png").resolve()
+    with Image.open(import_image) as native:
+        if list(native.size) != import_report["native_resolution"]:
+            raise ValueError("Changed import progress capture dimensions")
+    if digest(import_image) != import_report["screenshot_sha256"]:
+        raise ValueError("Changed import progress capture hash")
+    images[import_image] = "seis3d-import-progress.png"
+    additional = [dict(image=images[import_image], native_dimensions=import_report["native_resolution"],
+        captured_date=import_report["date"],
+        sha256=import_report["screenshot_sha256"], source="VTI_ASYNC_IMPORT_2026_10_19.json")]
     files: set[str] = set()
     for p, name in images.items():
         shutil.copy2(p, offline / name)
@@ -152,14 +168,16 @@ def package_documentation() -> None:
         shutil.copy2(p, offline / names[p.resolve()])
         files.add(names[p.resolve()])
     manifest = dict(product="SeisWave Lab", version="2.0.0", date=DATE,
-        grid="Cartesian", current_screenshots=len(rows), native_dimensions=[2560,1494],
-        image_processing="Byte-identical copy; no crop, resample or recolor", captures=rows)
+        grid="Cartesian", workflow_capture_date=CAPTURE_DATE, current_screenshots=len(rows), native_dimensions=[2560,1494],
+        image_processing="Byte-identical copy; no crop, resample or recolor", captures=rows,
+        additional_captures=additional)
     (offline / "capture-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     files.add("capture-manifest.json")
     (offline / "README.md").write_text("# SeisWave Lab 图文说明\n\n"
         "[完整理论与流程](PROJECT_MANUAL.md) · [三维用户指南](Seis3D_User_Guide.md) · "
         "[二维用户指南](Seis2D_User_Guide.md) · [完整截图集](Seis3D_Screenshot_Gallery.md)\n\n"
-        f"{DATE}，笛卡尔网格项目，{len(rows)} 张 2560×1494 原生完整窗口图。"
+        f"文档整理于 {DATE}，流程截图采集于 {CAPTURE_DATE}；笛卡尔网格项目，{len(rows)} 张 2560×1494 原生完整窗口图。"
+        "另附一张 1280×900 VTI 后台导入进度原图及独立验证记录。"
         "Markdown 阅读器需要支持数学公式。历史审查与旧图链接保留到源码仓库。"
         "不含模型体、地震道集或可执行文件；运行数据在外层 out/screenshots。\n", encoding="utf-8")
     files.add("README.md")
@@ -183,7 +201,7 @@ def package_documentation() -> None:
         "站点启用 post_asset_folder，并将资源目录加入 skip_render，避免附件 Markdown 被识别为新文章。"
         "数学渲染与 NexT 合并配置见资源目录 HEXO_MATH.md。\n\n"
         f"文章源自仓库 docs/PROJECT_MANUAL.md，保留 2026-05-30 发布日期，更新日期为 {DATE}。"
-        f"本包有当前 {len(rows)} 张完整原图及配套 Markdown，所有图片与仓库字节相同。"
+        f"本包有当前 {len(rows)} 张完整流程原图，另附一张 VTI 后台导入进度原图及配套 Markdown，所有图片与仓库字节相同。"
         "不包含程序、模拟体或记录数据，不修改网站、不自动部署。"
         "历史审查链接保留到源码仓库。\n", encoding="utf-8")
     hexo_files.add("README.md")
@@ -203,7 +221,7 @@ markdown:
     - name: markdown-it-mathjax3
 ''',encoding="utf-8")
     hexo_files.add("hexo/_config.seiswave.example.yml")
-    checks = dict(date=DATE, screenshots=len(rows), local_links_checked=links,
+    checks = dict(date=DATE, workflow_capture_date=CAPTURE_DATE, screenshots=len(rows), additional_screenshots=len(additional), local_links_checked=links,
         display_equations=len(re.findall(r"^\\tag\{\d+\}",source_body,re.M)),
         native_resolution=[2560,1494], screenshot_hashes_verified=True,
         note="Math HTML rendering is recorded separately in math-render-validation.json; no website deployed.")

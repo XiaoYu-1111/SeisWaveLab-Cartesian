@@ -280,28 +280,23 @@ void drawSourceControls3D(Seis3D_State& s) {
     AppUi::Widgets::TextWrapped("A normalized 3 x 3 x 3 spatial source reduces grid-scale excitation. Wavelet delay is 1.2 / f0.");
 }
 
-// Import S3DM or export initialized SI materials through independent S3DM/VTI output paths.
+// VTI physical model interchange; the VTI wavefield snapshot is a separate data product.
 void drawModelControls3D(Seis3D_State& s) {
     AppUi::FunctionStyleScope colors(AppUi::FunctionRole::Model);
-    AppUi::Widgets::TextWrapped(".s3dm: physical XYZ grid, SI Vp / Vs / rho.");
+    AppUi::Widgets::TextWrapped("VTI ImageData: origin, spacing and Vp / Vs / Density in SI units.");
+    AppUi::Widgets::TextWrapped("Import requires origin (0,0,0) and equal XYZ spacing. Use uncompressed raw-appended or ASCII VTI.");
     ImGui::BeginDisabled(s.recording3D||s.sequence3D);
     AppUi::Widgets::InputText(fieldLabel3D("Model path").c_str(),s.modelPath3D,sizeof(s.modelPath3D));
     if(AppUi::Widgets::Button("Browse model file...",ImVec2(-1,0))) performAction3D(s,[&]{browseModelPath3D(s,false);});
-    if(AppUi::Widgets::Button("Validate + import 3D model",ImVec2(-1,0))) performAction3D(s,[&]{initializeSession3D(s,true);});
+    if(AppUi::Widgets::Button("Validate + import 3D model",ImVec2(-1,0))) performAction3D(s,[&]{beginModelImport3D(s);});
     ImGui::Separator();
-    AppUi::Widgets::Combo(fieldLabel3D("Model export format").c_str(),&s.modelExportFormat3D,
-        "Seis3D model (.s3dm)\0VTK ImageData (.vti)\0");
-    const bool vti3D=s.modelExportFormat3D==1;
-    auto& outputPath3D=vti3D?s.vtiModelExportPath3D:s.modelExportPath3D;
-    AppUi::Widgets::InputText(fieldLabel3D("Model export path").c_str(),outputPath3D,sizeof(outputPath3D));
-    if(AppUi::Widgets::Button("Choose model output...",ImVec2(-1,0))) performAction3D(s,[&]{
-        if(vti3D) browseVtiModelPath3D(s);else browseModelPath3D(s,true);
-    });
+    AppUi::Widgets::TextWrapped("Model export format: VTK ImageData (.vti)");
+    AppUi::Widgets::InputText(fieldLabel3D("Model export path").c_str(),s.modelExportPath3D,sizeof(s.modelExportPath3D));
+    if(AppUi::Widgets::Button("Choose model output...",ImVec2(-1,0))) performAction3D(s,[&]{browseModelPath3D(s,true);});
     ImGui::BeginDisabled(!s.ready3D);
-    if(AppUi::Widgets::Button(vti3D?"Export VTI model to a new file":"Export model to a new file",ImVec2(-1,0)))
-        performAction3D(s,[&]{if(vti3D) exportVtiModel3D(s);else exportModel3D(s);});
+    if(AppUi::Widgets::Button("Export VTI model to a new file",ImVec2(-1,0))) performAction3D(s,[&]{exportModel3D(s);});
     ImGui::EndDisabled();
-    if(vti3D) AppUi::Widgets::TextWrapped("VTI: Vp / Vs (m/s), Density (kg/m3); Z increases with depth.");
+    AppUi::Widgets::TextWrapped("VTI models contain physical nodes only, without CPML or ghost cells.");
     ImGui::Separator();
     AppUi::Widgets::Text("Current wavefield snapshot: %s",s.component3D==0?"Vz":s.component3D==1?"Vx":s.component3D==2?"Vy":s.component3D==3?"Velocity magnitude":"Pressure");
     AppUi::Widgets::InputText(fieldLabel3D("Wavefield snapshot path").c_str(),s.vtiWavefieldExportPath3D,sizeof(s.vtiWavefieldExportPath3D));
@@ -784,6 +779,7 @@ void buildDockLayout3D(Seis3D_State& s,ImGuiID dockId,ImVec2 size) {
 
 // Use the same state transitions as the controls; display shortcuts never apply preset defaults.
 bool handleWorkspaceShortcuts3D(Seis3D_State& s) {
+    if(s.modelImport3D) return false;
     if(!AppUi::workspaceShortcutsAvailable(true)) return false;
     const bool reverse=ImGui::GetIO().KeyShift;
     if(ImGui::IsKeyPressed(ImGuiKey_Q,false))
@@ -837,17 +833,53 @@ void drawShortcutHelp3D() {
     ImGui::EndPopup();
 }
 
+// Draw a live modal independently of compute work; OpenGL and ImGui remain on the UI thread.
+void drawModelImportProgress3D(Seis3D_State& s) {
+    const char* popup=AppUi::windowLabel("Importing VTI model###Seis3D.ImportProgress");
+    if(s.modelImport3D&&!ImGui::IsPopupOpen(popup)) ImGui::OpenPopup(popup);
+    if(!s.modelImport3D) {
+        if(ImGui::BeginPopupModal(popup,nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {ImGui::CloseCurrentPopup();ImGui::EndPopup();}
+        return;
+    }
+    const auto view=modelImportView3D(s);const auto* viewport=ImGui::GetMainViewport();
+    const float width=(std::min)(560.f,viewport->WorkSize.x-32);
+    ImGui::SetNextWindowPos(viewport->GetCenter(),ImGuiCond_Always,ImVec2(.5f,.5f));
+    ImGui::SetNextWindowSize(ImVec2(width,0));
+    if(!ImGui::BeginPopupModal(popup,nullptr,ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoMove)) return;
+    const char* stages[]={"Validating VTI structure and materials...","Reading Vp / Vs / Density...",
+        "Initializing compute backend...","Uploading physical model...","Preparing model display..."};
+    const auto position=ImGui::GetCursorScreenPos();const float radius=ImGui::GetFontSize()*.6f;
+    auto* draw=ImGui::GetWindowDrawList();const float angle=float(ImGui::GetTime()*5);
+    draw->PathArcTo(ImVec2(position.x+radius+2,position.y+radius+2),radius,angle,angle+4.7f,32);
+    draw->PathStroke(ImGui::GetColorU32(AppUi::palette().accent),0,3);
+    ImGui::Dummy(ImVec2(radius*2+14,radius*2+6));ImGui::SameLine();
+    AppUi::Widgets::TextWrapped("%s",stages[(std::clamp)(view.stage,0,4)]);
+    AppUi::Widgets::TextWrapped("%s",view.filename.c_str());
+    char percent[24]{};std::snprintf(percent,sizeof(percent),"%.0f%%",view.progress*100);
+    ImGui::ProgressBar(view.progress,ImVec2(-1,ImGui::GetFontSize()*1.3f),percent);
+    AppUi::Widgets::Text("Elapsed: %.1f s",view.seconds);
+    AppUi::Widgets::TextWrapped("Import is running. Large models may take longer; the window remains responsive.");
+    if(view.stage<2) {
+        ImGui::BeginDisabled(view.cancelling);
+        if(AppUi::Widgets::Button(view.cancelling?"Cancelling import...":"Cancel import")) cancelModelImport3D(s);
+        ImGui::EndDisabled();
+    } else AppUi::Widgets::TextDisabled("Finishing setup; please wait...");
+    ImGui::EndPopup();
+}
+
 // Compose an isolated, persistent dockspace with a fixed toolbar and compact physical status bar.
 bool renderScreen3D(Seis3D_State& s,int width,int height) {
     (void)width;(void)height;
     ImGui::PushFont(nullptr,ImGui::GetFontSize()*(std::clamp)(s.fontScale3D,.85f,1.25f));
+    pollModelImport3D(s);
     s.homeRequested3D=false;
     const bool shortcutHelpRequested=handleWorkspaceShortcuts3D(s);
-    if(ImGui::GetTime()-s.memoryRefreshTime3D>1) {
+    if(!s.modelImport3D&&ImGui::GetTime()-s.memoryRefreshTime3D>1) {
         s.memoryRefreshTime3D=ImGui::GetTime();
         if(cudaMemGetInfo(&s.freeVram3D,&s.totalVram3D)!=cudaSuccess) s.freeVram3D=s.totalVram3D=0;
     }
-    performAction3D(s,[&]{advanceSimulation3D(s);});
+    if(!s.modelImport3D) performAction3D(s,[&]{advanceSimulation3D(s);});
+    ImGui::BeginDisabled(bool(s.modelImport3D));
     const auto* viewport=ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
@@ -920,7 +952,7 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
     ImGui::End();
     for(int panel=0;panel<8;++panel) {
         // Apply controls before rendering, and render textures before submitting ImGui images.
-        if(panel==2) performAction3D(s,[&]{updateGraphics3D(s);});
+        if(panel==2&&!s.modelImport3D) performAction3D(s,[&]{updateGraphics3D(s);});
         if(!s.panelsOpen3D[panel]) continue;
         ImGui::SetNextWindowClass(&windowClass);
         ImGui::SetNextWindowSize(ImVec2(400,320),ImGuiCond_FirstUseEver);
@@ -952,6 +984,8 @@ bool renderScreen3D(Seis3D_State& s,int width,int height) {
         }
         ImGui::End();
     }
+    ImGui::EndDisabled();
+    drawModelImportProgress3D(s);
     ImGui::PopFont();
     return s.homeRequested3D;
 }

@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-19",
+  "scope": "Repository manuals, showcase source, offline documentation and Hexo bundle; no live deployment",
+  "article_sha256": "7d6534067c2a95b0a936e01f32bacbdab57bff6d2e0560d7302c94f37af7716f",
+  "hexo_validation": {
+    "hexo": "8.1.1",
+    "posts": 1,
+    "article": "2026/05/30/CUDA_Seis3D/",
+    "article_sha256": "7d6534067c2a95b0a936e01f32bacbdab57bff6d2e0560d7302c94f37af7716f",
+    "images": 41,
+    "local_attachments_checked": 20,
+    "math_errors": 0,
+    "subpath": "/seiswave-preview/",
+    "generated": true
+  },
+  "source_documents": [
+    "README.md",
+    "README.en.md",
+    "docs/PROJECT_MANUAL.md",
+    "docs/user/Seis3D_User_Guide.md",
+    "docs/user/VTI_Model_Format.md",
+    "docs/development/CODE_ARCHITECTURE.md",
+    "docs/reviews/VTI_ASYNC_IMPORT_2026_10_19.md",
+    "docs/showcase/CUDA_Seis3D_GitHub_Pages.md"
+  ],
+  "archives": {
+    "out\\blog\\SeisWaveLab_Hexo.zip": {
+      "sha256": "7914f2226d4b1567a8fc342e01f158c35d1fe097d05e323decce05dd0a3a9187",
+      "files": 101,
+      "bytes": 39423369
+    },
+    "out\\documentation\\SeisWaveLab_Documentation.zip": {
+      "sha256": "4bebdac94157b78e49b54dcdeae1cb0d82bca94aa1912abea214da8f82d81ee2",
+      "files": 98,
+      "bytes": 39398027
+    }
+  },
+  "current_workflow_captures": 45,
+  "additional_import_capture": 1
+}

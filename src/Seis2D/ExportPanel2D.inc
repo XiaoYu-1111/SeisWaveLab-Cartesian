@@ -65,17 +65,12 @@ inline void browseExportDirectory2D() {
 // Select a package basename and parent location; the actual result is a numbered directory, not one file.
 inline void browsePackageName2D() {
 #ifdef _WIN32
-    ensureExportDirectory2D();wchar_t file[32768]{};
-    const auto initial=(exportPath2D(exportDirectory2D)/std::filesystem::u8path(exportPrefix2D)).wstring();
-    if(initial.size()>=std::size(file)) throw std::invalid_argument("Output path is too long.");
-    std::copy(initial.begin(),initial.end(),file);OPENFILENAMEW dialog{};dialog.lStructSize=sizeof(dialog);
-    dialog.hwndOwner=GetActiveWindow();dialog.lpstrFile=file;dialog.nMaxFile=DWORD(std::size(file));
-    dialog.lpstrTitle=L"Choose shot package basename and location";dialog.lpstrFilter=L"Shot package basename\0*.*\0";
-    dialog.Flags=OFN_NOCHANGEDIR|OFN_PATHMUSTEXIST|OFN_NOREADONLYRETURN;
-    if(GetSaveFileNameW(&dialog)) {
-        const std::filesystem::path selected(file);validateExportPrefix2D(pathToUtf8(selected.filename()));
+    ensureExportDirectory2D();std::filesystem::path selected;
+    const auto initial=exportPath2D(exportDirectory2D)/std::filesystem::u8path(exportPrefix2D);
+    if(SeisCommon::chooseNativeFile(initial,getExecutableDirectory(),L"Shot package basename\0*.*\0",nullptr,true,selected,L"seis2d_shot")) {
+        validateExportPrefix2D(pathToUtf8(selected.filename()));
         copyExportField2D(exportDirectory2D,selected.parent_path());copyExportField2D(exportPrefix2D,selected.filename());
-    } else if(CommDlgExtendedError()) throw std::runtime_error("Cannot open package name selector.");
+    }
 #endif
 }
 // Offer one consistent destination for manual, completed and multi-shot records.

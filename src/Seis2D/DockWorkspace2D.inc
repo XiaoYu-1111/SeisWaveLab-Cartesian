@@ -3,7 +3,7 @@ struct CanvasHandles2D {GLuint framebuffer=0,texture=0;int width=0,height=0;} ca
 ImVec2 canvasOrigin2D{},canvasSize2D{800,600};
 ImDrawList* canvasDrawList2D=nullptr;
 bool canvasHovered2D=false,resetDockLayout2D=false;
-bool selectExportTab2D=false,focusControls2D=false;
+bool selectExportTab2D=false,selectModelIoTab2D=false,focusControls2D=false;
 int dockPreset2D=0;
 constexpr const char* controlsName2D="Control Panel###Seis2D.Controls";
 constexpr const char* canvasName2D="Wavefield X-Z###Seis2D.Canvas";

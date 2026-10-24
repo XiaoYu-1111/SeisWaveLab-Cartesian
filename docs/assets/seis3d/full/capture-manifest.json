@@ -18,14 +18,14 @@
     "slice_zoom": "1",
     "title": "中文首页",
     "captured_date": "2026-10-19",
-    "sha256": "88d694413fcfbf755ad3976704c89632530df15a4893e53d403c5ea03edd5d8b",
+    "sha256": "a9e7ef7126da78a0bc26f4b4df4375190d70f42c487ab9814be3c11b438a1751",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "02-model.png",
@@ -46,14 +46,14 @@
     "slice_zoom": "1",
     "title": "模型与网格",
     "captured_date": "2026-10-19",
-    "sha256": "0cf7fcdf3a278a380b8577cfdc366f0a2fcef5e49340f9919c5e80395f5bd79f",
+    "sha256": "10413c8efa370d17fe693c6f2bf8d38ec248e8624c91bee3d24445c3b59804f6",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "03-stability.png",
@@ -74,14 +74,14 @@
     "slice_zoom": "1",
     "title": "安全时步",
     "captured_date": "2026-10-19",
-    "sha256": "fdefafc17192871cddfb0f1af6cec83eecfc500f27cf5a5e1dc0e1eb7eb7b8d5",
+    "sha256": "8e0859d1bacf3f86b2417f29df0f092e51876eaa24583976b0734ca8de619075",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "04-source.png",
@@ -102,14 +102,14 @@
     "slice_zoom": "1",
     "title": "震源设置",
     "captured_date": "2026-10-19",
-    "sha256": "79a0a87a2b2ad3c9f6930bf40de931a8583f482dfa9343d9af3c29b38d00fe30",
+    "sha256": "1702f74efe2f4b034f41812a31507713b0d7e580d5156e0a21193ffdf9b22d29",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "05-model-io.png",
@@ -130,14 +130,14 @@
     "slice_zoom": "1",
     "title": "模型文件",
     "captured_date": "2026-10-19",
-    "sha256": "790d3db4baa4c9d2597341b16a46ea0dd0b27487f85a557dc475ad0a5ea46038",
+    "sha256": "cffb806c2d81cdb46ddb27aeb590aac3ceb11104985456ad5234c7429d41e107",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "06-receivers.png",
@@ -158,14 +158,14 @@
     "slice_zoom": "1",
     "title": "接收排列",
     "captured_date": "2026-10-19",
-    "sha256": "3289e5175b596db2decf530cd2b6c7da894e5abc421aae9146e85424af9c1cef",
+    "sha256": "d4d05446bebf692542fc887df56a459476c1197ef24bfd3bea668656ba388e21",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "07-acquisition-settings.png",
@@ -186,14 +186,14 @@
     "slice_zoom": "1",
     "title": "采集参数",
     "captured_date": "2026-10-19",
-    "sha256": "a7c8e2b174f66f2058c448e584addf5dd219ec5ded53c6155f5b273a7805a7d8",
+    "sha256": "f0ef664cff00646ded7c7c192ea42c9ef8ec86b76961e6c3d80229589aa4d2db",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "08-wavefield.png",
@@ -214,14 +214,14 @@
     "slice_zoom": "1",
     "title": "运行波场",
     "captured_date": "2026-10-19",
-    "sha256": "c8f410c8cdeb6edfaad012c27790809942f6b00f5df14347e4a5a7126bb40b5a",
+    "sha256": "aa9f3b48f261a965592dbf9fa8150f92b9ca9c72743329d6ab4924dae07a5872",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "09-style-coolwarm.png",
@@ -242,14 +242,14 @@
     "slice_zoom": "1",
     "title": "Coolwarm",
     "captured_date": "2026-10-19",
-    "sha256": "ede9247cf27a5b1d7d54c6817381f5e24dd62d10541e6909bf9082078d074e19",
+    "sha256": "2ef2a8b0fb143ba2e119d3efd0bfbaeca8ec5be51b9d69e24430516c5aed2cc0",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "10-style-bipolar.png",
@@ -270,14 +270,14 @@
     "slice_zoom": "1",
     "title": "Seismic Bipolar",
     "captured_date": "2026-10-19",
-    "sha256": "5fc763b892b0bc05183414dc60697989b8d8681f15466a44377438ced9fbc110",
+    "sha256": "4738b550977ea5b8dd256f7f4ca47e3510e72521136786971aab24223760930a",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "11-style-viridis.png",
@@ -298,14 +298,14 @@
     "slice_zoom": "1",
     "title": "Viridis",
     "captured_date": "2026-10-19",
-    "sha256": "39e908be962fde305da509305612f00252a38e694963d697c91cce3b259323d1",
+    "sha256": "e0984fd0df76938727d0c38048607791d275cf0dded61e094f88c208d7b54dee",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "12-style-turbo.png",
@@ -326,14 +326,14 @@
     "slice_zoom": "1",
     "title": "Turbo",
     "captured_date": "2026-10-19",
-    "sha256": "c2748c79e4d8bbbf692bfdd568aeedcea5caffbf5a830cbfd3e69ec700942d16",
+    "sha256": "6820a067a42f2ced8acb2b631f82e293963b155fd434d4709cfbc3f94eb49981",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "13-style-inferno.png",
@@ -354,14 +354,14 @@
     "slice_zoom": "1",
     "title": "Inferno",
     "captured_date": "2026-10-19",
-    "sha256": "4a93d8ead49fbcc2ec7a25acd2b5ef421fb195c318be971510bf1af1ed27d2c1",
+    "sha256": "9c08ea4e46f751cf8fa17b142768fc32aa1751bf1bd733cc8c473a3d1affea24",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "14-style-cuda.png",
@@ -382,14 +382,14 @@
     "slice_zoom": "1",
     "title": "CUDA Green",
     "captured_date": "2026-10-19",
-    "sha256": "826bd3fe01cb5fdebc669d730a1c065a99a1378a7b706b09fa5c0a605a78676f",
+    "sha256": "f4ba5ac0cc4472b9c0adbe52be0caa7fbefe5cf68754ee16ac2d69a27502c21a",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "15-component-magnitude.png",
@@ -410,14 +410,14 @@
     "slice_zoom": "1",
     "title": "速度模",
     "captured_date": "2026-10-19",
-    "sha256": "7b6aa7e601b759effed5b36163eb60a276f800ed20d1f7cb8707606bd7dde0a9",
+    "sha256": "7c5e7fb40ae016774e25a738d56fffc876ae7d8d0288ecd9616f087f1b784590",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "16-volume-settings.png",
@@ -438,14 +438,14 @@
     "slice_zoom": "1",
     "title": "体绘制参数",
     "captured_date": "2026-10-19",
-    "sha256": "966a984f72a9a3e980cec5749d3a8babb2a8589d6c045af1a4d80f7dc16fb786",
+    "sha256": "00b1da0370e0be93bbf0f4089d8f5046280296e15c3b568d1cf979b24ad7e853",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "17-boundary-visible.png",
@@ -466,14 +466,14 @@
     "slice_zoom": "1",
     "title": "边界层显示",
     "captured_date": "2026-10-19",
-    "sha256": "854fef2e35c24a7615459eeeaab5ab2fbb7d5576729d0df59c7ae6a76aa61d87",
+    "sha256": "49533b9f8592b763f2bc882676117bdaa8b797a2f4952e93168a704776560a87",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "18-capture-progress.png",
@@ -494,14 +494,14 @@
     "slice_zoom": "1",
     "title": "采集中",
     "captured_date": "2026-10-19",
-    "sha256": "6b3be436f61a0b77761db68cfaf6c362d73e0421f92ec945893c09ec0cbbf0b9",
+    "sha256": "8fb681a1277a791735e682c8ea44e6f5cf0be5e4b884c1bf8792597dd9b62942",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "19-record-all.png",
@@ -522,14 +522,14 @@
     "slice_zoom": "1",
     "title": "全部150道",
     "captured_date": "2026-10-19",
-    "sha256": "0e6f93d2575a38a8018606819873b37821d846a371d84762856fc86cda1e0492",
+    "sha256": "f2ddd645fcea27c13c4b5353233c5ec46f1cc4b216b9a214ee9625bf34d623ec",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "20-record-row.png",
@@ -550,14 +550,14 @@
     "slice_zoom": "1",
     "title": "中间50道",
     "captured_date": "2026-10-19",
-    "sha256": "f248219bc68bf72310de5773cc0c5eb31ba633ff8044c9d2aacc7a8c434a6edb",
+    "sha256": "6b6def1cb96cb6adc4a0698375d713342f84a3ced795edc63b4b5a2bef938f1e",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "21-record-agc.png",
@@ -578,14 +578,14 @@
     "slice_zoom": "1",
     "title": "AGC对比",
     "captured_date": "2026-10-19",
-    "sha256": "df9a484e81c1c2271ed1047028e2764aa8ad3767e38378990610a27605ae268b",
+    "sha256": "f6c4d91c0178517caecc28d19d160f3e34cfb6494ed9acf54c5486470e3d985c",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "22-record-density.png",
@@ -606,14 +606,14 @@
     "slice_zoom": "1",
     "title": "密度图",
     "captured_date": "2026-10-19",
-    "sha256": "ab9d202e18828a8e39d6c20c7467ed284438f179df414c657886cb89c0d5b0d1",
+    "sha256": "0b5d52014e561537621a0b65e8a39adc95498d9b7ebff7a1ed3d94720e7ca8db",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "23-single-trace.png",
@@ -634,14 +634,14 @@
     "slice_zoom": "1",
     "title": "单道三分量",
     "captured_date": "2026-10-19",
-    "sha256": "4bfd77915ac36ad1adf5767413edeee84f744fb1326b7ea2e1c1c8807e23fc21",
+    "sha256": "7cd9cc014dbba6e9f18325733738de99e25e57b6e0aec4c094dd60dfb2d4fd83",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "24-export.png",
@@ -662,14 +662,14 @@
     "slice_zoom": "1",
     "title": "导出记录",
     "captured_date": "2026-10-19",
-    "sha256": "774e943b0e18552fad1aba9bee099276f51f82241c953ecac71c17aabf302785",
+    "sha256": "ca64b4a9576945797148909652fc7fda03f427eeb8b6321ddc113a7756dc3554",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "25-import.png",
@@ -690,14 +690,14 @@
     "slice_zoom": "1",
     "title": "单炮导入",
     "captured_date": "2026-10-19",
-    "sha256": "23d673ea04e7e2796787462ef2b666bdf18937c039d9133e6acd12958bed9a78",
+    "sha256": "e2d6f57a621276be12a396d95753c4353514020e395c2d1cb55c37efe48fd3cf",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "26-agc-options.png",
@@ -718,14 +718,14 @@
     "slice_zoom": "1",
     "title": "AGC控件",
     "captured_date": "2026-10-19",
-    "sha256": "9aa79c95694ccec22c7c5a622b864c1b40aec9a0711bbba8b1fe54ae96c68963",
+    "sha256": "e61d3f986a6e85e48f1fa6a9be01e445c692c61147191853690c3f06bb7c1b6a",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "27-shortcuts.png",
@@ -746,14 +746,14 @@
     "slice_zoom": "1",
     "title": "快捷键帮助",
     "captured_date": "2026-10-19",
-    "sha256": "12fa641f95832f5db72c7d93152e941d6251a4d7901329cfad0c8cb05b4563ca",
+    "sha256": "9429ad28fead0deb4bc9e3dd97be78913ea64613c6b23040d3fbced7b0902163",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "28-model-fault.png",
@@ -774,14 +774,14 @@
     "slice_zoom": "1",
     "title": "断层模型",
     "captured_date": "2026-10-19",
-    "sha256": "824ed7e1645e9ec1d145a2b077c61af251e7dfd12af12ed8d223df59a1e5e6b3",
+    "sha256": "02488ba7a810df1fceaeeaf425356de01999abb290b109856132247ebb8b0a5b",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "29-home-english.png",
@@ -802,14 +802,14 @@
     "slice_zoom": "1",
     "title": "英文首页",
     "captured_date": "2026-10-19",
-    "sha256": "84da381e7ee2ab27158ff7cf05ad4ab3f1c96239f01cac63d303128199e26610",
+    "sha256": "afbe453500647d7db02e1a9e5c318ce644921095cfdc548e7801a17b5728889c",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "30-operating-manual.png",
@@ -830,14 +830,14 @@
     "slice_zoom": "1",
     "title": "内置操作手册",
     "captured_date": "2026-10-19",
-    "sha256": "0dfb4f74e46e6f4cb12ae35b149efe654fa6a982a18b550ed878af7c1bac96a1",
+    "sha256": "5fb48cef2409d350bb6e1099127a797746a77bf1fa4e778e8a57009aa49afb00",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "31-boundary-settings.png",
@@ -858,14 +858,14 @@
     "slice_zoom": "1",
     "title": "自由顶面",
     "captured_date": "2026-10-19",
-    "sha256": "7a0fdce728f00104be09112298b5f8f314ac5ffff2f324a05fbcf0252e97e5b1",
+    "sha256": "efd12910f766cd066ea7488d98ec6e0957aa841d6c538f418dfecd816f116fb0",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "32-all-absorbing.png",
@@ -886,14 +886,14 @@
     "slice_zoom": "1",
     "title": "六面吸收",
     "captured_date": "2026-10-19",
-    "sha256": "a2857ae8654de258d52fe93f37bc920fec5431c8392ae1b7b084a83777385552",
+    "sha256": "eda3634d88ab79a23e95faecfc3afe5701b49e4bde5baa10f8089d334b43b4ac",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   },
   {
     "image": "33-all-reflecting.png",
@@ -914,13 +914,13 @@
     "slice_zoom": "1",
     "title": "六面反射",
     "captured_date": "2026-10-19",
-    "sha256": "f4fff677126902326e5f4a42d8dc35b2054cff1ed345aae032bc4da615a6751c",
+    "sha256": "d4a08eca90584fc388a2125ce030c0dc52ac479f63f33d88ae0d2779023c6bd5",
     "cropped": false,
     "resampled": false,
     "recolored": false,
     "theme": "Paper Sand",
     "application_version": "2.0.0",
     "backend": "CUDA",
-    "executable_sha256": "d718f92fb1ec8215f6c9dbacbe094b407a5dbc1ccd35ff07542ff5ece60f421c"
+    "executable_sha256": "5155baa3fef056d308ac5dcd328341258a44c6e4baa1935009683981f3e7a0e8"
   }
 ]
